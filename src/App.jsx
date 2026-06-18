@@ -315,6 +315,16 @@ export default function App() {
   }, [authSession, location.pathname, location.search, navigate]);
 
   useEffect(() => {
+    if (!authSession?.user) {
+      return;
+    }
+
+    if (location.pathname === APP_PATHS.managementLogin && authRole === 'management') {
+      navigate(APP_PATHS.dashboard, { replace: true });
+    }
+  }, [authRole, authSession, location.pathname, navigate]);
+
+  useEffect(() => {
     let isActive = true;
     let nextUrls = [];
 
