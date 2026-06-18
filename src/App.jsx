@@ -666,7 +666,6 @@ export default function App() {
         onScrollToSection={scrollToSection}
         authUser={authSession?.user}
         authRole={authRole}
-        onSignOut={authSession?.user ? handleSignOut : undefined}
       />
 
       <main id="main-content">

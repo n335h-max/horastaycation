@@ -33,10 +33,15 @@ function getAuthBadgeCopy(authUser, authRole) {
     subtitle,
     initial,
     roleLabel: String(authRole || 'client').replace(/^\w/, (match) => match.toUpperCase()),
+    photoUrl:
+      authUser.user_metadata?.avatar_url ||
+      authUser.user_metadata?.picture ||
+      authUser.identities?.find((identity) => identity.provider === 'google')?.identity_data?.avatar_url ||
+      '',
   };
 }
 
-function SignedInBadge({ authUser, authRole, isLanding, onSignOut, compact = false }) {
+function UserAvatarIndicator({ authUser, authRole, isLanding = false }) {
   const badge = getAuthBadgeCopy(authUser, authRole);
 
   if (!badge) {
@@ -44,38 +49,26 @@ function SignedInBadge({ authUser, authRole, isLanding, onSignOut, compact = fal
   }
 
   const containerClass = isLanding
-    ? 'border-white/20 bg-white/10 text-white backdrop-blur-sm'
-    : 'border-brand-100 bg-white text-brand-950 shadow-sm';
-  const subtextClass = isLanding ? 'text-white/65' : 'text-slate-500';
-  const avatarClass = isLanding
-    ? 'bg-white/20 text-white'
-    : 'bg-brand-600 text-white';
-  const signOutClass = isLanding
-    ? 'border-white/15 bg-white/10 text-white/85 hover:bg-white/20'
-    : 'border-brand-100 bg-brand-50 text-brand-700 hover:bg-brand-100';
+    ? 'border-white/20 bg-white/10'
+    : 'border-brand-100 bg-white shadow-sm';
+  const avatarFallbackClass = isLanding ? 'bg-white/15 text-white' : 'bg-brand-600 text-white';
+  const statusDotClass = isLanding ? 'bg-emerald-300 ring-brand-950' : 'bg-emerald-500 ring-white';
+  const title = `${badge.displayName} · ${badge.roleLabel}${badge.subtitle ? ` · ${badge.subtitle}` : ''}`;
 
   return (
-    <div className={`flex items-center gap-3 rounded-2xl border px-3 py-2 ${containerClass}`}>
-      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${avatarClass}`}>
-        {badge.initial}
-      </div>
-      <div className={compact ? 'min-w-0' : 'hidden min-w-0 sm:block'}>
-        <div className="truncate text-sm font-semibold">
-          {badge.displayName}
+    <div
+      className={`relative flex h-11 w-11 items-center justify-center rounded-full border p-1 ${containerClass}`}
+      title={title}
+      aria-label={title}
+    >
+      {badge.photoUrl ? (
+        <img src={badge.photoUrl} alt={badge.displayName} className="h-full w-full rounded-full object-cover" referrerPolicy="no-referrer" />
+      ) : (
+        <div className={`flex h-full w-full items-center justify-center rounded-full text-sm font-bold ${avatarFallbackClass}`}>
+          {badge.initial}
         </div>
-        <div className={`truncate text-xs ${subtextClass}`}>
-          {badge.roleLabel} · {badge.subtitle}
-        </div>
-      </div>
-      {onSignOut ? (
-        <button
-          type="button"
-          onClick={onSignOut}
-          className={`rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${signOutClass}`}
-        >
-          Sign Out
-        </button>
-      ) : null}
+      )}
+      <span className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full ring-2 ${statusDotClass}`} />
     </div>
   );
 }
@@ -88,7 +81,6 @@ export function SiteHeader({
   onScrollToSection,
   authUser,
   authRole,
-  onSignOut,
 }) {
   const isLanding = activePage === 'landing';
   const navTextClass = isLanding ? 'text-white/80 hover:text-white' : 'text-slate-600 hover:text-brand-600';
@@ -162,7 +154,7 @@ export function SiteHeader({
               Management Login
             </button>
           </nav>
-          <SignedInBadge authUser={authUser} authRole={authRole} isLanding={isLanding} onSignOut={onSignOut} />
+          <UserAvatarIndicator authUser={authUser} authRole={authRole} isLanding={isLanding} />
         </div>
 
         <button
@@ -180,7 +172,19 @@ export function SiteHeader({
       {mobileOpen ? (
         <div id="mobile-menu" className="mx-auto mt-4 max-w-7xl rounded-3xl bg-white p-6 shadow-xl md:hidden">
           <div className="space-y-4">
-            <SignedInBadge authUser={authUser} authRole={authRole} isLanding={false} onSignOut={onSignOut} compact />
+            {authUser ? (
+              <div className="flex items-center gap-3 rounded-2xl border border-ice-200 bg-ice-50 px-4 py-3">
+                <UserAvatarIndicator authUser={authUser} authRole={authRole} />
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-semibold text-brand-950">
+                    {authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email}
+                  </div>
+                  <div className="truncate text-xs text-slate-500">
+                    Signed in
+                  </div>
+                </div>
+              </div>
+            ) : null}
             {NAV_ITEMS.map((item) =>
               item.sectionId ? (
                 <button
