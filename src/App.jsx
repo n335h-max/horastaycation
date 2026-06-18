@@ -654,6 +654,9 @@ export default function App() {
         onToggleMobile={(forced) => setMobileOpen((current) => (typeof forced === 'boolean' ? forced : !current))}
         onShowPage={showPage}
         onScrollToSection={scrollToSection}
+        authUser={authSession?.user}
+        authRole={authRole}
+        onSignOut={authSession?.user ? handleSignOut : undefined}
       />
 
       <main id="main-content">
