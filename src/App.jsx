@@ -2,16 +2,29 @@ import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { SiteFooter, SiteHeader, ToastStack } from './components/SiteChrome';
 import { FEATURED_PROPERTIES } from './data/siteData';
+import { getMediaObjectUrl, revokeMediaObjectUrls } from './lib/mediaStorage';
+import { isSupabaseConfigured, supabase } from './lib/supabase';
 import { validateWithSchema, bookingSchema, paymentSchema } from './lib/validation';
 import { APP_PATHS, getPageFromPath, getPathFromPage } from './lib/routes';
 import {
   getSnapshot,
-  loginManagement,
+  deleteManagementListing,
   saveBookingDraft,
+  saveManagementListing,
   submitBooking,
   submitOwnerApplication,
   submitReview,
+  syncRemoteData,
+  updateBookingTransactionStatus,
 } from './services/horaApi';
+import {
+  getCurrentSession,
+  getResolvedUserRole,
+  getUserProfile,
+  signInWithGoogle,
+  signOutCurrentUser,
+  syncUserProfile,
+} from './services/authApi';
 
 const initialPaymentForm = {
   cardNumber: '',
@@ -25,6 +38,9 @@ const LandingPageRoute = lazy(() =>
 );
 const OwnerSignupPageRoute = lazy(() =>
   import('./pages/OwnerSignupPageRoute').then((module) => ({ default: module.OwnerSignupPageRoute })),
+);
+const OwnerDashboardPageRoute = lazy(() =>
+  import('./pages/OwnerDashboardPageRoute').then((module) => ({ default: module.OwnerDashboardPageRoute })),
 );
 const BookingPageRoute = lazy(() =>
   import('./pages/BookingPageRoute').then((module) => ({ default: module.BookingPageRoute })),
@@ -109,8 +125,18 @@ export default function App() {
   const [isSubmittingOwner, setIsSubmittingOwner] = useState(false);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [resolvedListings, setResolvedListings] = useState([]);
+  const [authSession, setAuthSession] = useState(null);
+  const [authProfile, setAuthProfile] = useState(null);
+  const [authRole, setAuthRole] = useState('client');
+  const [isAuthLoading, setIsAuthLoading] = useState(Boolean(isSupabaseConfigured));
 
   const { formatCurrency, formatCompactNumber, formatDate } = useFormatters();
+  const sourceListings = store.managementListings?.length ? store.managementListings : FEATURED_PROPERTIES;
+  const dashboardListings = resolvedListings.length ? resolvedListings : sourceListings;
+  const featuredListings = dashboardListings.filter(
+    (listing) => listing.publishStatus !== 'draft' && !listing.isDeleted,
+  );
 
   useEffect(() => {
     setMobileOpen(false);
@@ -147,6 +173,202 @@ export default function App() {
 
     return () => window.clearTimeout(timer);
   }, [store.bookingDraft]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function hydrateRemoteData() {
+      const result = await syncRemoteData();
+
+      if (!isActive) {
+        return;
+      }
+
+      setStore(result.store);
+    }
+
+    hydrateRemoteData();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) {
+      setIsAuthLoading(false);
+      return undefined;
+    }
+
+    let isActive = true;
+
+    async function hydrateSession() {
+      const session = await getCurrentSession();
+
+      if (!isActive) {
+        return;
+      }
+
+      setAuthSession(session);
+      if (!session?.user) {
+        setAuthProfile(null);
+        setAuthRole('client');
+        setIsAuthLoading(false);
+        return;
+      }
+
+      const profile = await getUserProfile(session.user.id);
+
+      if (!isActive) {
+        return;
+      }
+
+      setAuthProfile(profile);
+      setAuthRole(getResolvedUserRole(session, profile));
+      setIsAuthLoading(false);
+    }
+
+    hydrateSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!isActive) {
+        return;
+      }
+
+      setAuthSession(session);
+
+      if (!session?.user) {
+        setAuthProfile(null);
+        setAuthRole('client');
+        return;
+      }
+
+      const profile = await getUserProfile(session.user.id);
+
+      if (!isActive) {
+        return;
+      }
+
+      setAuthProfile(profile);
+      setAuthRole(getResolvedUserRole(session, profile));
+    });
+
+    return () => {
+      isActive = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function applyRequestedRole() {
+      if (!authSession?.user) {
+        return;
+      }
+
+      const params = new URLSearchParams(location.search);
+      const requestedRole = params.get('auth_role');
+
+      if (!requestedRole) {
+        return;
+      }
+
+      const resolvedRole = await syncUserProfile(authSession, requestedRole);
+
+      if (!isActive) {
+        return;
+      }
+
+      const profile = await getUserProfile(authSession.user.id);
+
+      if (!isActive) {
+        return;
+      }
+
+      setAuthProfile(profile);
+      setAuthRole(resolvedRole);
+      params.delete('auth_role');
+      navigate(
+        {
+          pathname: location.pathname,
+          search: params.toString() ? `?${params.toString()}` : '',
+        },
+        { replace: true },
+      );
+      pushToast(
+        requestedRole === 'management'
+          ? 'Google sign-in complete. Management access is now checked against the allowed email list.'
+          : `Signed in successfully as ${requestedRole}.`,
+        'success',
+        'lock',
+      );
+    }
+
+    applyRequestedRole();
+
+    return () => {
+      isActive = false;
+    };
+  }, [authSession, location.pathname, location.search, navigate]);
+
+  useEffect(() => {
+    let isActive = true;
+    let nextUrls = [];
+
+    async function resolveListings() {
+      try {
+        const listings = await Promise.all(
+          sourceListings.map(async (listing) => {
+            const [imageUrl, summaryImageUrl, thumbnailUrl, videoUrl] = await Promise.all([
+              listing.imageAsset ? getMediaObjectUrl(listing.imageAsset) : Promise.resolve(''),
+              listing.summaryImageAsset ? getMediaObjectUrl(listing.summaryImageAsset) : Promise.resolve(''),
+              listing.thumbnailAsset ? getMediaObjectUrl(listing.thumbnailAsset) : Promise.resolve(''),
+              listing.videoAsset ? getMediaObjectUrl(listing.videoAsset) : Promise.resolve(''),
+            ]);
+
+            const resolvedListing = {
+              ...listing,
+              image: imageUrl || listing.image,
+              summaryImage: summaryImageUrl || listing.summaryImage || imageUrl || listing.image,
+              thumbnail: thumbnailUrl || listing.thumbnail || imageUrl || listing.image,
+              videoUrl: videoUrl || listing.videoUrl || '',
+            };
+
+            nextUrls = [
+              ...nextUrls,
+              resolvedListing.image,
+              resolvedListing.summaryImage,
+              resolvedListing.thumbnail,
+              resolvedListing.videoUrl,
+            ];
+
+            return resolvedListing;
+          }),
+        );
+
+        if (!isActive) {
+          revokeMediaObjectUrls(nextUrls);
+          return;
+        }
+
+        setResolvedListings(listings);
+      } catch {
+        if (isActive) {
+          setResolvedListings(sourceListings);
+        }
+      }
+    }
+
+    resolveListings();
+
+    return () => {
+      isActive = false;
+      revokeMediaObjectUrls(nextUrls);
+    };
+  }, [sourceListings]);
 
   function pushToast(message, type = 'info', icon = 'email') {
     setToasts((current) => [
@@ -218,7 +440,7 @@ export default function App() {
   }
 
   const bookingSummary = useMemo(() => {
-    const property = FEATURED_PROPERTIES.find((item) => item.id === store.bookingDraft.property);
+    const property = featuredListings.find((item) => item.id === store.bookingDraft.property);
     if (!property || !store.bookingDraft.checkin || !store.bookingDraft.checkout) {
       return null;
     }
@@ -246,7 +468,7 @@ export default function App() {
       serviceFee,
       total: subtotal + serviceFee,
     };
-  }, [store.bookingDraft]);
+  }, [featuredListings, store.bookingDraft]);
 
   function handleProceedToPayment(event) {
     event.preventDefault();
@@ -263,6 +485,15 @@ export default function App() {
     if (!bookingSummary) {
       setBookingErrors({ checkout: ['Check-out must be after check-in.'] });
       pushToast('Select valid dates to continue to payment.', 'warning', 'calendar');
+      setIsOpeningPayment(false);
+      return;
+    }
+
+    const selectedProperty = featuredListings.find((item) => item.id === store.bookingDraft.property);
+
+    if (isRangeBlocked(selectedProperty, store.bookingDraft.checkin, store.bookingDraft.checkout)) {
+      setBookingErrors({ checkin: ['Selected dates are unavailable for this staycation.'] });
+      pushToast('Selected dates are unavailable. Please choose a different stay window.', 'warning', 'calendar');
       setIsOpeningPayment(false);
       return;
     }
@@ -340,16 +571,78 @@ export default function App() {
     navigate(APP_PATHS.reviewSuccess);
   }
 
-  async function handleManagementLogin(values) {
-    setIsLoggingIn(true);
-    const result = await loginManagement(values);
-    setStore(result.store);
-    pushToast('Welcome back. Dashboard loaded.', 'info', 'lock');
-    setIsLoggingIn(false);
-    navigate(APP_PATHS.dashboard);
+  function isRangeBlocked(property, checkin, checkout) {
+    if (!property || !checkin || !checkout) {
+      return false;
+    }
+
+    const blockedDates = new Set(property.blockedDates || []);
+    const cursor = new Date(checkin);
+    const endDate = new Date(checkout);
+
+    while (cursor < endDate) {
+      const isoDate = cursor.toISOString().slice(0, 10);
+
+      if (blockedDates.has(isoDate)) {
+        return true;
+      }
+
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    return false;
   }
 
-  const showFooter = location.pathname !== APP_PATHS.dashboard && location.pathname !== APP_PATHS.managementLogin;
+  async function handleGoogleSignIn(role, redirectPath) {
+    setIsLoggingIn(true);
+    await signInWithGoogle(role, redirectPath);
+    setIsLoggingIn(false);
+  }
+
+  async function handleManagementListingSave(values) {
+    const result = await saveManagementListing(values);
+    setStore(result.store);
+    pushToast('Management listing updated successfully.', 'success', 'upload');
+
+    if (result.remote.saved) {
+      pushToast(
+        result.remote.uploadedMediaCount
+          ? `Listing synced to Supabase with ${result.remote.uploadedMediaCount} uploaded media file(s).`
+          : 'Listing synced to Supabase successfully.',
+        'info',
+        'lock',
+      );
+    } else {
+      pushToast(
+        'Listing saved locally. Run the Supabase schema and configure env vars to enable shared uploads.',
+        'warning',
+        'calendar',
+      );
+    }
+  }
+
+  async function handleManagementListingDelete(listingId) {
+    const result = await deleteManagementListing(listingId);
+    setStore(result.store);
+    pushToast('Listing deleted successfully.', 'success', 'upload');
+  }
+
+  async function handleBookingStatusChange(bookingId, bookingStatus) {
+    const result = await updateBookingTransactionStatus(bookingId, bookingStatus);
+    setStore(result.store);
+    pushToast(`Booking marked as ${bookingStatus}.`, 'success', 'calendar');
+  }
+
+  async function handleSignOut() {
+    await signOutCurrentUser();
+    pushToast('Signed out successfully.', 'info', 'lock');
+    navigate(APP_PATHS.landing);
+  }
+
+  const showFooter =
+    location.pathname !== APP_PATHS.dashboard &&
+    location.pathname !== APP_PATHS.ownerDashboard &&
+    location.pathname !== APP_PATHS.managementLogin;
 
   return (
     <>
@@ -372,6 +665,7 @@ export default function App() {
                 <LandingPageRoute
                   onShowPage={showPage}
                   onScrollToSection={scrollToSection}
+                  featuredProperties={featuredListings}
                   formatCompactNumber={formatCompactNumber}
                   formatCurrency={formatCurrency}
                 />
@@ -379,12 +673,41 @@ export default function App() {
             />
             <Route
               path={APP_PATHS.ownerSignup}
-              element={<OwnerSignupPageRoute onShowPage={showPage} onSubmitOwner={handleOwnerSubmit} isSubmitting={isSubmittingOwner} />}
+              element={
+                <OwnerSignupPageRoute
+                  onShowPage={showPage}
+                  onSubmitOwner={handleOwnerSubmit}
+                  isSubmitting={isSubmittingOwner}
+                  authUser={authSession?.user}
+                  authRole={authRole}
+                  isAuthLoading={isAuthLoading}
+                  onGoogleSignIn={() => handleGoogleSignIn('owner', APP_PATHS.ownerSignup)}
+                />
+              }
+            />
+            <Route
+              path={APP_PATHS.ownerDashboard}
+              element={
+                authSession?.user && authRole === 'owner' ? (
+                  <OwnerDashboardPageRoute
+                    ownerApplications={store.ownerApplications}
+                    bookingTransactions={store.bookingTransactions}
+                    emails={store.dashboardEmails}
+                    onShowPage={showPage}
+                    onSignOut={handleSignOut}
+                    authUser={authSession?.user}
+                    formatCurrency={formatCurrency}
+                  />
+                ) : (
+                  <Navigate to={APP_PATHS.ownerSignup} replace />
+                )
+              }
             />
             <Route
               path={APP_PATHS.booking}
               element={
                 <BookingPageRoute
+                  properties={featuredListings}
                   bookingForm={store.bookingDraft}
                   bookingErrors={bookingErrors}
                   isSubmitting={isOpeningPayment}
@@ -394,6 +717,10 @@ export default function App() {
                   bookingSummary={bookingSummary}
                   formatCurrency={formatCurrency}
                   formatDate={formatDate}
+                  authUser={authSession?.user}
+                  authRole={authRole}
+                  isAuthLoading={isAuthLoading}
+                  onGoogleSignIn={() => handleGoogleSignIn('client', APP_PATHS.booking)}
                 />
               }
             />
@@ -403,7 +730,17 @@ export default function App() {
             />
             <Route
               path={APP_PATHS.managementLogin}
-              element={<ManagementLoginPageRoute onShowPage={showPage} onLogin={handleManagementLogin} isSubmitting={isLoggingIn} />}
+              element={
+                <ManagementLoginPageRoute
+                  onShowPage={showPage}
+                  isSubmitting={isLoggingIn}
+                  authUser={authSession?.user}
+                  authRole={authRole}
+                  isAuthLoading={isAuthLoading}
+                  onGoogleSignIn={() => handleGoogleSignIn('management', APP_PATHS.managementLogin)}
+                  onSignOut={handleSignOut}
+                />
+              }
             />
             <Route path={APP_PATHS.bookingSuccess} element={<SuccessPageRoute variant="booking" onShowPage={showPage} />} />
             <Route path={APP_PATHS.ownerSuccess} element={<SuccessPageRoute variant="owner" onShowPage={showPage} />} />
@@ -411,15 +748,26 @@ export default function App() {
             <Route
               path={APP_PATHS.dashboard}
               element={
-                <DashboardPageRoute
-                  bookings={store.dashboardBookings}
-                  emails={store.dashboardEmails}
-                  revenue={store.dashboardRevenue}
-                ownerApplications={store.ownerApplications}
-                reviewSubmissions={store.reviewSubmissions}
-                  onShowPage={showPage}
-                  formatCurrency={formatCurrency}
-                />
+                authSession?.user && authRole === 'management' ? (
+                  <DashboardPageRoute
+                    listings={dashboardListings}
+                    bookings={store.dashboardBookings}
+                    bookingTransactions={store.bookingTransactions}
+                    emails={store.dashboardEmails}
+                    revenue={store.dashboardRevenue}
+                    ownerApplications={store.ownerApplications}
+                    reviewSubmissions={store.reviewSubmissions}
+                    onSaveListing={handleManagementListingSave}
+                    onDeleteListing={handleManagementListingDelete}
+                    onUpdateBookingStatus={handleBookingStatusChange}
+                    onShowPage={showPage}
+                    onSignOut={handleSignOut}
+                    authUser={authSession?.user}
+                    formatCurrency={formatCurrency}
+                  />
+                ) : (
+                  <Navigate to={APP_PATHS.managementLogin} replace />
+                )
               }
             />
             <Route path="*" element={<Navigate to={APP_PATHS.landing} replace />} />

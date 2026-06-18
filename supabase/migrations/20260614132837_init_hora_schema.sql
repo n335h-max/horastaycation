@@ -47,7 +47,6 @@ create table if not exists public.booking_transactions (
   total numeric not null,
   special_requests text,
   payment_last4 text,
-  booking_status text not null default 'confirmed',
   submitted_at timestamptz not null default now()
 );
 
@@ -68,19 +67,7 @@ create table if not exists public.management_listings (
   thumbnail text not null default '',
   video_url text not null default '',
   schedule text not null default '',
-  publish_status text not null default 'published',
-  availability_notes text not null default '',
-  blocked_dates jsonb not null default '[]'::jsonb,
-  is_deleted boolean not null default false,
   amenities jsonb not null default '[]'::jsonb,
-  updated_at timestamptz not null default now()
-);
-
-create table if not exists public.user_profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
-  email text not null default '',
-  full_name text not null default '',
-  preferred_role text not null default 'client',
   updated_at timestamptz not null default now()
 );
 
@@ -88,7 +75,6 @@ alter table public.owner_applications enable row level security;
 alter table public.review_submissions enable row level security;
 alter table public.booking_transactions enable row level security;
 alter table public.management_listings enable row level security;
-alter table public.user_profiles enable row level security;
 
 drop policy if exists "public_can_insert_owner_applications" on public.owner_applications;
 create policy "public_can_insert_owner_applications"
@@ -109,14 +95,6 @@ create policy "public_can_insert_booking_transactions"
 on public.booking_transactions
 for insert
 to anon, authenticated
-with check (true);
-
-drop policy if exists "public_can_update_booking_transactions" on public.booking_transactions;
-create policy "public_can_update_booking_transactions"
-on public.booking_transactions
-for update
-to anon, authenticated
-using (true)
 with check (true);
 
 drop policy if exists "public_can_select_management_listings" on public.management_listings;
@@ -140,28 +118,6 @@ for update
 to anon, authenticated
 using (true)
 with check (true);
-
-drop policy if exists "users_can_select_own_profile" on public.user_profiles;
-create policy "users_can_select_own_profile"
-on public.user_profiles
-for select
-to authenticated
-using (auth.uid() = id);
-
-drop policy if exists "users_can_insert_own_profile" on public.user_profiles;
-create policy "users_can_insert_own_profile"
-on public.user_profiles
-for insert
-to authenticated
-with check (auth.uid() = id);
-
-drop policy if exists "users_can_update_own_profile" on public.user_profiles;
-create policy "users_can_update_own_profile"
-on public.user_profiles
-for update
-to authenticated
-using (auth.uid() = id)
-with check (auth.uid() = id);
 
 insert into storage.buckets (id, name, public)
 values ('listing-images', 'listing-images', true)

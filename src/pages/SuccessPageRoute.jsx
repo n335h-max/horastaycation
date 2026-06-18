@@ -14,8 +14,8 @@ const CONTENT = {
     title: 'Your property application is in review.',
     description:
       'The Hora team has received your details and will follow up after reviewing the submission.',
-    primaryLabel: 'Back to Home',
-    primaryPage: 'landing',
+    primaryLabel: 'View Owner Dashboard',
+    primaryPage: 'owner-dashboard',
   },
   review: {
     eyebrow: 'Evaluation Received',

@@ -80,6 +80,8 @@ export const FEATURED_PROPERTIES = [
     image: 'https://picsum.photos/seed/ayer-keroh-hora/500/375.jpg',
     summaryImage: 'https://picsum.photos/seed/ayer-keroh-hora/400/200.jpg',
     thumbnail: 'https://picsum.photos/seed/ayer-keroh-hora/80/60.jpg',
+    videoUrl: '',
+    schedule: 'Daily check-in from 3:00 PM · Check-out before 11:00 AM',
     amenities: ['Tiny House', 'Modern Design', 'Landscape'],
   },
   {
@@ -97,6 +99,8 @@ export const FEATURED_PROPERTIES = [
     image: 'https://picsum.photos/seed/sama-sama-tido-hora/500/375.jpg',
     summaryImage: 'https://picsum.photos/seed/sama-sama-tido-hora/400/200.jpg',
     thumbnail: 'https://picsum.photos/seed/sama-sama-tido-hora/80/60.jpg',
+    videoUrl: '',
+    schedule: 'Weekend priority stays · Check-in from 3:00 PM',
     amenities: ['Pool', 'BBQ Place', 'Outdoor Kitchen'],
   },
   {
@@ -114,6 +118,8 @@ export const FEATURED_PROPERTIES = [
     image: 'https://picsum.photos/seed/bohejiwa-hora/500/375.jpg',
     summaryImage: 'https://picsum.photos/seed/bohejiwa-hora/400/200.jpg',
     thumbnail: 'https://picsum.photos/seed/bohejiwa-hora/80/60.jpg',
+    videoUrl: '',
+    schedule: 'Flexible weekday stays · Check-in from 2:00 PM',
     amenities: ['Ambience', 'Signboard', 'Marketing'],
   },
 ];

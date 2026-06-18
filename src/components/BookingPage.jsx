@@ -1,8 +1,8 @@
-import { useState } from 'react';
 import { FEATURED_PROPERTIES, GUEST_OPTIONS } from '../data/siteData';
 import { Icon } from './Icon';
 
 export function BookingPage({
+  properties = FEATURED_PROPERTIES,
   bookingForm,
   bookingErrors,
   isSubmitting,
@@ -12,8 +12,12 @@ export function BookingPage({
   bookingSummary,
   formatCurrency,
   formatDate,
+  authUser,
+  authRole,
+  isAuthLoading,
+  onGoogleSignIn,
 }) {
-  const [googleConnected, setGoogleConnected] = useState(false);
+  const googleConnected = Boolean(authUser && authRole === 'client');
   const steps = [
     { number: '01', label: 'Google Client Sign-In' },
     { number: '02', label: 'Browse Staycations' },
@@ -85,7 +89,7 @@ export function BookingPage({
             <h2 className="font-display text-3xl font-bold text-brand-950">Sign in as Client</h2>
             <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-600">After the guest continues with Google, the booking flow opens and they can browse the staycation choices below as a client.</p>
             <div className="mt-6 grid gap-4 md:grid-cols-3">
-              {FEATURED_PROPERTIES.map((property) => (
+              {properties.map((property) => (
                 <div key={property.id} className="rounded-2xl border border-ice-200 bg-ice-50 p-4">
                   <div className="text-sm font-semibold text-brand-900">{property.name}</div>
                   <div className="mt-1 text-sm text-slate-500">{property.location}</div>
@@ -95,9 +99,14 @@ export function BookingPage({
                 </div>
               ))}
             </div>
-            <button type="button" onClick={() => setGoogleConnected(true)} className="btn-primary mt-8 w-full py-4 text-base">
+            {authUser?.email ? (
+              <div className="mt-6 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+                Signed in as {authUser.email}
+              </div>
+            ) : null}
+            <button type="button" onClick={onGoogleSignIn} disabled={isSubmitting || isAuthLoading} className="btn-primary mt-8 w-full py-4 text-base disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60">
               <span className="inline-flex items-center gap-2">
-                Continue With Google as Client
+                {isSubmitting || isAuthLoading ? 'Opening Google Sign-In…' : 'Continue With Google as Client'}
                 <Icon name="arrow-right" />
               </span>
             </button>
@@ -114,7 +123,7 @@ export function BookingPage({
                   <h2 className="mb-4 font-display text-xl font-bold text-brand-900">Browse Staycation Choices</h2>
                   <p className="mb-5 text-sm text-slate-500">These are placeholder choices for now. Later you can replace them with your real staycation listings.</p>
                   <div className="space-y-4">
-                    {FEATURED_PROPERTIES.map((property) => (
+                    {properties.map((property) => (
                       <label
                         key={property.id}
                         className={`property-option flex cursor-pointer items-center gap-4 rounded-xl border-2 p-4 transition-colors ${
@@ -142,6 +151,8 @@ export function BookingPage({
                           <div className="font-semibold text-brand-900">{property.name}</div>
                           <div className="text-sm text-slate-500">{property.location}</div>
                           <div className="mt-1 text-xs font-semibold text-brand-600">{property.statusNote}</div>
+                          {property.schedule ? <div className="mt-1 text-xs text-slate-400">{property.schedule}</div> : null}
+                          {property.videoUrl ? <div className="mt-1 text-xs text-brand-500">Video walkthrough available</div> : null}
                         </div>
                         <div className="text-right">
                           <div className="font-bold text-brand-700">{formatCurrency(property.price)}</div>

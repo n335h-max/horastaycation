@@ -47,9 +47,7 @@ export function SiteHeader({ activePage, mobileOpen, onToggleMobile, onShowPage,
           className="group flex items-center gap-3"
           aria-label="Go to the home page"
         >
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-brand-600 to-accent-400 text-white">
-            <Icon name="umbrella" className="text-lg" />
-          </span>
+          <img src="/hora-logo.svg" alt="Hora Staycation logo" className="h-10 w-10 rounded-xl object-cover" />
           <span className={`font-display text-xl font-bold transition-colors ${brandTextClass}`}>
             HORA<span className="text-accent-500"> Staycation</span>
           </span>
@@ -162,9 +160,7 @@ export function SiteFooter({ onShowPage }) {
         <div className="mb-8 grid gap-8 md:grid-cols-4">
           <div>
             <div className="mb-4 flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand-600 to-accent-400 text-white">
-                <Icon name="umbrella" className="text-sm" />
-              </span>
+              <img src="/hora-logo.svg" alt="Hora Staycation logo" className="h-8 w-8 rounded-lg object-cover" />
               <span className="font-display text-lg font-bold text-white">HORA Staycation</span>
             </div>
             <p className="text-sm leading-relaxed text-white/50">

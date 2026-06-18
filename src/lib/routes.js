@@ -1,6 +1,7 @@
 export const APP_PATHS = {
   landing: '/',
   ownerSignup: '/owners/apply',
+  ownerDashboard: '/owners/dashboard',
   ownerSuccess: '/owners/success',
   booking: '/booking',
   bookingSuccess: '/booking/success',
@@ -14,6 +15,8 @@ export function getPageFromPath(pathname) {
   switch (pathname) {
     case APP_PATHS.ownerSignup:
       return 'owner-signup';
+    case APP_PATHS.ownerDashboard:
+      return 'owner-dashboard';
     case APP_PATHS.ownerSuccess:
       return 'owner-success';
     case APP_PATHS.booking:
@@ -37,6 +40,8 @@ export function getPathFromPage(page) {
   switch (page) {
     case 'owner-signup':
       return APP_PATHS.ownerSignup;
+    case 'owner-dashboard':
+      return APP_PATHS.ownerDashboard;
     case 'owner-success':
       return APP_PATHS.ownerSuccess;
     case 'booking':
