@@ -113,6 +113,7 @@ export function LandingPage({
   const [heroActiveIndex, setHeroActiveIndex] = useState(0);
   const [heroTouchStartX, setHeroTouchStartX] = useState(null);
   const [selectedFeaturedLocation, setSelectedFeaturedLocation] = useState('All locations');
+  const whatsappBaseUrl = 'https://wa.me/601110629990?text=';
   const heroShowcaseProperties = featuredProperties.slice(0, 7);
   const featuredLocationOptions = ['All locations', ...new Set(featuredProperties.map((property) => property.location))];
   const visibleFeaturedProperties = selectedFeaturedLocation === 'All locations'
@@ -156,6 +157,11 @@ export function LandingPage({
 
   function handleFeaturedBooking() {
     onShowPage('booking');
+  }
+
+  function getWhatsappEnquiryHref(property) {
+    const message = `Hi Hora, I want to ask about ${property.name} in ${property.location}. Can you share availability and booking details?`;
+    return `${whatsappBaseUrl}${encodeURIComponent(message)}`;
   }
 
   return (
@@ -702,12 +708,12 @@ export function LandingPage({
                         Check Dates
                       </span>
                     </button>
-                    <button type="button" onClick={onOpenSupport} className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100">
+                    <a href={getWhatsappEnquiryHref(property)} target="_blank" rel="noreferrer" className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100">
                       <span className="inline-flex items-center gap-2">
                         <Icon name="comment" />
                         Quick Enquiry
                       </span>
-                    </button>
+                    </a>
                   </div>
                   {property.videoUrl ? (
                     <a href={property.videoUrl} target="_blank" rel="noreferrer" className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-brand-600 hover:text-brand-800">

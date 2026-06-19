@@ -30,6 +30,7 @@ export function BookingPage({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('Any location');
   const [savedOnly, setSavedOnly] = useState(false);
+  const whatsappBaseUrl = 'https://wa.me/601110629990?text=';
   const steps = [
     { number: '01', label: 'Unified Sign-In' },
     { number: '02', label: 'Browse Staycations' },
@@ -71,10 +72,15 @@ export function BookingPage({
     onToggleWishlist?.(propertyId);
   }
 
-  function handleQuickEnquiryClick(event) {
+  function getWhatsappEnquiryHref(property) {
+    const message = `Hi Hora, I want to ask about ${property.name} in ${property.location}. Can you share availability and booking details?`;
+    return `${whatsappBaseUrl}${encodeURIComponent(message)}`;
+  }
+
+  function handleQuickEnquiryClick(event, property) {
     event.preventDefault();
     event.stopPropagation();
-    onOpenSupport?.();
+    window.open(getWhatsappEnquiryHref(property), '_blank', 'noopener,noreferrer');
   }
 
   function handleSearchSubmit(event) {
@@ -394,7 +400,7 @@ export function BookingPage({
                         <div className="self-start text-left sm:self-auto sm:text-right">
                           <div className="font-bold text-brand-700">{formatCurrency(property.price)}</div>
                           <div className="text-xs text-slate-400">/night</div>
-                          <button type="button" onClick={handleQuickEnquiryClick} className="mt-3 rounded-full bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
+                          <button type="button" onClick={(event) => handleQuickEnquiryClick(event, property)} className="mt-3 rounded-full bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
                             Quick Enquiry
                           </button>
                         </div>
