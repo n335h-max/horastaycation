@@ -110,8 +110,37 @@ export function LandingPage({
   onInstallApp,
 }) {
   const [proposalSectionsOpen, setProposalSectionsOpen] = useState(false);
+  const [heroActiveIndex, setHeroActiveIndex] = useState(0);
+  const [heroTouchStartX, setHeroTouchStartX] = useState(null);
   const heroShowcaseProperties = featuredProperties.slice(0, 7);
-  const heroMarqueeItems = heroShowcaseProperties.length ? [...heroShowcaseProperties, ...heroShowcaseProperties] : [];
+
+  function handleHeroStep(direction) {
+    if (!heroShowcaseProperties.length) {
+      return;
+    }
+
+    setHeroActiveIndex((current) => (current + direction + heroShowcaseProperties.length) % heroShowcaseProperties.length);
+  }
+
+  function handleHeroTouchStart(event) {
+    setHeroTouchStartX(event.touches[0]?.clientX ?? null);
+  }
+
+  function handleHeroTouchEnd(event) {
+    if (heroTouchStartX == null) {
+      return;
+    }
+
+    const touchEndX = event.changedTouches[0]?.clientX ?? heroTouchStartX;
+    const deltaX = touchEndX - heroTouchStartX;
+    setHeroTouchStartX(null);
+
+    if (Math.abs(deltaX) < 45) {
+      return;
+    }
+
+    handleHeroStep(deltaX < 0 ? 1 : -1);
+  }
 
   function handleBuildWithUsReveal() {
     setProposalSectionsOpen(true);
@@ -168,29 +197,54 @@ export function LandingPage({
             <div className="relative">
               <article className="overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 shadow-2xl backdrop-blur-sm">
                 <div className="relative aspect-[4/5] sm:aspect-[16/11] lg:aspect-[4/5]">
-                  <div className="hero-marquee absolute inset-0">
-                    <div className="hero-marquee-track">
-                      {heroMarqueeItems.map((property, index) => (
+                  <div
+                    className="hero-carousel absolute inset-0"
+                    onTouchStart={handleHeroTouchStart}
+                    onTouchEnd={handleHeroTouchEnd}
+                  >
+                    <div
+                      className="hero-carousel-track"
+                      style={{
+                        transform: `translateX(calc(50% - (var(--hero-card-width) / 2) - ${heroActiveIndex} * (var(--hero-card-width) + var(--hero-card-gap))))`,
+                      }}
+                    >
+                      {heroShowcaseProperties.map((property, index) => (
                         <article
-                          key={`${property.id}-${index}`}
-                          className="hero-marquee-card"
-                          aria-hidden={index >= heroShowcaseProperties.length}
+                          key={property.id}
+                          className={`hero-carousel-card ${index === heroActiveIndex ? 'is-active' : ''}`}
+                          aria-hidden={index !== heroActiveIndex}
                         >
                           <img
                             src={property.summaryImage || property.image}
-                            alt={index < heroShowcaseProperties.length ? property.name : ''}
+                            alt={property.name}
                             width="420"
                             height="560"
                             fetchPriority={index === 0 ? 'high' : 'auto'}
                             className="h-full w-full object-cover"
                           />
-                          <div className="hero-marquee-card-overlay">
-                            <div className="hero-marquee-card-label">{property.location}</div>
-                            <div className="hero-marquee-card-title">{property.name}</div>
+                          <div className="hero-carousel-card-overlay">
+                            <div className="hero-carousel-card-label">{property.location}</div>
+                            <div className="hero-carousel-card-title">{property.name}</div>
                           </div>
                         </article>
                       ))}
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => handleHeroStep(-1)}
+                      className="hero-carousel-arrow hero-carousel-arrow-left"
+                      aria-label="Show previous staycation"
+                    >
+                      <Icon name="arrow-right" className="rotate-180" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleHeroStep(1)}
+                      className="hero-carousel-arrow hero-carousel-arrow-right"
+                      aria-label="Show next staycation"
+                    >
+                      <Icon name="arrow-right" />
+                    </button>
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-t from-brand-950/85 via-brand-950/20 to-transparent" />
                   <div className="absolute left-5 top-5 inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-brand-900">
@@ -201,15 +255,15 @@ export function LandingPage({
                     <div className="rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur-md">
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <div className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">Moving Staycation Reel</div>
-                          <div className="mt-2 font-display text-3xl font-bold">All seven stays, one glance</div>
+                          <div className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">Staycation Carousel</div>
+                          <div className="mt-2 font-display text-3xl font-bold">Centered view, easy browse</div>
                           <p className="mt-2 max-w-md text-sm leading-relaxed text-white/75">
-                            The hero now rotates your real staycation visuals side by side so guests immediately see the full collection before booking.
+                            Browse one stay at a time with full-photo cards, side peeks for the next options, and quick left-right navigation.
                           </p>
                         </div>
                         <div className="hidden rounded-2xl bg-white/15 px-4 py-3 text-right sm:block">
-                          <div className="text-xs uppercase tracking-[0.2em] text-white/55">Showcased Stays</div>
-                          <div className="mt-1 text-2xl font-bold">{heroShowcaseProperties.length}</div>
+                          <div className="text-xs uppercase tracking-[0.2em] text-white/55">Now Viewing</div>
+                          <div className="mt-1 text-2xl font-bold">{heroActiveIndex + 1}/{heroShowcaseProperties.length}</div>
                         </div>
                       </div>
                     </div>
