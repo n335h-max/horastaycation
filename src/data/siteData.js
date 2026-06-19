@@ -17,7 +17,7 @@ export const HORA_VALUES = [
     letter: 'O',
     title: 'Outdoor',
     description:
-      'Experience the beauty of nature, from beaches to highlands, through memorable outdoor moments.',
+      'Experience the beauty of landscape, from beaches to highlands, through memorable outdoor moments.',
     cardClass: 'from-brand-500 to-brand-600',
   },
   {
