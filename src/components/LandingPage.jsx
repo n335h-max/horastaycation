@@ -535,7 +535,7 @@ export function LandingPage({
             </div>
             <h2 className="font-display text-4xl font-bold text-white md:text-5xl">Book a Staycation</h2>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-white/60">
-              Clients continue with Google first, then browse these placeholder staycations before moving into a cleaner booking flow.
+              Guests can now browse all seven staycations here, and the temporary visuals can be replaced once the real project photos are ready.
             </p>
           </div>
 

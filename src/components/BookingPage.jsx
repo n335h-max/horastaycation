@@ -133,8 +133,8 @@ export function BookingPage({
             <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
               <Icon name="star" />
             </div>
-            <div className="font-semibold text-brand-950">Placeholder Stays</div>
-            <p className="mt-1 text-sm text-slate-500">Use these sample staycations for now, then replace them with the real options later.</p>
+            <div className="font-semibold text-brand-950">Guest Preview Stays</div>
+            <p className="mt-1 text-sm text-slate-500">Guests can already browse these seven staycations now, then you can swap in the real photos and final details later.</p>
           </div>
         </div>
 
@@ -322,7 +322,7 @@ export function BookingPage({
                     Active role: {authRole.charAt(0).toUpperCase() + authRole.slice(1)}
                   </div>
                   <h2 className="mb-4 font-display text-xl font-bold text-brand-900">Browse Staycation Choices</h2>
-                  <p className="mb-5 text-sm text-slate-500">These are placeholder choices for now. Later you can replace them with your real staycation listings.</p>
+                  <p className="mb-5 text-sm text-slate-500">These seven staycations are visible in the customer flow now, with temporary visuals ready to be replaced when your real photos arrive.</p>
                   <div className="space-y-4">
                     {filteredProperties.map((property) => (
                       <label
@@ -471,7 +471,7 @@ export function BookingPage({
                       {formatDate(bookingSummary.checkin)} — {formatDate(bookingSummary.checkout)}
                     </p>
                     <div className="mb-4 rounded-xl bg-ice-50 px-4 py-3 text-sm text-slate-600">
-                      <span className="font-semibold text-brand-900">{bookingSummary.nights} night{bookingSummary.nights > 1 ? 's' : ''}</span> selected with placeholder pricing and booking details shown below.
+                      <span className="font-semibold text-brand-900">{bookingSummary.nights} night{bookingSummary.nights > 1 ? 's' : ''}</span> selected with current preview pricing and booking details shown below.
                     </div>
                     <div className="space-y-2 border-t border-ice-200 pt-4 text-sm">
                       <div className="flex justify-between">
