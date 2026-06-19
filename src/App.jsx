@@ -23,6 +23,7 @@ import {
   syncRemoteData,
   toggleWishlistProperty,
   trackAnalyticsEvent,
+  updateBookingTransactionDetails,
   updateBookingTransactionStatus,
 } from './services/horaApi';
 import {
@@ -175,6 +176,7 @@ export default function App() {
   const requestedAuthRole = authSearchParams.get('role') || authSearchParams.get('auth_role') || 'client';
   const requestedNextPath = authSearchParams.get('next') || '';
   const bookingSuccessSessionId = authSearchParams.get('session_id') || '';
+  const bookingCheckoutState = authSearchParams.get('checkout') || '';
   const [mobileOpen, setMobileOpen] = useState(false);
   const [toasts, setToasts] = useState([]);
   const [store, setStore] = useState(() => getSnapshot());
@@ -648,6 +650,10 @@ export default function App() {
           paymentMeta: {
             provider: 'stripe',
             stripeSessionId: bookingSuccessSessionId,
+            stripePaymentIntentId: payload.paymentIntentId || '',
+            paymentStatus: payload.paymentStatus || 'paid',
+            customerReceiptEmail: payload.customerEmail || pendingCheckout.bookingForm.guestEmail || '',
+            statusNote: 'Confirmed by Stripe hosted checkout.',
           },
         });
 
@@ -684,6 +690,17 @@ export default function App() {
       isActive = false;
     };
   }, [bookingSuccessSessionId, location.pathname]);
+
+  useEffect(() => {
+    if (location.pathname !== APP_PATHS.booking || bookingCheckoutState !== 'cancelled') {
+      return;
+    }
+
+    pushToast('Stripe checkout was cancelled. Your booking details are still here if you want to try again.', 'warning', 'lock');
+    void recordAnalytics('stripe_checkout_cancelled', {
+      propertyId: store.bookingDraft.property || '',
+    });
+  }, [bookingCheckoutState, location.pathname]);
 
   function handleProceedToPayment(event) {
     event.preventDefault();
@@ -870,6 +887,56 @@ export default function App() {
     const result = await updateBookingTransactionStatus(bookingId, bookingStatus);
     setStore(result.store);
     pushToast(`Booking marked as ${bookingStatus}.`, 'success', 'calendar');
+  }
+
+  async function handleBookingCancellation(booking) {
+    const result = await updateBookingTransactionDetails(booking.id, {
+      bookingStatus: 'cancelled',
+      paymentStatus: booking.paymentStatus === 'paid' ? booking.paymentStatus : 'cancelled',
+      cancelledAt: new Date().toISOString(),
+      statusNote:
+        booking.paymentStatus === 'paid'
+          ? 'Booking cancelled by management. Refund can be processed separately.'
+          : 'Booking and unpaid checkout cancelled by management.',
+    });
+    setStore(result.store);
+    pushToast('Booking marked as cancelled.', 'success', 'calendar');
+    await recordAnalytics('booking_cancelled', { bookingId: booking.id });
+  }
+
+  async function handleBookingRefund(booking) {
+    try {
+      const response = await fetch('/api/refund-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          paymentIntentId: booking.stripePaymentIntentId,
+          stripeSessionId: booking.stripeSessionId,
+        }),
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Stripe refund failed.');
+      }
+
+      const result = await updateBookingTransactionDetails(booking.id, {
+        bookingStatus: 'refunded',
+        paymentStatus: 'refunded',
+        refundStatus: payload.status || 'succeeded',
+        refundId: payload.refundId || '',
+        refundedAt: new Date().toISOString(),
+        stripePaymentIntentId: payload.paymentIntentId || booking.stripePaymentIntentId || '',
+        statusNote: 'Refund issued by management through Stripe.',
+      });
+      setStore(result.store);
+      pushToast('Stripe refund completed and booking updated.', 'success', 'lock');
+      await recordAnalytics('stripe_refund_success', { bookingId: booking.id, refundId: payload.refundId || '' });
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : 'Stripe refund failed.', 'warning', 'lock');
+    }
   }
 
   async function handleWishlistToggle(propertyId) {
@@ -1116,6 +1183,8 @@ export default function App() {
                     onSaveListing={handleManagementListingSave}
                     onDeleteListing={handleManagementListingDelete}
                     onUpdateBookingStatus={handleBookingStatusChange}
+                    onRefundBooking={handleBookingRefund}
+                    onCancelBooking={handleBookingCancellation}
                     onShowPage={showPage}
                     onSignOut={handleSignOut}
                     authUser={authSession?.user}

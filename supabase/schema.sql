@@ -47,7 +47,17 @@ create table if not exists public.booking_transactions (
   total numeric not null,
   special_requests text,
   payment_last4 text,
+  payment_provider text not null default 'manual',
+  payment_status text not null default 'paid',
+  stripe_session_id text,
+  stripe_payment_intent_id text,
+  stripe_refund_id text,
+  refund_status text,
+  refunded_at timestamptz,
+  cancelled_at timestamptz,
+  customer_receipt_email text,
   booking_status text not null default 'confirmed',
+  status_note text,
   submitted_at timestamptz not null default now()
 );
 
@@ -104,6 +114,36 @@ add column if not exists owner_user_id uuid references auth.users(id) on delete 
 
 alter table public.booking_transactions
 add column if not exists client_user_id uuid references auth.users(id) on delete set null;
+
+alter table public.booking_transactions
+add column if not exists payment_provider text not null default 'manual';
+
+alter table public.booking_transactions
+add column if not exists payment_status text not null default 'paid';
+
+alter table public.booking_transactions
+add column if not exists stripe_session_id text;
+
+alter table public.booking_transactions
+add column if not exists stripe_payment_intent_id text;
+
+alter table public.booking_transactions
+add column if not exists stripe_refund_id text;
+
+alter table public.booking_transactions
+add column if not exists refund_status text;
+
+alter table public.booking_transactions
+add column if not exists refunded_at timestamptz;
+
+alter table public.booking_transactions
+add column if not exists cancelled_at timestamptz;
+
+alter table public.booking_transactions
+add column if not exists customer_receipt_email text;
+
+alter table public.booking_transactions
+add column if not exists status_note text;
 
 alter table public.management_listings
 add column if not exists updated_by uuid references auth.users(id) on delete set null;

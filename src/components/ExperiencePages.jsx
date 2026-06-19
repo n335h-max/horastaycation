@@ -350,6 +350,32 @@ function formatAnalyticsEventLabel(type = 'activity') {
     .replace(/^\w/, (match) => match.toUpperCase());
 }
 
+function getPaymentStatusClasses(status = 'paid') {
+  const normalized = String(status || 'paid').toLowerCase();
+
+  if (normalized === 'paid') {
+    return 'bg-emerald-50 text-emerald-700';
+  }
+
+  if (normalized === 'refunded') {
+    return 'bg-amber-50 text-amber-700';
+  }
+
+  if (normalized === 'failed' || normalized === 'expired') {
+    return 'bg-rose-50 text-rose-700';
+  }
+
+  if (normalized === 'cancelled') {
+    return 'bg-slate-100 text-slate-600';
+  }
+
+  return 'bg-ice-50 text-brand-700';
+}
+
+function formatStatusCopy(status = 'paid') {
+  return String(status || 'paid').replace(/[-_]/g, ' ').replace(/^\w/, (match) => match.toUpperCase());
+}
+
 export function OwnerDashboardPage({ ownerApplications, bookingTransactions, emails, onShowPage, onSignOut, authUser, formatCurrency }) {
   const latestOwner = ownerApplications[0] ?? null;
   const latestBooking = bookingTransactions[0] ?? null;
@@ -713,6 +739,8 @@ export function DashboardPage({
   onSaveListing,
   onDeleteListing,
   onUpdateBookingStatus,
+  onRefundBooking,
+  onCancelBooking,
   onShowPage,
   onSignOut,
   authUser,
@@ -1245,6 +1273,25 @@ export function DashboardPage({
                           <div className="mt-2 text-sm text-slate-500">
                             {booking.bookingForm.checkin} to {booking.bookingForm.checkout} · {booking.bookingSummary.nights} night(s) · {booking.bookingForm.guests} guest(s)
                           </div>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClasses(booking.paymentStatus)}`}>
+                              Payment {formatStatusCopy(booking.paymentStatus || 'paid')}
+                            </span>
+                            <span className="rounded-full bg-ice-50 px-3 py-1 text-xs font-semibold text-brand-700">
+                              {String(booking.paymentProvider || 'manual').toUpperCase()}
+                            </span>
+                            {booking.refundStatus ? (
+                              <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                                Refund {formatStatusCopy(booking.refundStatus)}
+                              </span>
+                            ) : null}
+                          </div>
+                          <div className="mt-3 space-y-1 text-xs text-slate-400">
+                            {booking.stripeSessionId ? <div>Stripe session: {booking.stripeSessionId}</div> : null}
+                            {booking.stripePaymentIntentId ? <div>Payment intent: {booking.stripePaymentIntentId}</div> : null}
+                            {booking.customerReceiptEmail ? <div>Receipt email: {booking.customerReceiptEmail}</div> : null}
+                            {booking.statusNote ? <div>Status note: {booking.statusNote}</div> : null}
+                          </div>
                         </div>
                         <div className="space-y-2 text-right">
                           <div className="font-bold text-brand-700">{formatCurrency(booking.bookingSummary.total)}</div>
@@ -1258,7 +1305,26 @@ export function DashboardPage({
                             <option value="checked-in">Checked In</option>
                             <option value="completed">Completed</option>
                             <option value="cancelled">Cancelled</option>
+                            <option value="payment_issue">Payment Issue</option>
+                            <option value="refunded">Refunded</option>
                           </select>
+                          <div className="flex flex-wrap justify-end gap-2 pt-2">
+                            <button
+                              type="button"
+                              onClick={() => onCancelBooking?.(booking)}
+                              className="rounded-xl border border-ice-200 px-3 py-2 text-xs font-semibold text-slate-600"
+                            >
+                              Cancel Booking
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onRefundBooking?.(booking)}
+                              disabled={!booking.stripeSessionId || booking.paymentStatus === 'refunded'}
+                              className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              Refund Payment
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>

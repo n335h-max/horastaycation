@@ -33,6 +33,20 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+function formatBookingStatusLabel(status = 'confirmed') {
+  return String(status || 'confirmed').replace(/[-_]/g, ' ').replace(/^\w/, (match) => match.toUpperCase());
+}
+
+function buildDashboardBooking(transaction) {
+  return {
+    guest: transaction.bookingForm.guestName || RANDOM_GUEST_NAMES[0],
+    property: `${transaction.bookingSummary.name} — ${transaction.bookingSummary.nights} night${transaction.bookingSummary.nights > 1 ? 's' : ''}`,
+    amount: transaction.bookingSummary.total,
+    status: formatBookingStatusLabel(transaction.bookingStatus || 'confirmed'),
+    image: `https://picsum.photos/seed/${encodeURIComponent(transaction.bookingForm.guestName || RANDOM_GUEST_NAMES[0])}/40/40.jpg`,
+  };
+}
+
 function withDefaults(store) {
   return {
     ...clone(DEFAULT_STORE),
@@ -47,6 +61,61 @@ function loadStore() {
 function saveStore(store) {
   writeStorage(store);
   return store;
+}
+
+function refreshBookingDashboard(store) {
+  store.dashboardBookings = store.bookingTransactions.slice(0, 6).map(buildDashboardBooking);
+  store.dashboardRevenue = store.bookingTransactions.reduce(
+    (total, transaction) => total + (transaction.paymentStatus === 'refunded' ? 0 : Number(transaction.bookingSummary.total) || 0),
+    0,
+  );
+
+  return store;
+}
+
+function buildLegacyRemoteBookingPayload({ currentUser, bookingForm, bookingSummary, paymentForm, bookingStatus }) {
+  return {
+    client_user_id: currentUser?.id || null,
+    property_id: bookingForm.property,
+    property_name: bookingSummary.name,
+    property_location: bookingSummary.location,
+    guest_name: bookingForm.guestName,
+    guest_email: bookingForm.guestEmail,
+    guest_phone: bookingForm.guestPhone,
+    guests: Number(bookingForm.guests),
+    checkin_date: bookingForm.checkin,
+    checkout_date: bookingForm.checkout,
+    nights: bookingSummary.nights,
+    subtotal: bookingSummary.subtotal,
+    service_fee: bookingSummary.serviceFee,
+    total: bookingSummary.total,
+    special_requests: bookingForm.specialRequests || null,
+    payment_last4: paymentForm.cardLast4 || paymentForm.cardNumber?.replace(/\s/g, '').slice(-4) || null,
+    booking_status: bookingStatus,
+  };
+}
+
+function buildExtendedRemoteBookingPayload({
+  currentUser,
+  bookingForm,
+  bookingSummary,
+  paymentForm,
+  paymentMeta,
+  bookingStatus,
+}) {
+  return {
+    ...buildLegacyRemoteBookingPayload({ currentUser, bookingForm, bookingSummary, paymentForm, bookingStatus }),
+    payment_provider: paymentMeta.provider || 'manual',
+    payment_status: paymentMeta.paymentStatus || 'paid',
+    stripe_session_id: paymentMeta.stripeSessionId || null,
+    stripe_payment_intent_id: paymentMeta.stripePaymentIntentId || null,
+    stripe_refund_id: paymentMeta.refundId || null,
+    refund_status: paymentMeta.refundStatus || null,
+    refunded_at: paymentMeta.refundedAt || null,
+    cancelled_at: paymentMeta.cancelledAt || null,
+    customer_receipt_email: paymentMeta.customerReceiptEmail || bookingForm.guestEmail || null,
+    status_note: paymentMeta.statusNote || null,
+  };
 }
 
 async function insertRemote(table, payload) {
@@ -301,6 +370,17 @@ function mapRemoteBookingTransaction(record) {
     id: record.id,
     submittedAt: record.submitted_at,
     bookingStatus: record.booking_status || 'confirmed',
+    paymentStatus: record.payment_status || 'paid',
+    paymentProvider: record.payment_provider || 'manual',
+    stripeSessionId: record.stripe_session_id || '',
+    stripePaymentIntentId: record.stripe_payment_intent_id || '',
+    refundId: record.stripe_refund_id || '',
+    refundStatus: record.refund_status || '',
+    refundedAt: record.refunded_at || '',
+    cancelledAt: record.cancelled_at || '',
+    customerReceiptEmail: record.customer_receipt_email || record.guest_email || '',
+    statusNote: record.status_note || '',
+    paymentLast4: record.payment_last4 || '',
     bookingForm: {
       property: record.property_id,
       checkin: record.checkin_date,
@@ -357,17 +437,7 @@ export async function syncRemoteData() {
 
   if (remoteBookings.saved) {
     store.bookingTransactions = remoteBookings.transactions;
-    store.dashboardBookings = remoteBookings.transactions.slice(0, 6).map((transaction) => ({
-      guest: transaction.bookingForm.guestName || RANDOM_GUEST_NAMES[0],
-      property: `${transaction.bookingSummary.name} — ${transaction.bookingSummary.nights} night${transaction.bookingSummary.nights > 1 ? 's' : ''}`,
-      amount: transaction.bookingSummary.total,
-      status: (transaction.bookingStatus || 'confirmed').replace(/^\w/, (match) => match.toUpperCase()),
-      image: `https://picsum.photos/seed/${encodeURIComponent(transaction.bookingForm.guestName || RANDOM_GUEST_NAMES[0])}/40/40.jpg`,
-    }));
-    store.dashboardRevenue = remoteBookings.transactions.reduce(
-      (total, transaction) => total + (Number(transaction.bookingSummary.total) || 0),
-      0,
-    );
+    refreshBookingDashboard(store);
   }
 
   saveStore(store);
@@ -562,18 +632,62 @@ export async function updateBookingTransactionStatus(bookingId, bookingStatus) {
   store.bookingTransactions = store.bookingTransactions.map((transaction) =>
     transaction.id === bookingId ? { ...transaction, bookingStatus } : transaction,
   );
-  store.dashboardBookings = store.bookingTransactions.slice(0, 6).map((transaction) => ({
-    guest: transaction.bookingForm.guestName || RANDOM_GUEST_NAMES[0],
-    property: `${transaction.bookingSummary.name} — ${transaction.bookingSummary.nights} night${transaction.bookingSummary.nights > 1 ? 's' : ''}`,
-    amount: transaction.bookingSummary.total,
-    status: (transaction.bookingStatus || 'confirmed').replace(/^\w/, (match) => match.toUpperCase()),
-    image: `https://picsum.photos/seed/${encodeURIComponent(transaction.bookingForm.guestName || RANDOM_GUEST_NAMES[0])}/40/40.jpg`,
-  }));
+  refreshBookingDashboard(store);
   saveStore(store);
 
   const remote = await updateRemote('booking_transactions', { booking_status: bookingStatus }, 'id', bookingId);
   await delay();
 
+  return { store, remote };
+}
+
+export async function updateBookingTransactionDetails(bookingId, updates = {}) {
+  const store = loadStore();
+  const nextUpdates = { ...updates };
+
+  store.bookingTransactions = store.bookingTransactions.map((transaction) =>
+    transaction.id === bookingId ? { ...transaction, ...nextUpdates } : transaction,
+  );
+  refreshBookingDashboard(store);
+
+  if (nextUpdates.customerReceiptEmail || nextUpdates.statusNote) {
+    store.dashboardEmails = [
+      {
+        title: 'Booking Payment Update',
+        detail: nextUpdates.customerReceiptEmail || nextUpdates.statusNote || `Updated ${bookingId}`,
+        tone: 'indigo',
+      },
+      ...store.dashboardEmails,
+    ].slice(0, 6);
+  }
+
+  saveStore(store);
+
+  const extendedRemotePayload = {
+    booking_status: nextUpdates.bookingStatus,
+    payment_status: nextUpdates.paymentStatus,
+    stripe_session_id: nextUpdates.stripeSessionId,
+    stripe_payment_intent_id: nextUpdates.stripePaymentIntentId,
+    stripe_refund_id: nextUpdates.refundId,
+    refund_status: nextUpdates.refundStatus,
+    refunded_at: nextUpdates.refundedAt,
+    cancelled_at: nextUpdates.cancelledAt,
+    customer_receipt_email: nextUpdates.customerReceiptEmail,
+    status_note: nextUpdates.statusNote,
+    payment_provider: nextUpdates.paymentProvider,
+    payment_last4: nextUpdates.paymentLast4,
+  };
+  const compactExtendedPayload = Object.fromEntries(
+    Object.entries(extendedRemotePayload).filter(([, value]) => typeof value !== 'undefined'),
+  );
+
+  let remote = await updateRemote('booking_transactions', compactExtendedPayload, 'id', bookingId);
+
+  if (!remote.saved && typeof nextUpdates.bookingStatus !== 'undefined') {
+    remote = await updateRemote('booking_transactions', { booking_status: nextUpdates.bookingStatus }, 'id', bookingId);
+  }
+
+  await delay();
   return { store, remote };
 }
 
@@ -642,6 +756,10 @@ export async function submitBooking({ bookingForm, bookingSummary, paymentForm =
   const currentUser = await getAuthenticatedUser();
   const guest = bookingForm.guestName || RANDOM_GUEST_NAMES[0];
   const stripeSessionId = paymentMeta.stripeSessionId || '';
+  const bookingStatus = paymentMeta.bookingStatus || 'confirmed';
+  const paymentStatus = paymentMeta.paymentStatus || 'paid';
+  const statusNote = paymentMeta.statusNote || '';
+  const customerReceiptEmail = paymentMeta.customerReceiptEmail || bookingForm.guestEmail || '';
 
   if (stripeSessionId && store.completedStripeSessions.includes(stripeSessionId)) {
     return {
@@ -654,11 +772,19 @@ export async function submitBooking({ bookingForm, bookingSummary, paymentForm =
     {
       id: crypto.randomUUID(),
       submittedAt: new Date().toISOString(),
-      bookingStatus: 'confirmed',
+      bookingStatus,
+      paymentStatus,
       bookingForm,
       bookingSummary,
       paymentProvider: paymentMeta.provider || 'manual',
       stripeSessionId,
+      stripePaymentIntentId: paymentMeta.stripePaymentIntentId || '',
+      refundId: paymentMeta.refundId || '',
+      refundStatus: paymentMeta.refundStatus || '',
+      refundedAt: paymentMeta.refundedAt || '',
+      cancelledAt: paymentMeta.cancelledAt || '',
+      customerReceiptEmail,
+      statusNote,
       paymentLast4: paymentForm.cardLast4 || paymentForm.cardNumber?.replace(/\s/g, '').slice(-4) || '',
     },
     ...store.bookingTransactions,
@@ -669,14 +795,14 @@ export async function submitBooking({ bookingForm, bookingSummary, paymentForm =
       guest,
       property: `${bookingSummary.name} — ${bookingSummary.nights} night${bookingSummary.nights > 1 ? 's' : ''}`,
       amount: bookingSummary.total,
-      status: 'Confirmed',
+      status: formatBookingStatusLabel(bookingStatus),
       image: `https://picsum.photos/seed/${encodeURIComponent(guest)}/40/40.jpg`,
     },
     ...store.dashboardBookings,
   ].slice(0, 6);
 
   store.dashboardEmails = [
-    { title: 'Booking Confirmed — Customer', detail: `Sent to ${bookingForm.guestEmail}`, tone: 'indigo' },
+    { title: 'Booking Confirmed — Customer', detail: `Sent to ${customerReceiptEmail}`, tone: 'indigo' },
     { title: 'New Booking Alert — Owner', detail: `Sent for ${bookingSummary.name}`, tone: 'brand' },
     { title: 'New Booking Alert — Management', detail: 'Sent to admin@horastaycation.com', tone: 'accent' },
     ...store.dashboardEmails,
@@ -688,25 +814,36 @@ export async function submitBooking({ bookingForm, bookingSummary, paymentForm =
     store.completedStripeSessions = [...store.completedStripeSessions, stripeSessionId];
   }
   saveStore(store);
-  const remote = await insertRemote('booking_transactions', {
-    client_user_id: currentUser?.id || null,
-    property_id: bookingForm.property,
-    property_name: bookingSummary.name,
-    property_location: bookingSummary.location,
-    guest_name: bookingForm.guestName,
-    guest_email: bookingForm.guestEmail,
-    guest_phone: bookingForm.guestPhone,
-    guests: Number(bookingForm.guests),
-    checkin_date: bookingForm.checkin,
-    checkout_date: bookingForm.checkout,
-    nights: bookingSummary.nights,
-    subtotal: bookingSummary.subtotal,
-    service_fee: bookingSummary.serviceFee,
-    total: bookingSummary.total,
-    special_requests: bookingForm.specialRequests || null,
-    payment_last4: paymentForm.cardLast4 || paymentForm.cardNumber?.replace(/\s/g, '').slice(-4) || null,
-    booking_status: 'confirmed',
-  });
+  let remote = await insertRemote(
+    'booking_transactions',
+    buildExtendedRemoteBookingPayload({
+      currentUser,
+      bookingForm,
+      bookingSummary,
+      paymentForm,
+      paymentMeta: {
+        ...paymentMeta,
+        paymentStatus,
+        bookingStatus,
+        customerReceiptEmail,
+        statusNote,
+      },
+      bookingStatus,
+    }),
+  );
+
+  if (!remote.saved) {
+    remote = await insertRemote(
+      'booking_transactions',
+      buildLegacyRemoteBookingPayload({
+        currentUser,
+        bookingForm,
+        bookingSummary,
+        paymentForm,
+        bookingStatus,
+      }),
+    );
+  }
   await delay();
   return { store, remote };
 }

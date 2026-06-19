@@ -1,4 +1,4 @@
-import Stripe from 'stripe';
+import { getStripeClient } from './_lib/stripeServer.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing Stripe session id.' });
   }
 
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  const stripe = getStripeClient();
 
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
@@ -29,6 +29,8 @@ export default async function handler(req, res) {
       paid: session.payment_status === 'paid',
       status: session.status,
       paymentStatus: session.payment_status,
+      sessionId: session.id,
+      paymentIntentId: typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id || '',
       customerName: session.customer_details?.name || session.metadata?.guestName || '',
       customerEmail: session.customer_details?.email || session.metadata?.guestEmail || '',
       cardLast4,
