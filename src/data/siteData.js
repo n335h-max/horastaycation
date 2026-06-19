@@ -116,6 +116,9 @@ export const FEATURED_PROPERTIES = [
     videoUrl: '',
     schedule: 'Daily check-in from 3:00 PM · Check-out before 11:00 AM',
     amenities: ['Tiny House', 'Modern Design', 'Landscape'],
+    guestCapacity: 4,
+    reviewSnippet: 'Beautiful entrance and very clean layout. It feels polished the moment you walk in.',
+    reviewAuthor: 'Nadia, weekend guest',
   },
   {
     id: 'sama-sama-tido',
@@ -135,6 +138,9 @@ export const FEATURED_PROPERTIES = [
     videoUrl: '',
     schedule: 'Weekend priority stays · Check-in from 3:00 PM',
     amenities: ['Pool', 'BBQ Place', 'Outdoor Kitchen'],
+    guestCapacity: 8,
+    reviewSnippet: 'The lawn and open space make this one feel perfect for relaxed family gatherings.',
+    reviewAuthor: 'Faris, family stay',
   },
   {
     id: 'bohejiwa',
@@ -154,6 +160,9 @@ export const FEATURED_PROPERTIES = [
     videoUrl: '',
     schedule: 'Flexible weekday stays · Check-in from 2:00 PM',
     amenities: ['Ambience', 'Signboard', 'Marketing'],
+    guestCapacity: 6,
+    reviewSnippet: 'Strong ambience and memorable branding touches. The night atmosphere stands out.',
+    reviewAuthor: 'Aina, couple trip',
   },
   {
     id: 'alang-villa',
@@ -173,6 +182,9 @@ export const FEATURED_PROPERTIES = [
     videoUrl: '',
     schedule: 'Daily check-in from 3:00 PM · Quiet-hour friendly stay',
     amenities: ['Private Escape', 'Branding', 'Landscape'],
+    guestCapacity: 6,
+    reviewSnippet: 'Private, tidy, and easy to recognize on arrival. Great for a more exclusive stay feel.',
+    reviewAuthor: 'Hakim, short retreat',
   },
   {
     id: 'aviva',
@@ -192,6 +204,9 @@ export const FEATURED_PROPERTIES = [
     videoUrl: '',
     schedule: 'Easy weekend stays · Check-in from 3:00 PM',
     amenities: ['Cozy Layout', 'Landscape', 'Hospitality'],
+    guestCapacity: 3,
+    reviewSnippet: 'Compact but cozy. The tiny-house style feels warm and comfortable at night.',
+    reviewAuthor: 'Siti, solo escape',
   },
   {
     id: 'jalan-kebun',
@@ -211,6 +226,9 @@ export const FEATURED_PROPERTIES = [
     videoUrl: '',
     schedule: 'Flexible stays · Smooth check-in access',
     amenities: ['Guest Flow', 'Landscape', 'Maintenance'],
+    guestCapacity: 5,
+    reviewSnippet: 'Easy circulation and practical layout. It works well for small groups and family movement.',
+    reviewAuthor: 'Azri, group guest',
   },
   {
     id: 'amana-villa',
@@ -230,6 +248,9 @@ export const FEATURED_PROPERTIES = [
     videoUrl: '',
     schedule: 'Daily check-in from 3:00 PM · Relaxed guest pacing',
     amenities: ['Comfort', 'Ambience', 'Landscape'],
+    guestCapacity: 5,
+    reviewSnippet: 'Comfortable, calm, and refreshing. The landscaped front area gives a soft premium feel.',
+    reviewAuthor: 'Liyana, returning guest',
   },
 ];
 

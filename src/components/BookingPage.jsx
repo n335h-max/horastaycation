@@ -71,6 +71,12 @@ export function BookingPage({
     onToggleWishlist?.(propertyId);
   }
 
+  function handleQuickEnquiryClick(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    onOpenSupport?.();
+  }
+
   function handleSearchSubmit(event) {
     event.preventDefault();
     onSearch?.({
@@ -278,7 +284,14 @@ export function BookingPage({
               {filteredProperties.map((property) => (
                 <div key={property.id} className="rounded-2xl border border-ice-200 bg-ice-50 p-4">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="text-sm font-semibold text-brand-900">{property.name}</div>
+                    <div>
+                      <div className="text-sm font-semibold text-brand-900">{property.name}</div>
+                      <div className="mt-1 inline-flex items-center gap-1 text-xs text-amber-500">
+                        <Icon name="star" />
+                        <span className="font-semibold text-brand-900">{property.ratingLabel}</span>
+                        <span className="text-slate-400">({property.reviewCount})</span>
+                      </div>
+                    </div>
                     <button
                       type="button"
                       onClick={(event) => handleWishlistClick(event, property.id)}
@@ -289,9 +302,15 @@ export function BookingPage({
                     </button>
                   </div>
                   <div className="mt-1 text-sm text-slate-500">{property.location}</div>
+                  <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-brand-700">
+                    <Icon name="users" />
+                    Up to {property.guestCapacity} guests
+                  </div>
                   <div className="mt-3 inline-flex rounded-full bg-white px-3 py-1 text-xs font-semibold text-brand-700">
                     {property.statusNote}
                   </div>
+                  <p className="mt-3 text-xs leading-relaxed text-slate-500">"{property.reviewSnippet}"</p>
+                  <div className="mt-3 text-sm font-bold text-brand-700">{formatCurrency(property.price)}/night</div>
                 </div>
               ))}
             </div>
@@ -361,13 +380,23 @@ export function BookingPage({
                             </button>
                           </div>
                           <div className="text-sm text-slate-500">{property.location}</div>
+                          <div className="mt-1 inline-flex items-center gap-1 text-xs text-amber-500">
+                            <Icon name="star" />
+                            <span className="font-semibold text-brand-900">{property.ratingLabel}</span>
+                            <span className="text-slate-400">({property.reviewCount})</span>
+                          </div>
                           <div className="mt-1 text-xs font-semibold text-brand-600">{property.statusNote}</div>
+                          <div className="mt-1 text-xs text-brand-700">Up to {property.guestCapacity} guests</div>
                           {property.schedule ? <div className="mt-1 text-xs text-slate-400">{property.schedule}</div> : null}
                           {property.videoUrl ? <div className="mt-1 text-xs text-brand-500">Video walkthrough available</div> : null}
+                          <p className="mt-2 text-xs leading-relaxed text-slate-500">"{property.reviewSnippet}"</p>
                         </div>
                         <div className="self-start text-left sm:self-auto sm:text-right">
                           <div className="font-bold text-brand-700">{formatCurrency(property.price)}</div>
                           <div className="text-xs text-slate-400">/night</div>
+                          <button type="button" onClick={handleQuickEnquiryClick} className="mt-3 rounded-full bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
+                            Quick Enquiry
+                          </button>
                         </div>
                       </label>
                     ))}

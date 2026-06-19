@@ -112,7 +112,12 @@ export function LandingPage({
   const [proposalSectionsOpen, setProposalSectionsOpen] = useState(false);
   const [heroActiveIndex, setHeroActiveIndex] = useState(0);
   const [heroTouchStartX, setHeroTouchStartX] = useState(null);
+  const [selectedFeaturedLocation, setSelectedFeaturedLocation] = useState('All locations');
   const heroShowcaseProperties = featuredProperties.slice(0, 7);
+  const featuredLocationOptions = ['All locations', ...new Set(featuredProperties.map((property) => property.location))];
+  const visibleFeaturedProperties = selectedFeaturedLocation === 'All locations'
+    ? featuredProperties
+    : featuredProperties.filter((property) => property.location === selectedFeaturedLocation);
 
   function handleHeroStep(direction) {
     if (!heroShowcaseProperties.length) {
@@ -147,6 +152,10 @@ export function LandingPage({
     window.setTimeout(() => {
       window.document.getElementById('proposal-projects')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 80);
+  }
+
+  function handleFeaturedBooking() {
+    onShowPage('booking');
   }
 
   return (
@@ -611,8 +620,25 @@ export function LandingPage({
             </p>
           </div>
 
+          <div className="mb-8 flex flex-wrap items-center justify-center gap-3">
+            {featuredLocationOptions.map((location) => (
+              <button
+                key={location}
+                type="button"
+                onClick={() => setSelectedFeaturedLocation(location)}
+                className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                  selectedFeaturedLocation === location
+                    ? 'border-white/35 bg-white text-brand-950'
+                    : 'border-white/15 bg-white/10 text-white/78 hover:bg-white/16'
+                }`}
+              >
+                {location}
+              </button>
+            ))}
+          </div>
+
           <div className="mb-12 grid gap-8 md:grid-cols-3">
-            {featuredProperties.map((property) => (
+            {visibleFeaturedProperties.map((property) => (
               <article key={property.id} className="stay-card overflow-hidden rounded-2xl bg-white shadow-lg">
                 <div className="prop-img-wrap" style={{ aspectRatio: '4 / 3' }}>
                   <img
@@ -629,13 +655,21 @@ export function LandingPage({
                       {property.badge}
                     </span>
                   </div>
+                  <div className="absolute right-4 top-4 z-10 rounded-full bg-brand-950/86 px-3 py-1 text-sm font-semibold text-white backdrop-blur-sm">
+                    {formatCurrency(property.price)}/night
+                  </div>
+                  <div className="absolute bottom-4 left-4 z-10 inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-brand-900 backdrop-blur-sm">
+                    <Icon name="users" className="text-brand-600" />
+                    Up to {property.guestCapacity} guests
+                  </div>
                 </div>
                 <div className="p-5">
                   <div className="mb-2 flex items-center gap-1 text-sm text-amber-400">
                     {Array.from({ length: 5 }).map((_, index) => (
                       <Icon key={index} name="star" />
                     ))}
-                    <span className="ml-1 text-slate-400">({property.reviewCount})</span>
+                    <span className="ml-1 font-semibold text-brand-900">{property.ratingLabel}</span>
+                    <span className="text-slate-400">({property.reviewCount})</span>
                   </div>
                   <h3 className="font-display text-xl font-bold text-brand-950">{property.name}</h3>
                   <p className="mb-3 mt-1 text-sm text-slate-500">
@@ -651,11 +685,30 @@ export function LandingPage({
                     <span>{property.amenities[1]}</span>
                     <span>{property.amenities[2]}</span>
                   </div>
+                  <div className="mb-4 rounded-2xl bg-ice-50 px-4 py-3">
+                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-500">Guest Review</div>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-600">"{property.reviewSnippet}"</p>
+                    <p className="mt-2 text-xs font-semibold text-brand-700">{property.reviewAuthor}</p>
+                  </div>
                   {property.schedule ? (
                     <div className="mb-4 rounded-2xl bg-ice-50 px-3 py-2 text-xs font-medium text-slate-500">
                       {property.schedule}
                     </div>
                   ) : null}
+                  <div className="mb-4 grid gap-3 sm:grid-cols-2">
+                    <button type="button" onClick={handleFeaturedBooking} className="rounded-2xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm font-semibold text-brand-800 transition hover:bg-brand-100">
+                      <span className="inline-flex items-center gap-2">
+                        <Icon name="calendar" />
+                        Check Dates
+                      </span>
+                    </button>
+                    <button type="button" onClick={onOpenSupport} className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100">
+                      <span className="inline-flex items-center gap-2">
+                        <Icon name="comment" />
+                        Quick Enquiry
+                      </span>
+                    </button>
+                  </div>
                   {property.videoUrl ? (
                     <a href={property.videoUrl} target="_blank" rel="noreferrer" className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-brand-600 hover:text-brand-800">
                       <Icon name="arrow-right" />
@@ -670,7 +723,7 @@ export function LandingPage({
                       <span className="text-2xl font-bold text-brand-700">{formatCurrency(property.price)}</span>
                       <span className="text-sm text-slate-400">/night</span>
                     </div>
-                    <button type="button" onClick={() => onShowPage('booking')} className="btn-primary px-4 py-2 text-sm">
+                    <button type="button" onClick={handleFeaturedBooking} className="btn-primary px-4 py-2 text-sm">
                       <span>Book Now</span>
                     </button>
                   </div>
@@ -678,6 +731,12 @@ export function LandingPage({
               </article>
             ))}
           </div>
+
+          {!visibleFeaturedProperties.length ? (
+            <div className="mb-12 rounded-3xl border border-dashed border-white/20 bg-white/10 px-5 py-6 text-center text-sm text-white/75">
+              No staycations match this location right now. Try another area or open a quick enquiry for help choosing.
+            </div>
+          ) : null}
 
           <div className="text-center">
             <button type="button" onClick={() => onShowPage('booking')} className="btn-accent px-7 py-4 text-base">
