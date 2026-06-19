@@ -110,6 +110,8 @@ export function LandingPage({
   onInstallApp,
 }) {
   const [proposalSectionsOpen, setProposalSectionsOpen] = useState(false);
+  const heroShowcaseProperties = featuredProperties.slice(0, 7);
+  const heroMarqueeItems = heroShowcaseProperties.length ? [...heroShowcaseProperties, ...heroShowcaseProperties] : [];
 
   function handleBuildWithUsReveal() {
     setProposalSectionsOpen(true);
@@ -166,32 +168,48 @@ export function LandingPage({
             <div className="relative">
               <article className="overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 shadow-2xl backdrop-blur-sm">
                 <div className="relative aspect-[4/5] sm:aspect-[16/11] lg:aspect-[4/5]">
-                  <img
-                    src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=luxury%20tiny-house%20staycation%20resort%20in%20lush%20tropical%20greenery%2C%20warm%20cinematic%20sunset%20lighting%2C%20modern%20wood%20and%20glass%20architecture%2C%20inviting%20outdoor%20deck%2C%20premium%20hospitality%20banner%20image%2C%20highly%20detailed%2C%20photorealistic&image_size=portrait_16_9"
-                    alt="Premium tiny-house staycation banner"
-                    width="900"
-                    height="1200"
-                    fetchPriority="high"
-                    className="h-full w-full object-cover"
-                  />
+                  <div className="hero-marquee absolute inset-0">
+                    <div className="hero-marquee-track">
+                      {heroMarqueeItems.map((property, index) => (
+                        <article
+                          key={`${property.id}-${index}`}
+                          className="hero-marquee-card"
+                          aria-hidden={index >= heroShowcaseProperties.length}
+                        >
+                          <img
+                            src={property.summaryImage || property.image}
+                            alt={index < heroShowcaseProperties.length ? property.name : ''}
+                            width="420"
+                            height="560"
+                            fetchPriority={index === 0 ? 'high' : 'auto'}
+                            className="h-full w-full object-cover"
+                          />
+                          <div className="hero-marquee-card-overlay">
+                            <div className="hero-marquee-card-label">{property.location}</div>
+                            <div className="hero-marquee-card-title">{property.name}</div>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
                   <div className="absolute inset-0 bg-gradient-to-t from-brand-950/85 via-brand-950/20 to-transparent" />
                   <div className="absolute left-5 top-5 inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-brand-900">
                     <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                    Banner Preview
+                    7 Staycation Showcase
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
                     <div className="rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur-md">
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <div className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">Weekend Highlight</div>
-                          <div className="mt-2 font-display text-3xl font-bold">Private tropical reset</div>
+                          <div className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">Moving Staycation Reel</div>
+                          <div className="mt-2 font-display text-3xl font-bold">All seven stays, one glance</div>
                           <p className="mt-2 max-w-md text-sm leading-relaxed text-white/75">
-                            High-conversion banner styling with a premium stay feel, stronger trust, and a clearer path into booking.
+                            The hero now rotates your real staycation visuals side by side so guests immediately see the full collection before booking.
                           </p>
                         </div>
                         <div className="hidden rounded-2xl bg-white/15 px-4 py-3 text-right sm:block">
-                          <div className="text-xs uppercase tracking-[0.2em] text-white/55">Starting From</div>
-                          <div className="mt-1 text-2xl font-bold">{formatCurrency(featuredProperties[0]?.price ?? 289)}</div>
+                          <div className="text-xs uppercase tracking-[0.2em] text-white/55">Showcased Stays</div>
+                          <div className="mt-1 text-2xl font-bold">{heroShowcaseProperties.length}</div>
                         </div>
                       </div>
                     </div>
