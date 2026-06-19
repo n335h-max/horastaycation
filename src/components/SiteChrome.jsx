@@ -191,6 +191,7 @@ export function SiteHeader({
   onOpenAuth,
   onSignOut,
 }) {
+  const [mobileProfileOpen, setMobileProfileOpen] = useState(false);
   const isLanding = activePage === 'landing';
   const navTextClass = isLanding ? 'text-white/80 hover:text-white' : 'text-slate-600 hover:text-brand-600';
   const brandTextClass = isLanding ? 'text-white group-hover:text-white/80' : 'text-brand-950 group-hover:text-brand-600';
@@ -209,6 +210,14 @@ export function SiteHeader({
 
     return isLanding && item.sectionId === 'intro';
   }
+
+  useEffect(() => {
+    if (!mobileOpen) {
+      setMobileProfileOpen(false);
+    }
+  }, [mobileOpen]);
+
+  const mobileBadge = authUser ? getAuthBadgeCopy(authUser, authRole) : null;
 
   return (
     <header
@@ -293,16 +302,61 @@ export function SiteHeader({
         <div id="mobile-menu" className="mx-auto mt-4 max-w-7xl rounded-3xl bg-white p-6 shadow-xl md:hidden">
           <div className="space-y-4">
             {authUser ? (
-              <div className="flex items-center gap-3 rounded-2xl border border-ice-200 bg-ice-50 px-4 py-3">
-                <UserAvatarIndicator authUser={authUser} authRole={authRole} />
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold text-brand-950">
-                    {authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email}
+              <div className="overflow-hidden rounded-[1.6rem] border border-ice-200 bg-ice-50">
+                <button
+                  type="button"
+                  onClick={() => setMobileProfileOpen((current) => !current)}
+                  className="flex w-full items-center gap-3 px-4 py-4 text-left"
+                  aria-expanded={mobileProfileOpen}
+                  aria-controls="mobile-profile-menu"
+                >
+                  <UserAvatarIndicator authUser={authUser} authRole={authRole} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-semibold text-brand-950">
+                      {mobileBadge?.displayName}
+                    </div>
+                    <div className="truncate text-xs text-slate-500">
+                      Tap to manage account
+                    </div>
                   </div>
-                  <div className="truncate text-xs text-slate-500">
-                    Signed in
+                  <Icon name="arrow-right" className={`text-sm text-slate-400 transition-transform ${mobileProfileOpen ? 'rotate-90' : ''}`} />
+                </button>
+
+                {mobileProfileOpen ? (
+                  <div id="mobile-profile-menu" className="border-t border-ice-200 bg-white px-4 py-4">
+                    <div className="rounded-2xl border border-ice-200 bg-ice-50 px-4 py-3">
+                      <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Role</div>
+                      {availableRoles.length > 1 ? (
+                        <select
+                          value={authRole}
+                          onChange={(event) => onRoleSwitch?.(event.target.value)}
+                          className="mt-2 w-full rounded-xl border border-ice-200 bg-white px-3 py-2 text-sm text-slate-700"
+                        >
+                          {availableRoles.map((role) => (
+                            <option key={role} value={role}>
+                              {role.charAt(0).toUpperCase() + role.slice(1)}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="mt-2 inline-flex rounded-full bg-brand-50 px-3 py-1 text-sm font-semibold text-brand-700">
+                          {mobileBadge?.roleLabel}
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onSignOut?.();
+                        onToggleMobile(false);
+                      }}
+                      className="mt-3 flex w-full items-center justify-center rounded-2xl bg-brand-950 px-4 py-3 text-sm font-semibold text-white"
+                    >
+                      Sign Out
+                    </button>
                   </div>
-                </div>
+                ) : null}
               </div>
             ) : null}
             {NAV_ITEMS.map((item) =>
@@ -311,7 +365,7 @@ export function SiteHeader({
                   key={item.label}
                   type="button"
                   onClick={() => onScrollToSection(item.sectionId, true)}
-                  className="block w-full text-left font-medium text-slate-700"
+                  className="block w-full rounded-2xl border border-transparent px-3 py-3 text-left font-medium text-slate-700 transition hover:border-ice-200 hover:bg-ice-50"
                 >
                   {item.label}
                 </button>
@@ -323,7 +377,7 @@ export function SiteHeader({
                     onShowPage(item.page);
                     onToggleMobile(false);
                   }}
-                  className="block w-full text-left font-medium text-slate-700"
+                  className="block w-full rounded-2xl border border-transparent px-3 py-3 text-left font-medium text-slate-700 transition hover:border-ice-200 hover:bg-ice-50"
                 >
                   {item.label}
                 </button>
@@ -339,38 +393,17 @@ export function SiteHeader({
             >
               Register Now
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (authUser) {
-                  onSignOut?.();
-                } else {
+            {!authUser ? (
+              <button
+                type="button"
+                onClick={() => {
                   onOpenAuth?.();
-                }
-                onToggleMobile(false);
-              }}
-              className="btn-primary w-full py-3 text-sm"
-            >
-              <span>{authUser ? 'Sign Out' : 'Sign In'}</span>
-            </button>
-            {authUser && availableRoles.length > 1 ? (
-              <div className="rounded-2xl border border-ice-200 bg-ice-50 px-4 py-3">
-                <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-slate-400" htmlFor="mobile-role-switch">
-                  Active role
-                </label>
-                <select
-                  id="mobile-role-switch"
-                  value={authRole}
-                  onChange={(event) => onRoleSwitch?.(event.target.value)}
-                  className="mt-2 w-full rounded-xl border border-ice-200 bg-white px-3 py-2 text-sm text-slate-700"
-                >
-                  {availableRoles.map((role) => (
-                    <option key={role} value={role}>
-                      {role.charAt(0).toUpperCase() + role.slice(1)}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  onToggleMobile(false);
+                }}
+                className="btn-primary w-full py-3 text-sm"
+              >
+                <span>Sign In</span>
+              </button>
             ) : null}
           </div>
         </div>
