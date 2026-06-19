@@ -26,6 +26,7 @@ const DEFAULT_STORE = {
   wishlistByUser: {},
   supportRequests: [],
   analyticsEvents: [],
+  completedStripeSessions: [],
 };
 
 function clone(value) {
@@ -636,10 +637,18 @@ export async function submitReview(review) {
   return { store, remote };
 }
 
-export async function submitBooking({ bookingForm, bookingSummary, paymentForm }) {
+export async function submitBooking({ bookingForm, bookingSummary, paymentForm = {}, paymentMeta = {} }) {
   const store = loadStore();
   const currentUser = await getAuthenticatedUser();
   const guest = bookingForm.guestName || RANDOM_GUEST_NAMES[0];
+  const stripeSessionId = paymentMeta.stripeSessionId || '';
+
+  if (stripeSessionId && store.completedStripeSessions.includes(stripeSessionId)) {
+    return {
+      store,
+      remote: { saved: true, error: null, alreadyProcessed: true },
+    };
+  }
 
   store.bookingTransactions = [
     {
@@ -648,6 +657,9 @@ export async function submitBooking({ bookingForm, bookingSummary, paymentForm }
       bookingStatus: 'confirmed',
       bookingForm,
       bookingSummary,
+      paymentProvider: paymentMeta.provider || 'manual',
+      stripeSessionId,
+      paymentLast4: paymentForm.cardLast4 || paymentForm.cardNumber?.replace(/\s/g, '').slice(-4) || '',
     },
     ...store.bookingTransactions,
   ];
@@ -672,6 +684,9 @@ export async function submitBooking({ bookingForm, bookingSummary, paymentForm }
 
   store.dashboardRevenue += bookingSummary.total;
   store.bookingDraft = clone(initialBookingDraft);
+  if (stripeSessionId) {
+    store.completedStripeSessions = [...store.completedStripeSessions, stripeSessionId];
+  }
   saveStore(store);
   const remote = await insertRemote('booking_transactions', {
     client_user_id: currentUser?.id || null,
@@ -689,7 +704,7 @@ export async function submitBooking({ bookingForm, bookingSummary, paymentForm }
     service_fee: bookingSummary.serviceFee,
     total: bookingSummary.total,
     special_requests: bookingForm.specialRequests || null,
-    payment_last4: paymentForm.cardNumber.replace(/\s/g, '').slice(-4),
+    payment_last4: paymentForm.cardLast4 || paymentForm.cardNumber?.replace(/\s/g, '').slice(-4) || null,
     booking_status: 'confirmed',
   });
   await delay();

@@ -3,10 +3,7 @@ import { Icon } from './Icon';
 export function PaymentModal({
   open,
   summary,
-  paymentForm,
-  paymentErrors,
   isSubmitting,
-  onPaymentChange,
   onClose,
   onSubmit,
   formatCurrency,
@@ -50,74 +47,26 @@ export function PaymentModal({
         </div>
 
         <form className="space-y-4" onSubmit={onSubmit}>
-          <div>
-            <label className="form-label" htmlFor="stripeCardNumber">Card Number</label>
-            <input
-              id="stripeCardNumber"
-              name="cardNumber"
-              inputMode="numeric"
-              autoComplete="cc-number"
-              value={paymentForm.cardNumber}
-              onChange={onPaymentChange}
-              className="form-input"
-              placeholder="4242 4242 4242 4242"
-              required
-            />
-            {paymentErrors?.cardNumber ? <p className="mt-2 text-sm text-rose-600">{paymentErrors.cardNumber[0]}</p> : null}
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="form-label" htmlFor="stripeExpiry">Expiry</label>
-              <input
-                id="stripeExpiry"
-                name="expiry"
-                inputMode="numeric"
-                autoComplete="cc-exp"
-                value={paymentForm.expiry}
-                onChange={onPaymentChange}
-                className="form-input"
-                placeholder="MM/YY"
-                required
-              />
-              {paymentErrors?.expiry ? <p className="mt-2 text-sm text-rose-600">{paymentErrors.expiry[0]}</p> : null}
+          <div className="rounded-2xl border border-brand-100 bg-brand-50/60 p-5">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-brand-600 shadow-sm">
+                <Icon name="lock" />
+              </span>
+              <div>
+                <div className="font-semibold text-brand-950">Stripe Checkout</div>
+                <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                  You will be redirected to Stripe’s secure hosted checkout page to complete payment in test mode.
+                </p>
+              </div>
             </div>
-            <div>
-              <label className="form-label" htmlFor="stripeCvc">CVC</label>
-              <input
-                id="stripeCvc"
-                name="cvc"
-                inputMode="numeric"
-                autoComplete="cc-csc"
-                value={paymentForm.cvc}
-                onChange={onPaymentChange}
-                className="form-input"
-                placeholder="123"
-                required
-              />
-              {paymentErrors?.cvc ? <p className="mt-2 text-sm text-rose-600">{paymentErrors.cvc[0]}</p> : null}
-            </div>
-          </div>
-          <div>
-            <label className="form-label" htmlFor="stripeCardholder">Cardholder Name</label>
-            <input
-              id="stripeCardholder"
-              name="cardholder"
-              autoComplete="cc-name"
-              value={paymentForm.cardholder}
-              onChange={onPaymentChange}
-              className="form-input"
-              placeholder="Jane Smith"
-              required
-            />
-            {paymentErrors?.cardholder ? <p className="mt-2 text-sm text-rose-600">{paymentErrors.cardholder[0]}</p> : null}
           </div>
           <button type="submit" disabled={isSubmitting} className="btn-primary w-full py-4 text-lg disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60">
             <span className="inline-flex items-center gap-2">
               <Icon name="lock" />
-              {isSubmitting ? 'Processing Payment…' : `Pay ${formatCurrency(summary.total)}`}
+              {isSubmitting ? 'Redirecting to Stripe…' : `Continue to Stripe · ${formatCurrency(summary.total)}`}
             </span>
           </button>
-          <p className="text-center text-xs text-slate-400">Your payment information is encrypted and secure.</p>
+          <p className="text-center text-xs text-slate-400">Card details are entered on Stripe, not stored in this app.</p>
         </form>
       </div>
     </div>

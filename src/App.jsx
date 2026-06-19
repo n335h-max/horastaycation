@@ -7,8 +7,9 @@ import { FEATURED_PROPERTIES } from './data/siteData';
 import { getWishlistIds, isRangeBlocked, summarizeAnalytics } from './lib/guestFeatures';
 import { getMediaObjectUrl, revokeMediaObjectUrls } from './lib/mediaStorage';
 import { DEFAULT_COOKIE_PREFERENCES, readCookiePreferences, saveCookiePreferences } from './lib/privacyPreferences';
+import { clearPendingStripeCheckout, getPendingStripeCheckout, savePendingStripeCheckout } from './lib/stripeCheckout';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
-import { validateWithSchema, bookingSchema, paymentSchema } from './lib/validation';
+import { validateWithSchema, bookingSchema } from './lib/validation';
 import { APP_PATHS, getPageFromPath, getPathFromPage } from './lib/routes';
 import {
   getSnapshot,
@@ -33,13 +34,6 @@ import {
   switchUserRole,
   syncUserProfile,
 } from './services/authApi';
-
-const initialPaymentForm = {
-  cardNumber: '',
-  expiry: '',
-  cvc: '',
-  cardholder: '',
-};
 
 const LandingPageRoute = lazy(() =>
   import('./pages/LandingPageRoute').then((module) => ({ default: module.LandingPageRoute })),
@@ -180,15 +174,16 @@ export default function App() {
   const authSearchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const requestedAuthRole = authSearchParams.get('role') || authSearchParams.get('auth_role') || 'client';
   const requestedNextPath = authSearchParams.get('next') || '';
+  const bookingSuccessSessionId = authSearchParams.get('session_id') || '';
   const [mobileOpen, setMobileOpen] = useState(false);
   const [toasts, setToasts] = useState([]);
   const [store, setStore] = useState(() => getSnapshot());
   const [paymentOpen, setPaymentOpen] = useState(false);
-  const [paymentForm, setPaymentForm] = useState(initialPaymentForm);
   const [bookingErrors, setBookingErrors] = useState({});
-  const [paymentErrors, setPaymentErrors] = useState({});
   const [isOpeningPayment, setIsOpeningPayment] = useState(false);
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+  const [isVerifyingStripePayment, setIsVerifyingStripePayment] = useState(false);
+  const [stripeVerificationError, setStripeVerificationError] = useState('');
   const [isSubmittingOwner, setIsSubmittingOwner] = useState(false);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -582,36 +577,6 @@ export default function App() {
     }
   }
 
-  function handlePaymentChange(event) {
-    const { name, value } = event.target;
-    let nextValue = value;
-
-    if (name === 'cardNumber') {
-      nextValue = value
-        .replace(/\D/g, '')
-        .slice(0, 16)
-        .replace(/(.{4})/g, '$1 ')
-        .trim();
-    }
-
-    if (name === 'expiry') {
-      nextValue = value
-        .replace(/\D/g, '')
-        .slice(0, 4)
-        .replace(/(\d{2})(\d{1,2})/, '$1/$2');
-    }
-
-    if (name === 'cvc') {
-      nextValue = value.replace(/\D/g, '').slice(0, 3);
-    }
-
-    setPaymentForm((current) => ({ ...current, [name]: nextValue }));
-
-    if (paymentErrors[name]) {
-      setPaymentErrors((current) => ({ ...current, [name]: undefined }));
-    }
-  }
-
   const bookingSummary = useMemo(() => {
     const property = featuredListings.find((item) => item.id === store.bookingDraft.property);
     if (!property || !store.bookingDraft.checkin || !store.bookingDraft.checkout) {
@@ -643,6 +608,83 @@ export default function App() {
     };
   }, [featuredListings, store.bookingDraft]);
 
+  useEffect(() => {
+    if (location.pathname !== APP_PATHS.bookingSuccess || !bookingSuccessSessionId) {
+      setIsVerifyingStripePayment(false);
+      setStripeVerificationError('');
+      return;
+    }
+
+    let isActive = true;
+
+    async function verifyStripePayment() {
+      const pendingCheckout = getPendingStripeCheckout(bookingSuccessSessionId);
+
+      if (!pendingCheckout) {
+        if (isActive) {
+          setStripeVerificationError('Stripe returned successfully, but the pending booking data was not found on this device.');
+        }
+        return;
+      }
+
+      setIsVerifyingStripePayment(true);
+      setStripeVerificationError('');
+
+      try {
+        const response = await fetch(`/api/verify-checkout-session?session_id=${encodeURIComponent(bookingSuccessSessionId)}`);
+        const payload = await response.json();
+
+        if (!response.ok || !payload?.paid) {
+          throw new Error(payload?.error || 'Stripe has not marked this checkout as paid yet.');
+        }
+
+        const bookingResult = await submitBooking({
+          bookingForm: pendingCheckout.bookingForm,
+          bookingSummary: pendingCheckout.bookingSummary,
+          paymentForm: {
+            cardLast4: payload.cardLast4 || '',
+            cardholder: payload.customerName || pendingCheckout.bookingForm.guestName,
+          },
+          paymentMeta: {
+            provider: 'stripe',
+            stripeSessionId: bookingSuccessSessionId,
+          },
+        });
+
+        if (!isActive) {
+          return;
+        }
+
+        setStore(bookingResult.store);
+        clearPendingStripeCheckout(bookingSuccessSessionId);
+        setPaymentOpen(false);
+        setBookingErrors({});
+        pushToast('Stripe payment confirmed. Booking saved successfully.', 'success', 'lock');
+        await recordAnalytics('stripe_payment_success', { sessionId: bookingSuccessSessionId });
+
+        if (!bookingResult.remote.saved && !bookingResult.remote.alreadyProcessed) {
+          pushToast('Payment is confirmed, but the booking only saved locally because remote sync is not fully configured.', 'warning', 'calendar');
+        }
+      } catch (error) {
+        if (!isActive) {
+          return;
+        }
+
+        setStripeVerificationError(error instanceof Error ? error.message : 'Stripe payment verification failed.');
+      } finally {
+        if (isActive) {
+          setIsVerifyingStripePayment(false);
+        }
+      }
+    }
+
+    verifyStripePayment();
+
+    return () => {
+      isActive = false;
+    };
+  }, [bookingSuccessSessionId, location.pathname]);
+
   function handleProceedToPayment(event) {
     event.preventDefault();
     setIsOpeningPayment(true);
@@ -672,10 +714,7 @@ export default function App() {
     }
 
     setBookingErrors({});
-    setPaymentForm((current) => ({
-      ...current,
-      cardholder: result.data.guestName,
-    }));
+    setStripeVerificationError('');
     setPaymentOpen(true);
     setIsOpeningPayment(false);
   }
@@ -683,13 +722,6 @@ export default function App() {
   async function handlePaymentSubmit(event) {
     event.preventDefault();
     setIsSubmittingPayment(true);
-    const validationResult = validateWithSchema(paymentSchema, paymentForm);
-
-    if (!validationResult.success) {
-      setPaymentErrors(validationResult.errors);
-      setIsSubmittingPayment(false);
-      return;
-    }
 
     if (!bookingSummary) {
       pushToast('Your booking summary is incomplete.', 'warning', 'calendar');
@@ -697,27 +729,39 @@ export default function App() {
       return;
     }
 
-    const bookingResult = await submitBooking({
-      bookingForm: store.bookingDraft,
-      bookingSummary,
-      paymentForm,
-    });
+    try {
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          bookingForm: store.bookingDraft,
+          bookingSummary,
+        }),
+      });
+      const payload = await response.json();
 
-    setStore(bookingResult.store);
-    setPaymentOpen(false);
-    setPaymentForm(initialPaymentForm);
-    setPaymentErrors({});
-    setBookingErrors({});
+      if (!response.ok || !payload?.url || !payload?.sessionId) {
+        throw new Error(payload?.error || 'Unable to start Stripe checkout.');
+      }
+
+      savePendingStripeCheckout(payload.sessionId, {
+        bookingForm: store.bookingDraft,
+        bookingSummary,
+      });
+      await recordAnalytics('stripe_checkout_started', {
+        propertyId: store.bookingDraft.property,
+        sessionId: payload.sessionId,
+      });
+      window.location.assign(payload.url);
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : 'Unable to start Stripe checkout.', 'warning', 'lock');
+      setIsSubmittingPayment(false);
+      return;
+    }
+
     setIsSubmittingPayment(false);
-    pushToast('Payment successful. Booking confirmed.', 'success', 'lock');
-    pushToast(
-      bookingResult.remote.saved
-        ? 'Booking synced to Supabase successfully.'
-        : 'Booking saved locally. Run the Supabase SQL schema to enable remote sync.',
-      bookingResult.remote.saved ? 'info' : 'warning',
-      bookingResult.remote.saved ? 'email' : 'calendar',
-    );
-    navigate(APP_PATHS.bookingSuccess);
   }
 
   async function handleOwnerSubmit(values) {
@@ -1039,7 +1083,17 @@ export default function App() {
               path={APP_PATHS.managementLogin}
               element={<Navigate to={buildAuthPath('management', APP_PATHS.dashboard)} replace />}
             />
-            <Route path={APP_PATHS.bookingSuccess} element={<SuccessPageRoute variant="booking" onShowPage={showPage} />} />
+            <Route
+              path={APP_PATHS.bookingSuccess}
+              element={
+                <SuccessPageRoute
+                  variant="booking"
+                  onShowPage={showPage}
+                  isLoading={isVerifyingStripePayment}
+                  errorMessage={stripeVerificationError}
+                />
+              }
+            />
             <Route path={APP_PATHS.ownerSuccess} element={<SuccessPageRoute variant="owner" onShowPage={showPage} />} />
             <Route path={APP_PATHS.reviewSuccess} element={<SuccessPageRoute variant="review" onShowPage={showPage} />} />
             <Route
@@ -1094,10 +1148,7 @@ export default function App() {
           <PaymentModal
             open={paymentOpen}
             summary={bookingSummary}
-            paymentForm={paymentForm}
-            paymentErrors={paymentErrors}
             isSubmitting={isSubmittingPayment}
-            onPaymentChange={handlePaymentChange}
             onClose={() => setPaymentOpen(false)}
             onSubmit={handlePaymentSubmit}
             formatCurrency={formatCurrency}
