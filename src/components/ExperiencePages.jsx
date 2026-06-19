@@ -344,6 +344,12 @@ function DashboardStat({ stat, formatCurrency }) {
   );
 }
 
+function formatAnalyticsEventLabel(type = 'activity') {
+  return String(type)
+    .replace(/_/g, ' ')
+    .replace(/^\w/, (match) => match.toUpperCase());
+}
+
 export function OwnerDashboardPage({ ownerApplications, bookingTransactions, emails, onShowPage, onSignOut, authUser, formatCurrency }) {
   const latestOwner = ownerApplications[0] ?? null;
   const latestBooking = bookingTransactions[0] ?? null;
@@ -711,6 +717,7 @@ export function DashboardPage({
   onSignOut,
   authUser,
   formatCurrency,
+  analyticsSummary,
 }) {
   const latestBooking = bookingTransactions[0] ?? null;
   const stats = useMemo(
@@ -1109,6 +1116,94 @@ export function DashboardPage({
           {stats.map((stat) => (
             <DashboardStat key={stat.id} stat={stat} formatCurrency={formatCurrency} />
           ))}
+        </div>
+
+        <div className="mt-8 rounded-3xl border border-brand-100 bg-white p-6 shadow-sm">
+          <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <div className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-500">Analytics Dashboard</div>
+              <h2 className="mt-2 font-display text-3xl font-bold text-brand-950">Discovery and conversion insights</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-500">
+                Custom reporting now tracks consented guest discovery, wishlist usage, support activity, installs, and search-to-book conversion.
+              </p>
+            </div>
+            <div className="rounded-full bg-ice-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-700">
+              Consent-aware tracking
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+            <div className="rounded-2xl bg-ice-50 p-4">
+              <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Searches</div>
+              <div className="mt-2 text-3xl font-bold text-brand-950">{analyticsSummary?.searches ?? 0}</div>
+            </div>
+            <div className="rounded-2xl bg-ice-50 p-4">
+              <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Wishlist Saves</div>
+              <div className="mt-2 text-3xl font-bold text-brand-950">{analyticsSummary?.wishlistAdds ?? 0}</div>
+            </div>
+            <div className="rounded-2xl bg-ice-50 p-4">
+              <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Support Messages</div>
+              <div className="mt-2 text-3xl font-bold text-brand-950">{analyticsSummary?.supportMessages ?? 0}</div>
+            </div>
+            <div className="rounded-2xl bg-ice-50 p-4">
+              <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Install Prompts</div>
+              <div className="mt-2 text-3xl font-bold text-brand-950">{analyticsSummary?.installPrompts ?? 0}</div>
+            </div>
+            <div className="rounded-2xl bg-brand-950 p-4 text-white">
+              <div className="text-xs uppercase tracking-[0.2em] text-white/55">Search to Book</div>
+              <div className="mt-2 text-3xl font-bold">{analyticsSummary?.conversionRate ?? 0}%</div>
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+            <div className="rounded-2xl border border-ice-200 p-4">
+              <div className="text-sm font-semibold text-brand-950">At-a-glance insight</div>
+              <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                {analyticsSummary?.searches
+                  ? `${analyticsSummary.conversionRate}% of tracked searches are already converting into bookings.`
+                  : 'Analytics starts filling in as soon as guests begin searching and allow optional analytics.'}
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl bg-ice-50 p-4">
+                  <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Page Views</div>
+                  <div className="mt-2 text-2xl font-bold text-brand-950">{analyticsSummary?.pageViews ?? 0}</div>
+                </div>
+                <div className="rounded-2xl bg-ice-50 p-4">
+                  <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Wishlisted Stays</div>
+                  <div className="mt-2 text-2xl font-bold text-brand-950">{analyticsSummary?.uniqueWishlistedProperties ?? 0}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-ice-200 p-4">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="text-sm font-semibold text-brand-950">Recent analytics events</div>
+                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Latest activity</span>
+              </div>
+              <div className="space-y-3">
+                {analyticsSummary?.recentEvents?.length ? (
+                  analyticsSummary.recentEvents.map((event) => (
+                    <div key={event.id} className="flex items-center justify-between gap-4 rounded-2xl bg-ice-50 px-4 py-3">
+                      <div>
+                        <div className="font-semibold text-brand-900">{formatAnalyticsEventLabel(event.type)}</div>
+                        <div className="text-xs text-slate-500">{event.path || event.page || 'HoraStaycation'}</div>
+                      </div>
+                      <div className="text-xs font-medium text-slate-400">
+                        {new Date(event.createdAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-ice-200 p-4 text-sm text-slate-500">
+                    Recent tracked searches, wishlist actions, support opens, and install prompts will appear here.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="mt-8 grid gap-8 xl:grid-cols-[1.15fr_0.85fr]">

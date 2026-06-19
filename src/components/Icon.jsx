@@ -36,6 +36,11 @@ import {
   FaHouseChimney,
   FaHotTubPerson,
   FaPaw,
+  FaHeart,
+  FaRegCommentDots,
+  FaMobileScreenButton,
+  FaMagnifyingGlass,
+  FaDownload,
 } from 'react-icons/fa6';
 
 const ICON_MAP = {
@@ -77,6 +82,11 @@ const ICON_MAP = {
   home: FaHouseChimney,
   hotub: FaHotTubPerson,
   paw: FaPaw,
+  heart: FaHeart,
+  comment: FaRegCommentDots,
+  mobile: FaMobileScreenButton,
+  search: FaMagnifyingGlass,
+  download: FaDownload,
 };
 
 export function Icon({ name, className = '', ...props }) {

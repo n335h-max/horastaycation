@@ -1,4 +1,5 @@
 import { FEATURED_PROPERTIES, INITIAL_BOOKINGS, INITIAL_EMAILS, RANDOM_GUEST_NAMES } from '../data/siteData';
+import { getWishlistKey } from '../lib/guestFeatures';
 import { readStorage, writeStorage } from '../lib/storage';
 import { isSupabaseConfigured, SUPABASE_BUCKETS, supabase } from '../lib/supabase';
 
@@ -22,6 +23,9 @@ const DEFAULT_STORE = {
   reviewSubmissions: [],
   bookingTransactions: [],
   managementListings: FEATURED_PROPERTIES,
+  wishlistByUser: {},
+  supportRequests: [],
+  analyticsEvents: [],
 };
 
 function clone(value) {
@@ -382,6 +386,70 @@ export async function saveBookingDraft(draft) {
   saveStore(store);
   await delay();
   return store;
+}
+
+export async function toggleWishlistProperty({ authUser, propertyId }) {
+  const store = loadStore();
+  const wishlistKey = getWishlistKey(authUser);
+  const currentWishlist = Array.isArray(store.wishlistByUser[wishlistKey]) ? store.wishlistByUser[wishlistKey] : [];
+  const alreadySaved = currentWishlist.includes(propertyId);
+
+  store.wishlistByUser = {
+    ...store.wishlistByUser,
+    [wishlistKey]: alreadySaved
+      ? currentWishlist.filter((id) => id !== propertyId)
+      : [...currentWishlist, propertyId],
+  };
+
+  saveStore(store);
+  await delay();
+
+  return {
+    store,
+    saved: !alreadySaved,
+    wishlist: store.wishlistByUser[wishlistKey],
+  };
+}
+
+export async function submitSupportRequest(request) {
+  const store = loadStore();
+  const record = {
+    id: crypto.randomUUID(),
+    submittedAt: new Date().toISOString(),
+    ...request,
+  };
+
+  store.supportRequests = [record, ...store.supportRequests].slice(0, 50);
+  store.dashboardEmails = [
+    { title: 'New Support Request', detail: `${request.topic} · ${request.email || 'guest message'}`, tone: 'indigo' },
+    ...store.dashboardEmails,
+  ].slice(0, 6);
+
+  saveStore(store);
+  await delay();
+
+  return {
+    store,
+    request: record,
+  };
+}
+
+export async function trackAnalyticsEvent(event) {
+  const store = loadStore();
+  const record = {
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
+    ...event,
+  };
+
+  store.analyticsEvents = [record, ...store.analyticsEvents].slice(0, 250);
+  saveStore(store);
+  await delay(40);
+
+  return {
+    store,
+    event: record,
+  };
 }
 
 export async function saveManagementListing(listingInput) {

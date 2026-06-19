@@ -1,4 +1,6 @@
-import { FEATURED_PROPERTIES, GUEST_OPTIONS, SPECIAL_REQUEST_OPTIONS } from '../data/siteData';
+import { useMemo, useState } from 'react';
+import { FEATURED_PROPERTIES, GUEST_OPTIONS, SEARCH_LOCATIONS, SPECIAL_REQUEST_OPTIONS } from '../data/siteData';
+import { isRangeBlocked } from '../lib/guestFeatures';
 import { Icon } from './Icon';
 
 export function BookingPage({
@@ -17,14 +19,69 @@ export function BookingPage({
   availableRoles = ['client'],
   isAuthLoading,
   onOpenAuth,
+  wishlistIds = [],
+  onToggleWishlist,
+  onSearch,
+  onOpenSupport,
+  canInstallApp,
+  onInstallApp,
 }) {
   const googleConnected = Boolean(authUser && availableRoles.includes('client'));
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState('Any location');
+  const [savedOnly, setSavedOnly] = useState(false);
   const steps = [
     { number: '01', label: 'Unified Sign-In' },
     { number: '02', label: 'Browse Staycations' },
     { number: '03', label: 'Guest & Stay Details' },
     { number: '04', label: 'Payment' },
   ];
+  const locationOptions = useMemo(
+    () => ['Any location', ...new Set([...SEARCH_LOCATIONS.filter((item) => item !== 'Any location'), ...properties.map((property) => property.location)])],
+    [properties],
+  );
+  const filteredProperties = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
+    return properties.filter((property) => {
+      const matchesQuery = !normalizedQuery || [
+        property.name,
+        property.location,
+        property.mood,
+        property.bestFor,
+        ...(property.amenities || []),
+      ]
+        .join(' ')
+        .toLowerCase()
+        .includes(normalizedQuery);
+      const matchesLocation = selectedLocation === 'Any location' || property.location === selectedLocation;
+      const matchesWishlist = !savedOnly || wishlistIds.includes(property.id);
+      const matchesAvailability =
+        !bookingForm.checkin ||
+        !bookingForm.checkout ||
+        !isRangeBlocked(property, bookingForm.checkin, bookingForm.checkout);
+
+      return matchesQuery && matchesLocation && matchesWishlist && matchesAvailability;
+    });
+  }, [bookingForm.checkin, bookingForm.checkout, properties, savedOnly, searchQuery, selectedLocation, wishlistIds]);
+
+  function handleWishlistClick(event, propertyId) {
+    event.preventDefault();
+    event.stopPropagation();
+    onToggleWishlist?.(propertyId);
+  }
+
+  function handleSearchSubmit(event) {
+    event.preventDefault();
+    onSearch?.({
+      query: searchQuery.trim(),
+      location: selectedLocation,
+      checkin: bookingForm.checkin,
+      checkout: bookingForm.checkout,
+      guests: bookingForm.guests,
+      resultCount: filteredProperties.length,
+    });
+  }
 
   return (
     <section className="min-h-screen bg-ice-50 px-4 pb-16 pt-28 md:px-8">
@@ -81,6 +138,134 @@ export function BookingPage({
           </div>
         </div>
 
+        <form onSubmit={handleSearchSubmit} className="mb-8 rounded-[2rem] border border-brand-100 bg-white p-6 shadow-lg">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-brand-600">
+                <Icon name="search" />
+                Smart Search
+              </div>
+              <h2 className="mt-4 font-display text-3xl font-bold text-brand-950">Search before you decide</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-500">
+                Filter by keyword, location, and stay dates, then save favorites to your wishlist or book right away.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setSavedOnly((current) => !current)}
+                className={`rounded-full px-4 py-2 text-sm font-semibold ${
+                  savedOnly ? 'bg-brand-600 text-white' : 'bg-ice-50 text-brand-700'
+                }`}
+              >
+                Saved only {wishlistIds.length ? `(${wishlistIds.length})` : ''}
+              </button>
+              <button type="button" onClick={onOpenSupport} className="rounded-full bg-ice-50 px-4 py-2 text-sm font-semibold text-brand-700">
+                Ask support
+              </button>
+              {canInstallApp ? (
+                <button type="button" onClick={onInstallApp} className="rounded-full bg-brand-950 px-4 py-2 text-sm font-semibold text-white">
+                  Install app
+                </button>
+              ) : (
+                <div className="rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
+                  Mobile-ready PWA
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+            <div className="xl:col-span-2">
+              <label className="form-label" htmlFor="searchQuery">
+                Search staycation
+              </label>
+              <input
+                id="searchQuery"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                className="form-input"
+                placeholder="Search by property name, mood, or amenity"
+              />
+            </div>
+            <div>
+              <label className="form-label" htmlFor="searchLocation">
+                Location
+              </label>
+              <select
+                id="searchLocation"
+                value={selectedLocation}
+                onChange={(event) => setSelectedLocation(event.target.value)}
+                className="form-input"
+              >
+                {locationOptions.map((location) => (
+                  <option key={location} value={location}>
+                    {location}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="form-label" htmlFor="checkin-search">
+                Check-in
+              </label>
+              <input
+                id="checkin-search"
+                name="checkin"
+                type="date"
+                value={bookingForm.checkin}
+                onChange={onBookingChange}
+                className="form-input"
+              />
+            </div>
+            <div>
+              <label className="form-label" htmlFor="checkout-search">
+                Check-out
+              </label>
+              <input
+                id="checkout-search"
+                name="checkout"
+                type="date"
+                value={bookingForm.checkout}
+                onChange={onBookingChange}
+                className="form-input"
+              />
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+            <div>
+              <label className="form-label" htmlFor="guests-search">
+                Guests
+              </label>
+              <select id="guests-search" name="guests" value={bookingForm.guests} onChange={onBookingChange} className="form-input">
+                {GUEST_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button type="submit" className="btn-primary px-6 py-3 text-sm md:w-auto">
+              <span className="inline-flex items-center gap-2">
+                Search stays
+                <Icon name="arrow-right" />
+              </span>
+            </button>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-500">
+            <span className="rounded-full bg-ice-50 px-3 py-2 font-semibold text-brand-700">
+              {filteredProperties.length} match{filteredProperties.length === 1 ? '' : 'es'}
+            </span>
+            {bookingForm.checkin && bookingForm.checkout ? (
+              <span className="rounded-full bg-ice-50 px-3 py-2">
+                Availability is filtered for {formatDate(bookingForm.checkin)} to {formatDate(bookingForm.checkout)}
+              </span>
+            ) : null}
+          </div>
+        </form>
+
         {!googleConnected ? (
           <div className="rounded-3xl border border-brand-100 bg-white p-8 shadow-lg">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
@@ -90,9 +275,19 @@ export function BookingPage({
             <h2 className="font-display text-3xl font-bold text-brand-950">Sign in as Client</h2>
             <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-600">Use the unified login to choose the client role. Hora remembers your session and sends you straight back to listings after Google sign-in.</p>
             <div className="mt-6 grid gap-4 md:grid-cols-3">
-              {properties.map((property) => (
+              {filteredProperties.map((property) => (
                 <div key={property.id} className="rounded-2xl border border-ice-200 bg-ice-50 p-4">
-                  <div className="text-sm font-semibold text-brand-900">{property.name}</div>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="text-sm font-semibold text-brand-900">{property.name}</div>
+                    <button
+                      type="button"
+                      onClick={(event) => handleWishlistClick(event, property.id)}
+                      className={`rounded-full p-2 ${wishlistIds.includes(property.id) ? 'bg-rose-100 text-rose-600' : 'bg-white text-slate-400'}`}
+                      aria-label={wishlistIds.includes(property.id) ? 'Remove from wishlist' : 'Save to wishlist'}
+                    >
+                      <Icon name="heart" />
+                    </button>
+                  </div>
                   <div className="mt-1 text-sm text-slate-500">{property.location}</div>
                   <div className="mt-3 inline-flex rounded-full bg-white px-3 py-1 text-xs font-semibold text-brand-700">
                     {property.statusNote}
@@ -100,6 +295,11 @@ export function BookingPage({
                 </div>
               ))}
             </div>
+            {!filteredProperties.length ? (
+              <div className="mt-6 rounded-2xl border border-dashed border-ice-200 bg-ice-50 px-4 py-5 text-sm text-slate-500">
+                No stays match these filters yet. Adjust the search, open support, or save a different favorite on this device.
+              </div>
+            ) : null}
             {authUser?.email ? (
               <div className="mt-6 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
                 Signed in as {authUser.email}
@@ -124,7 +324,7 @@ export function BookingPage({
                   <h2 className="mb-4 font-display text-xl font-bold text-brand-900">Browse Staycation Choices</h2>
                   <p className="mb-5 text-sm text-slate-500">These are placeholder choices for now. Later you can replace them with your real staycation listings.</p>
                   <div className="space-y-4">
-                    {properties.map((property) => (
+                    {filteredProperties.map((property) => (
                       <label
                         key={property.id}
                         className={`property-option flex cursor-pointer flex-col gap-4 rounded-xl border-2 p-4 transition-colors sm:flex-row sm:items-center ${
@@ -149,7 +349,17 @@ export function BookingPage({
                           className="h-14 w-20 rounded-lg object-cover"
                         />
                         <div className="flex-1 self-start sm:self-auto">
-                          <div className="font-semibold text-brand-900">{property.name}</div>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="font-semibold text-brand-900">{property.name}</div>
+                            <button
+                              type="button"
+                              onClick={(event) => handleWishlistClick(event, property.id)}
+                              className={`rounded-full p-2 ${wishlistIds.includes(property.id) ? 'bg-rose-100 text-rose-600' : 'bg-ice-50 text-slate-400'}`}
+                              aria-label={wishlistIds.includes(property.id) ? 'Remove from wishlist' : 'Save to wishlist'}
+                            >
+                              <Icon name="heart" />
+                            </button>
+                          </div>
                           <div className="text-sm text-slate-500">{property.location}</div>
                           <div className="mt-1 text-xs font-semibold text-brand-600">{property.statusNote}</div>
                           {property.schedule ? <div className="mt-1 text-xs text-slate-400">{property.schedule}</div> : null}
@@ -162,6 +372,11 @@ export function BookingPage({
                       </label>
                     ))}
                   </div>
+                  {!filteredProperties.length ? (
+                    <div className="mt-4 rounded-2xl border border-dashed border-ice-200 bg-ice-50 px-4 py-5 text-sm text-slate-500">
+                      No published properties match this search. Try a different location, remove the saved-only filter, or ask support for help choosing a stay.
+                    </div>
+                  ) : null}
                   {bookingErrors?.property ? <p className="mt-3 text-sm text-rose-600">{bookingErrors.property[0]}</p> : null}
                 </div>
 

@@ -2,7 +2,9 @@ import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { SiteFooter, SiteHeader, ToastStack } from './components/SiteChrome';
+import { SupportWidget } from './components/SupportWidget';
 import { FEATURED_PROPERTIES } from './data/siteData';
+import { getWishlistIds, isRangeBlocked, summarizeAnalytics } from './lib/guestFeatures';
 import { getMediaObjectUrl, revokeMediaObjectUrls } from './lib/mediaStorage';
 import { DEFAULT_COOKIE_PREFERENCES, readCookiePreferences, saveCookiePreferences } from './lib/privacyPreferences';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
@@ -16,7 +18,10 @@ import {
   submitBooking,
   submitOwnerApplication,
   submitReview,
+  submitSupportRequest,
   syncRemoteData,
+  toggleWishlistProperty,
+  trackAnalyticsEvent,
   updateBookingTransactionStatus,
 } from './services/horaApi';
 import {
@@ -190,6 +195,8 @@ export default function App() {
   const [resolvedListings, setResolvedListings] = useState([]);
   const [cookiePreferences, setCookiePreferences] = useState(() => readCookiePreferences());
   const [cookieBannerOpen, setCookieBannerOpen] = useState(() => !readCookiePreferences());
+  const [supportWidgetOpen, setSupportWidgetOpen] = useState(false);
+  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState(null);
   const [authSession, setAuthSession] = useState(null);
   const [authProfile, setAuthProfile] = useState(null);
   const [authRole, setAuthRole] = useState('client');
@@ -202,6 +209,21 @@ export default function App() {
   const featuredListings = dashboardListings.filter(
     (listing) => listing.publishStatus !== 'draft' && !listing.isDeleted,
   );
+  const wishlistIds = useMemo(
+    () => getWishlistIds(store, authSession?.user),
+    [authSession?.user, store],
+  );
+  const analyticsSummary = useMemo(
+    () =>
+      summarizeAnalytics(
+        store.analyticsEvents,
+        store.bookingTransactions,
+        store.supportRequests,
+        store.wishlistByUser,
+      ),
+    [store.analyticsEvents, store.bookingTransactions, store.supportRequests, store.wishlistByUser],
+  );
+  const canInstallApp = Boolean(deferredInstallPrompt);
 
   useEffect(() => {
     setMobileOpen(false);
@@ -218,6 +240,16 @@ export default function App() {
       }
     }
   }, [location.hash, location.pathname]);
+
+  useEffect(() => {
+    function handleBeforeInstallPrompt(event) {
+      event.preventDefault();
+      setDeferredInstallPrompt(event);
+    }
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
 
   useEffect(() => {
     if (!toasts.length) {
@@ -516,6 +548,25 @@ export default function App() {
     }
   }
 
+  async function recordAnalytics(type, payload = {}) {
+    if (!cookiePreferences?.analytics) {
+      return null;
+    }
+
+    const result = await trackAnalyticsEvent({
+      type,
+      page: activePage,
+      path: location.pathname,
+      ...payload,
+    });
+    setStore(result.store);
+    return result;
+  }
+
+  useEffect(() => {
+    void recordAnalytics('page_view');
+  }, [cookiePreferences?.analytics, location.pathname]);
+
   function handleBookingChange(event) {
     const { name, value } = event.target;
     setStore((current) => ({
@@ -693,28 +744,6 @@ export default function App() {
     navigate(APP_PATHS.reviewSuccess);
   }
 
-  function isRangeBlocked(property, checkin, checkout) {
-    if (!property || !checkin || !checkout) {
-      return false;
-    }
-
-    const blockedDates = new Set(property.blockedDates || []);
-    const cursor = new Date(checkin);
-    const endDate = new Date(checkout);
-
-    while (cursor < endDate) {
-      const isoDate = cursor.toISOString().slice(0, 10);
-
-      if (blockedDates.has(isoDate)) {
-        return true;
-      }
-
-      cursor.setDate(cursor.getDate() + 1);
-    }
-
-    return false;
-  }
-
   function openAuthPage(role = 'client', nextPath) {
     navigate(buildAuthPath(role, nextPath || location.pathname));
   }
@@ -799,6 +828,65 @@ export default function App() {
     pushToast(`Booking marked as ${bookingStatus}.`, 'success', 'calendar');
   }
 
+  async function handleWishlistToggle(propertyId) {
+    const result = await toggleWishlistProperty({
+      authUser: authSession?.user,
+      propertyId,
+    });
+    setStore(result.store);
+    pushToast(
+      result.saved ? 'Stay saved to your wishlist.' : 'Stay removed from your wishlist.',
+      result.saved ? 'success' : 'info',
+      'heart',
+    );
+    await recordAnalytics(result.saved ? 'wishlist_add' : 'wishlist_remove', { propertyId });
+  }
+
+  async function handleBookingSearch(criteria) {
+    await recordAnalytics('search', {
+      query: criteria.query || '',
+      locationFilter: criteria.location || '',
+      resultCount: criteria.resultCount || 0,
+      checkin: criteria.checkin || '',
+      checkout: criteria.checkout || '',
+      guests: criteria.guests || '',
+    });
+  }
+
+  async function handleSupportOpen(source = activePage) {
+    setSupportWidgetOpen(true);
+    await recordAnalytics('support_open', { source });
+  }
+
+  async function handleSupportSubmit(payload) {
+    const result = await submitSupportRequest(payload);
+    setStore(result.store);
+    setSupportWidgetOpen(false);
+    pushToast('Support request sent. Hora can follow up by email.', 'success', 'comment');
+    await recordAnalytics('support_submit', {
+      topic: payload.topic,
+      source: payload.pageContext || activePage,
+    });
+  }
+
+  async function handleInstallApp() {
+    if (!deferredInstallPrompt) {
+      pushToast('This browser can still install Hora from its share or menu options.', 'info', 'mobile');
+      return;
+    }
+
+    deferredInstallPrompt.prompt();
+    const choice = await deferredInstallPrompt.userChoice;
+    setDeferredInstallPrompt(null);
+    await recordAnalytics('install_prompt', { outcome: choice.outcome });
+
+    pushToast(
+      choice.outcome === 'accepted' ? 'Hora was added to your device.' : 'Install prompt dismissed.',
+      choice.outcome === 'accepted' ? 'success' : 'info',
+      'download',
+    );
+  }
+
   async function handleSignOut() {
     await signOutCurrentUser();
     pushToast('Signed out successfully.', 'info', 'lock');
@@ -809,6 +897,10 @@ export default function App() {
     location.pathname !== APP_PATHS.dashboard &&
     location.pathname !== APP_PATHS.ownerDashboard &&
     location.pathname !== APP_PATHS.managementLogin &&
+    location.pathname !== APP_PATHS.authLogin;
+  const showSupportWidget =
+    location.pathname !== APP_PATHS.dashboard &&
+    location.pathname !== APP_PATHS.ownerDashboard &&
     location.pathname !== APP_PATHS.authLogin;
 
   return (
@@ -841,6 +933,11 @@ export default function App() {
                   featuredProperties={featuredListings}
                   formatCompactNumber={formatCompactNumber}
                   formatCurrency={formatCurrency}
+                  wishlistCount={wishlistIds.length}
+                  analyticsSummary={analyticsSummary}
+                  onOpenSupport={() => handleSupportOpen('landing')}
+                  canInstallApp={canInstallApp}
+                  onInstallApp={handleInstallApp}
                 />
               }
             />
@@ -925,6 +1022,12 @@ export default function App() {
                   availableRoles={availableRoles}
                   isAuthLoading={isAuthLoading}
                   onOpenAuth={() => openAuthPage('client', APP_PATHS.booking)}
+                  wishlistIds={wishlistIds}
+                  onToggleWishlist={handleWishlistToggle}
+                  onSearch={handleBookingSearch}
+                  onOpenSupport={() => handleSupportOpen('booking')}
+                  canInstallApp={canInstallApp}
+                  onInstallApp={handleInstallApp}
                 />
               }
             />
@@ -963,6 +1066,7 @@ export default function App() {
                     onSignOut={handleSignOut}
                     authUser={authSession?.user}
                     formatCurrency={formatCurrency}
+                    analyticsSummary={analyticsSummary}
                   />
                 </RoleProtectedRoute>
               }
@@ -973,6 +1077,17 @@ export default function App() {
       </main>
 
       {showFooter ? <SiteFooter onShowPage={showPage} onManageCookies={handleManageCookies} /> : null}
+
+      {showSupportWidget ? (
+        <SupportWidget
+          open={supportWidgetOpen}
+          onOpen={() => handleSupportOpen(activePage)}
+          onClose={() => setSupportWidgetOpen(false)}
+          onSubmit={handleSupportSubmit}
+          authUser={authSession?.user}
+          currentPage={activePage}
+        />
+      ) : null}
 
       {paymentOpen && bookingSummary ? (
         <Suspense fallback={<ModalLoadingFallback />}>
