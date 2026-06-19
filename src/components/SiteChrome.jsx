@@ -81,12 +81,16 @@ export function SiteHeader({
   onScrollToSection,
   authUser,
   authRole,
+  availableRoles = ['client'],
+  onRoleSwitch,
+  onOpenAuth,
+  onSignOut,
 }) {
   const isLanding = activePage === 'landing';
   const navTextClass = isLanding ? 'text-white/80 hover:text-white' : 'text-slate-600 hover:text-brand-600';
   const brandTextClass = isLanding ? 'text-white group-hover:text-white/80' : 'text-brand-950 group-hover:text-brand-600';
   const menuButtonClass = isLanding ? 'text-white' : 'text-brand-800';
-  const managementButtonClass = isLanding
+  const authButtonClass = isLanding
     ? 'rounded-xl border border-white/25 bg-white/10 px-5 py-2 text-sm text-white backdrop-blur-sm transition-colors hover:bg-white/20'
     : 'btn-outline px-5 py-2 text-sm';
   const activeLinkClass = isLanding
@@ -150,9 +154,33 @@ export function SiteHeader({
             <button type="button" onClick={() => onShowPage('booking')} className="btn-accent px-5 py-2 text-sm">
               Book Now
             </button>
-            <button type="button" onClick={() => onShowPage('management-login')} className={managementButtonClass}>
-              Management Login
-            </button>
+            {authUser ? (
+              <>
+                {availableRoles.length > 1 ? (
+                  <label className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isLanding ? 'bg-white/10 text-white' : 'bg-white text-slate-600 shadow-sm'}`}>
+                    <span>Role</span>
+                    <select
+                      value={authRole}
+                      onChange={(event) => onRoleSwitch?.(event.target.value)}
+                      className={`bg-transparent text-sm outline-none ${isLanding ? 'text-white' : 'text-slate-700'}`}
+                    >
+                      {availableRoles.map((role) => (
+                        <option key={role} value={role} className="text-slate-900">
+                          {role.charAt(0).toUpperCase() + role.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
+                <button type="button" onClick={onSignOut} className={authButtonClass}>
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <button type="button" onClick={onOpenAuth} className={authButtonClass}>
+                Sign In
+              </button>
+            )}
           </nav>
           <UserAvatarIndicator authUser={authUser} authRole={authRole} isLanding={isLanding} />
         </div>
@@ -222,13 +250,36 @@ export function SiteHeader({
             <button
               type="button"
               onClick={() => {
-                onShowPage('management-login');
+                if (authUser) {
+                  onSignOut?.();
+                } else {
+                  onOpenAuth?.();
+                }
                 onToggleMobile(false);
               }}
               className="btn-primary w-full py-3 text-sm"
             >
-              <span>Management Login</span>
+              <span>{authUser ? 'Sign Out' : 'Sign In'}</span>
             </button>
+            {authUser && availableRoles.length > 1 ? (
+              <div className="rounded-2xl border border-ice-200 bg-ice-50 px-4 py-3">
+                <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-slate-400" htmlFor="mobile-role-switch">
+                  Active role
+                </label>
+                <select
+                  id="mobile-role-switch"
+                  value={authRole}
+                  onChange={(event) => onRoleSwitch?.(event.target.value)}
+                  className="mt-2 w-full rounded-xl border border-ice-200 bg-white px-3 py-2 text-sm text-slate-700"
+                >
+                  {availableRoles.map((role) => (
+                    <option key={role} value={role}>
+                      {role.charAt(0).toUpperCase() + role.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -236,7 +287,7 @@ export function SiteHeader({
   );
 }
 
-export function SiteFooter({ onShowPage }) {
+export function SiteFooter({ onShowPage, onManageCookies }) {
   return (
     <footer className="border-t border-white/10 bg-brand-950 py-12">
       <div className="mx-auto max-w-7xl px-4 md:px-8">
@@ -247,7 +298,8 @@ export function SiteFooter({ onShowPage }) {
               <span className="font-display text-lg font-bold text-white">HORA Staycation</span>
             </div>
             <p className="text-sm leading-relaxed text-white/50">
-              Your staycation partner, curating unique stays and authentic experiences for the modern traveler.
+              Your staycation partner, curating unique stays and authentic experiences with GDPR and PDPA-aware
+              privacy controls.
             </p>
           </div>
           <div>
@@ -267,14 +319,14 @@ export function SiteFooter({ onShowPage }) {
           <div>
             <h3 className="mb-3 font-semibold text-white">Company</h3>
             <div className="space-y-2 text-sm text-white/50">
-              <a href="#" className="block transition-colors hover:text-accent-400">
-                About Us
-              </a>
-              <a href="#" className="block transition-colors hover:text-accent-400">
-                Careers
-              </a>
-              <a href="#" className="block transition-colors hover:text-accent-400">
-                Press
+              <button type="button" onClick={() => onShowPage('privacy-policy')} className="block text-left transition-colors hover:text-accent-400">
+                Privacy Policy
+              </button>
+              <button type="button" onClick={onManageCookies} className="block text-left transition-colors hover:text-accent-400">
+                Cookie Preferences
+              </button>
+              <a href="mailto:privacy@horastaycation.com" className="block transition-colors hover:text-accent-400">
+                privacy@horastaycation.com
               </a>
             </div>
           </div>

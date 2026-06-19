@@ -44,8 +44,8 @@ function GoogleEntryCard({ title, description, roleLabel, buttonLabel, onContinu
       <p className="mt-4 text-base leading-relaxed text-slate-600">{description}</p>
       <div className="mt-6 grid gap-3 sm:grid-cols-3">
         <div className="rounded-2xl bg-ice-50 p-4">
-          <div className="text-sm font-semibold text-brand-900">Google entry</div>
-          <p className="mt-1 text-sm text-slate-500">Keeps the role clear before the form starts.</p>
+          <div className="text-sm font-semibold text-brand-900">Unified login</div>
+          <p className="mt-1 text-sm text-slate-500">Choose a role once, then keep using the right workspace.</p>
         </div>
         <div className="rounded-2xl bg-ice-50 p-4">
           <div className="text-sm font-semibold text-brand-900">Structured details</div>
@@ -71,10 +71,19 @@ function GoogleEntryCard({ title, description, roleLabel, buttonLabel, onContinu
   );
 }
 
-export function OwnerSignupPage({ onShowPage, onSubmitOwner, isSubmitting, authUser, authRole, isAuthLoading, onGoogleSignIn }) {
+export function OwnerSignupPage({
+  onShowPage,
+  onSubmitOwner,
+  isSubmitting,
+  authUser,
+  authRole,
+  availableRoles = ['client'],
+  isAuthLoading,
+  onOpenAuth,
+}) {
   const [form, setForm] = useState(INITIAL_OWNER_FORM);
   const [errors, setErrors] = useState({});
-  const googleConnected = Boolean(authUser && authRole === 'owner');
+  const googleConnected = Boolean(authUser && availableRoles.includes('owner'));
 
   useEffect(() => {
     if (!authUser?.email) {
@@ -116,15 +125,15 @@ export function OwnerSignupPage({ onShowPage, onSubmitOwner, isSubmitting, authU
         </button>
         <div className="mb-8 text-center">
           <h1 className="font-display text-4xl font-bold text-brand-950 md:text-5xl">Build / Refurbish With Us</h1>
-          <p className="mt-3 text-lg text-slate-600">This owner flow starts with Google sign-in, then collects the location, unit count, and budget needed for Hora follow-up.</p>
+          <p className="mt-3 text-lg text-slate-600">Use unified sign-in to activate the owner role, then submit the refurbish details Hora needs for follow-up.</p>
         </div>
         {!googleConnected ? (
           <GoogleEntryCard
             title="Sign in as Owner"
-            description="Use this first step for owners who want Hora to build or refurbish a location. Once the owner continues with Google, the form below becomes their owner request."
+            description="Use the single sign-in flow for owners who want Hora to build or refurbish a location. After role selection, the form below becomes the owner request."
             roleLabel="Owner Role"
-            buttonLabel="Continue With Google as Owner"
-            onContinue={onGoogleSignIn}
+            buttonLabel="Continue to Unified Sign-In"
+            onContinue={onOpenAuth}
             email={authUser?.email}
             isSubmitting={isSubmitting || isAuthLoading}
           />
@@ -132,7 +141,7 @@ export function OwnerSignupPage({ onShowPage, onSubmitOwner, isSubmitting, authU
           <form onSubmit={handleSubmit} noValidate className="space-y-6 rounded-3xl border border-ice-200 bg-ice-50 p-8 shadow-lg">
             <div className="inline-flex items-center gap-2 rounded-full bg-brand-900 px-4 py-2 text-sm font-semibold text-white">
               <Icon name="lock" />
-              Signed in as Owner
+              Active role: {authRole.charAt(0).toUpperCase() + authRole.slice(1)}
             </div>
             <div className="grid gap-6 md:grid-cols-2">
               <div>
@@ -605,6 +614,58 @@ const MEDIA_FIELD_CONFIG = {
   },
 };
 
+const LISTING_PRESETS = [
+  {
+    id: 'beachfront-villa',
+    title: 'Beachfront Villa',
+    facilities: ['Infinity Pool', 'Private Beach Access', 'BBQ Deck', 'WiFi', 'Outdoor Shower'],
+    schedule: 'Daily check-in from 3:00 PM · Sunset concierge from 5:30 PM · Check-out before 11:00 AM',
+    statusNote: 'Beachfront highlight now live',
+    mood: 'Ocean-facing stay with breezy social spaces, polished arrival moments, and sunset-ready lounging.',
+    bestFor: 'Best for family holidays, bridal parties, and premium short escapes',
+  },
+  {
+    id: 'forest-cabin',
+    title: 'Forest Cabin',
+    facilities: ['Fire Pit', 'Mountain View Deck', 'Coffee Bar', 'WiFi', 'Private Parking'],
+    schedule: 'Self check-in from 4:00 PM · Quiet hours from 10:00 PM · Check-out before 11:00 AM',
+    statusNote: 'Forest retreat schedule refreshed',
+    mood: 'A calm woodland escape shaped for slower mornings, layered textures, and private evening gatherings.',
+    bestFor: 'Best for couples, creators, and restorative weekend stays',
+  },
+  {
+    id: 'urban-loft',
+    title: 'Urban Loft',
+    facilities: ['Rooftop Access', 'Smart Lock', 'Workspace', 'Streaming TV', 'Fast WiFi'],
+    schedule: 'Express check-in from 2:00 PM · Weekday priority stays · Check-out before 12:00 PM',
+    statusNote: 'Urban quick-stay preset active',
+    mood: 'A compact city stay with efficient flow, strong visual styling, and easy work-to-rest transitions.',
+    bestFor: 'Best for business trips, staycations, and content shoots',
+  },
+];
+
+const MEDIA_FIELD_ORDER = ['image', 'summaryImage', 'thumbnail', 'videoUrl'];
+
+function formatFileSize(size = 0) {
+  if (!Number.isFinite(size) || size <= 0) {
+    return '0 KB';
+  }
+
+  if (size >= 1024 * 1024) {
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  return `${Math.max(1, Math.round(size / 1024))} KB`;
+}
+
+function getMediaPreviewValue(fieldName, mediaPreviews, selectedListing) {
+  if (mediaPreviews[fieldName]) {
+    return mediaPreviews[fieldName];
+  }
+
+  return selectedListing?.[fieldName] || '';
+}
+
 export function DashboardPage({
   listings = FEATURED_PROPERTIES,
   bookings,
@@ -658,11 +719,30 @@ export function DashboardPage({
   const [mediaPreviews, setMediaPreviews] = useState({});
   const [pendingMediaFiles, setPendingMediaFiles] = useState({});
   const [draftListing, setDraftListing] = useState(null);
+  const [studioMessage, setStudioMessage] = useState('');
+  const [draggingField, setDraggingField] = useState('');
+  const [bulkUploadField, setBulkUploadField] = useState('image');
+  const [bulkListingIds, setBulkListingIds] = useState([]);
+  const [isBulkUploading, setIsBulkUploading] = useState(false);
 
   const availableListings = draftListing ? [draftListing, ...listings] : listings;
   const selectedListing = useMemo(
     () => availableListings.find((listing) => listing.id === selectedListingId) ?? availableListings[0] ?? FEATURED_PROPERTIES[0],
     [availableListings, selectedListingId],
+  );
+  const mediaCards = useMemo(
+    () =>
+      MEDIA_FIELD_ORDER.map((fieldName) => ({
+        fieldName,
+        config: MEDIA_FIELD_CONFIG[fieldName],
+        preview: getMediaPreviewValue(fieldName, mediaPreviews, selectedListing),
+        asset: listingForm[MEDIA_FIELD_CONFIG[fieldName].assetField],
+      })),
+    [listingForm, mediaPreviews, selectedListing],
+  );
+  const selectedBulkListings = useMemo(
+    () => availableListings.filter((listing) => bulkListingIds.includes(listing.id)),
+    [availableListings, bulkListingIds],
   );
 
   useEffect(() => {
@@ -674,6 +754,7 @@ export function DashboardPage({
     setMediaPreviews({});
     setPendingMediaFiles({});
     setUploadError('');
+    setStudioMessage('');
   }, [selectedListing]);
 
   useEffect(() => {
@@ -681,6 +762,10 @@ export function DashboardPage({
       setSelectedListingId(availableListings[0]?.id ?? '');
     }
   }, [availableListings, selectedListingId]);
+
+  useEffect(() => {
+    setBulkListingIds((current) => current.filter((listingId) => availableListings.some((listing) => listing.id === listingId)));
+  }, [availableListings]);
 
   useEffect(() => {
     const previewUrls = Object.values(mediaPreviews);
@@ -710,6 +795,7 @@ export function DashboardPage({
     }));
 
     if (mediaConfig) {
+      setStudioMessage('');
       setMediaPreviews((current) => {
         const next = { ...current };
         delete next[name];
@@ -723,16 +809,24 @@ export function DashboardPage({
     }
   }
 
-  async function handleMediaUpload(fieldName, event) {
+  async function uploadMediaFileToField(fieldName, file) {
     const mediaConfig = MEDIA_FIELD_CONFIG[fieldName];
-    const file = event.target.files?.[0];
 
-    if (!mediaConfig || !file) {
+    if (!mediaConfig || !(file instanceof File)) {
       return;
+    }
+
+    if (mediaConfig.accept === 'image/*' && !file.type.startsWith('image/')) {
+      throw new Error('Please drop an image file for this field.');
+    }
+
+    if (mediaConfig.accept === 'video/*' && !file.type.startsWith('video/')) {
+      throw new Error('Please drop a video file for this field.');
     }
 
     setIsUploadingMedia(fieldName);
     setUploadError('');
+    setStudioMessage('');
 
     try {
       const currentAsset = listingForm[mediaConfig.assetField];
@@ -769,20 +863,23 @@ export function DashboardPage({
         ...current,
         [fieldName]: file,
       }));
+      setStudioMessage(`${file.name} is staged for ${mediaConfig.label.toLowerCase()}. Save the listing to publish it.`);
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : 'Upload failed. Please try again.');
     } finally {
       setIsUploadingMedia('');
-      event.target.value = '';
     }
   }
 
-  function getMediaPreview(fieldName) {
-    if (mediaPreviews[fieldName]) {
-      return mediaPreviews[fieldName];
+  async function handleMediaUpload(fieldName, event) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
     }
 
-    return selectedListing?.[fieldName] || '';
+    await uploadMediaFileToField(fieldName, file);
+    event.target.value = '';
   }
 
   function handleCreateListing() {
@@ -793,6 +890,7 @@ export function DashboardPage({
     setPendingMediaFiles({});
     setMediaPreviews({});
     setUploadError('');
+    setStudioMessage('New listing draft created. Apply a preset or start dropping media files into the upload studio.');
   }
 
   function clearMediaField(fieldName) {
@@ -800,6 +898,12 @@ export function DashboardPage({
 
     if (!mediaConfig) {
       return;
+    }
+
+    const currentAsset = listingForm[mediaConfig.assetField];
+
+    if (currentAsset?.id) {
+      void deleteMediaFile(currentAsset);
     }
 
     setListingForm((current) => ({
@@ -817,11 +921,118 @@ export function DashboardPage({
       delete next[fieldName];
       return next;
     });
+    setStudioMessage(`${mediaConfig.label} cleared.`);
+  }
+
+  function handleMediaDragOver(fieldName, event) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+
+    if (draggingField !== fieldName) {
+      setDraggingField(fieldName);
+    }
+  }
+
+  function handleMediaDrop(fieldName, event) {
+    event.preventDefault();
+    setDraggingField('');
+    const file = event.dataTransfer.files?.[0];
+
+    if (file) {
+      void uploadMediaFileToField(fieldName, file);
+    }
+  }
+
+  function handlePresetApply(preset) {
+    setListingForm((current) => ({
+      ...current,
+      facilitiesText: preset.facilities.join(', '),
+      schedule: preset.schedule,
+      statusNote: preset.statusNote,
+      mood: preset.mood,
+      bestFor: preset.bestFor,
+    }));
+    setUploadError('');
+    setStudioMessage(`${preset.title} preset applied. Facilities, schedule, and guest-facing copy are ready for review.`);
+  }
+
+  function toggleBulkListing(listingId) {
+    setBulkListingIds((current) =>
+      current.includes(listingId)
+        ? current.filter((item) => item !== listingId)
+        : [...current, listingId],
+    );
+  }
+
+  function toggleAllBulkListings() {
+    if (bulkListingIds.length === availableListings.length) {
+      setBulkListingIds([]);
+      return;
+    }
+
+    setBulkListingIds(availableListings.map((listing) => listing.id));
+  }
+
+  async function handleBulkUpload(event) {
+    const files = Array.from(event.target.files || []);
+    const mediaConfig = MEDIA_FIELD_CONFIG[bulkUploadField];
+
+    if (!files.length || !mediaConfig) {
+      return;
+    }
+
+    if (!selectedBulkListings.length) {
+      setUploadError('Select at least one property before starting a bulk upload.');
+      event.target.value = '';
+      return;
+    }
+
+    if (files.length !== 1 && files.length !== selectedBulkListings.length) {
+      setUploadError('Use one file to apply the same asset to every selected property, or upload one file per selected property.');
+      event.target.value = '';
+      return;
+    }
+
+    setIsBulkUploading(true);
+    setUploadError('');
+    setStudioMessage('');
+
+    try {
+      for (let index = 0; index < selectedBulkListings.length; index += 1) {
+        const listing = selectedBulkListings[index];
+        const file = files[Math.min(index, files.length - 1)];
+        const currentAsset = listing[mediaConfig.assetField];
+
+        if (currentAsset?.id) {
+          await deleteMediaFile(currentAsset);
+        }
+
+        const mediaRef = await saveMediaFile(file, `${bulkUploadField}-bulk`);
+
+        await onSaveListing({
+          ...listing,
+          [mediaConfig.assetField]: mediaRef,
+          mediaFiles: {
+            [bulkUploadField]: file,
+          },
+        });
+      }
+
+      setStudioMessage(
+        `${files.length === 1 ? 'One file has' : `${files.length} files have`} been staged across ${selectedBulkListings.length} selected propert${selectedBulkListings.length === 1 ? 'y' : 'ies'}.`,
+      );
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Bulk upload failed. Please try again.');
+    } finally {
+      setIsBulkUploading(false);
+      event.target.value = '';
+    }
   }
 
   async function handleListingSubmit(event) {
     event.preventDefault();
     setIsSavingListing(true);
+    setUploadError('');
     await onSaveListing({
       ...selectedListing,
       ...listingForm,
@@ -830,12 +1041,14 @@ export function DashboardPage({
     setDraftListing(null);
     setPendingMediaFiles({});
     setIsSavingListing(false);
+    setStudioMessage('Listing content saved. The public staycation cards now use the latest management portal data.');
   }
 
   async function handleDeleteListing() {
     await onDeleteListing(selectedListing.id);
     setDraftListing(null);
     setSelectedListingId(listings.find((listing) => listing.id !== selectedListing.id)?.id ?? listings[0]?.id ?? '');
+    setStudioMessage('Listing removed from the management portal.');
   }
 
   return (
@@ -914,9 +1127,107 @@ export function DashboardPage({
             <div className="rounded-3xl border border-ice-200 bg-white p-6 shadow-sm">
               <div className="mb-6 flex items-center justify-between">
                 <h2 className="font-display text-2xl font-bold text-brand-950">Management Upload Studio</h2>
-                <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-600">Photos · Videos · Facilities · Schedule</span>
+                <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-600">Drag-and-Drop · Bulk Upload · Presets</span>
               </div>
               <form onSubmit={handleListingSubmit} className="space-y-5">
+                <div className="grid gap-5 xl:grid-cols-[1fr_1.05fr]">
+                  <div className="rounded-3xl border border-brand-100 bg-gradient-to-br from-brand-50 to-white p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-500">Listing Presets</div>
+                        <h3 className="mt-2 font-display text-2xl font-bold text-brand-950">Templates for fast setup</h3>
+                        <p className="mt-2 text-sm text-slate-500">Apply a ready-made facilities and schedule pack, then fine-tune the details for the selected property.</p>
+                      </div>
+                      <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-brand-600 shadow-sm">
+                        <Icon name="list-check" />
+                      </span>
+                    </div>
+                    <div className="mt-5 grid gap-3">
+                      {LISTING_PRESETS.map((preset) => (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => handlePresetApply(preset)}
+                          className="rounded-2xl border border-brand-100 bg-white px-4 py-4 text-left transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-sm"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="font-semibold text-brand-900">{preset.title}</div>
+                            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-500">Apply</span>
+                          </div>
+                          <div className="mt-2 text-sm text-slate-500">{preset.schedule}</div>
+                          <div className="mt-3 text-xs text-slate-400">{preset.facilities.join(' · ')}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-3xl border border-ice-200 bg-slate-950 p-5 text-white shadow-sm">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">Bulk Upload</div>
+                        <h3 className="mt-2 font-display text-2xl font-bold">Multiple properties in one pass</h3>
+                        <p className="mt-2 text-sm text-white/70">Choose the asset type, pick the properties, then upload one shared file or one file per selected property.</p>
+                      </div>
+                      <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-cyan-300">
+                        <Icon name="upload" />
+                      </span>
+                    </div>
+                    <div className="mt-5 grid gap-4 md:grid-cols-[0.8fr_1.2fr]">
+                      <div>
+                        <label className="form-label text-white" htmlFor="bulkUploadField">Asset Type</label>
+                        <select
+                          id="bulkUploadField"
+                          value={bulkUploadField}
+                          onChange={(event) => setBulkUploadField(event.target.value)}
+                          className="form-input border-white/15 bg-white/8 text-white"
+                        >
+                          {MEDIA_FIELD_ORDER.map((fieldName) => (
+                            <option key={fieldName} value={fieldName} className="text-slate-900">
+                              {MEDIA_FIELD_CONFIG[fieldName].label.replace(' Upload', '')}
+                            </option>
+                          ))}
+                        </select>
+                        <label className="form-label mt-4 text-white" htmlFor="bulkUploadInput">Bulk Files</label>
+                        <input
+                          id="bulkUploadInput"
+                          type="file"
+                          multiple
+                          accept={MEDIA_FIELD_CONFIG[bulkUploadField].accept}
+                          onChange={handleBulkUpload}
+                          disabled={isBulkUploading}
+                          className="form-input border-white/15 bg-white/8 text-white"
+                        />
+                        <p className="mt-2 text-xs text-white/55">
+                          Upload 1 file to reuse the same asset for every selected property, or upload {selectedBulkListings.length || 'matching'} files to map them in property order.
+                        </p>
+                      </div>
+                      <div>
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <div className="text-sm font-semibold uppercase tracking-[0.2em] text-white/55">Target Properties</div>
+                          <button type="button" onClick={toggleAllBulkListings} className="text-xs font-semibold text-cyan-300">
+                            {bulkListingIds.length === availableListings.length ? 'Clear all' : 'Select all'}
+                          </button>
+                        </div>
+                        <div className="grid max-h-48 gap-2 overflow-y-auto pr-1">
+                          {availableListings.map((listing) => (
+                            <label key={listing.id} className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/10 bg-white/6 px-4 py-3">
+                              <input
+                                type="checkbox"
+                                checked={bulkListingIds.includes(listing.id)}
+                                onChange={() => toggleBulkListing(listing.id)}
+                                className="mt-1 h-4 w-4 rounded border-white/30"
+                              />
+                              <span className="min-w-0">
+                                <span className="block font-semibold text-white">{listing.name}</span>
+                                <span className="block text-sm text-white/60">{listing.location}</span>
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 <div className="flex flex-wrap gap-3">
                   <button type="button" onClick={handleCreateListing} className="btn-primary px-5 py-3 text-sm">
                     + Add New Listing
@@ -978,78 +1289,80 @@ export function DashboardPage({
                   <textarea id="blockedDatesText" name="blockedDatesText" rows="3" value={listingForm.blockedDatesText} onChange={handleListingFieldChange} className="form-input" placeholder="2026-06-20, 2026-06-21, 2026-06-22" />
                   <p className="mt-2 text-xs text-slate-400">Add comma-separated dates to block guest booking on those days.</p>
                 </div>
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div>
-                    <label className="form-label" htmlFor="image">Hero Photo URL</label>
-                    <input id="image" name="image" value={listingForm.image} onChange={handleListingFieldChange} className="form-input" placeholder="https://..." />
-                    <label className="form-label mt-3" htmlFor="imageUpload">{MEDIA_FIELD_CONFIG.image.label}</label>
-                    <input
-                      id="imageUpload"
-                      type="file"
-                      accept={MEDIA_FIELD_CONFIG.image.accept}
-                      onChange={(event) => handleMediaUpload('image', event)}
-                      className="form-input"
-                    />
-                    <button type="button" onClick={() => clearMediaField('image')} className="mt-2 text-xs font-semibold text-rose-600">
-                      Delete / Replace hero media
-                    </button>
-                    <p className="mt-2 text-xs text-slate-400">{MEDIA_FIELD_CONFIG.image.helper}</p>
-                  </div>
-                  <div>
-                    <label className="form-label" htmlFor="summaryImage">Summary Photo URL</label>
-                    <input id="summaryImage" name="summaryImage" value={listingForm.summaryImage} onChange={handleListingFieldChange} className="form-input" placeholder="https://..." />
-                    <label className="form-label mt-3" htmlFor="summaryImageUpload">{MEDIA_FIELD_CONFIG.summaryImage.label}</label>
-                    <input
-                      id="summaryImageUpload"
-                      type="file"
-                      accept={MEDIA_FIELD_CONFIG.summaryImage.accept}
-                      onChange={(event) => handleMediaUpload('summaryImage', event)}
-                      className="form-input"
-                    />
-                    <button type="button" onClick={() => clearMediaField('summaryImage')} className="mt-2 text-xs font-semibold text-rose-600">
-                      Delete / Replace summary media
-                    </button>
-                    <p className="mt-2 text-xs text-slate-400">{MEDIA_FIELD_CONFIG.summaryImage.helper}</p>
-                  </div>
-                  <div>
-                    <label className="form-label" htmlFor="thumbnail">Thumbnail URL</label>
-                    <input id="thumbnail" name="thumbnail" value={listingForm.thumbnail} onChange={handleListingFieldChange} className="form-input" placeholder="https://..." />
-                    <label className="form-label mt-3" htmlFor="thumbnailUpload">{MEDIA_FIELD_CONFIG.thumbnail.label}</label>
-                    <input
-                      id="thumbnailUpload"
-                      type="file"
-                      accept={MEDIA_FIELD_CONFIG.thumbnail.accept}
-                      onChange={(event) => handleMediaUpload('thumbnail', event)}
-                      className="form-input"
-                    />
-                    <button type="button" onClick={() => clearMediaField('thumbnail')} className="mt-2 text-xs font-semibold text-rose-600">
-                      Delete / Replace thumbnail media
-                    </button>
-                    <p className="mt-2 text-xs text-slate-400">{MEDIA_FIELD_CONFIG.thumbnail.helper}</p>
-                  </div>
+                <div className="grid gap-4 xl:grid-cols-2">
+                  {mediaCards.map(({ fieldName, config, preview, asset }) => {
+                    const isVideoField = fieldName === 'videoUrl';
+                    const inputId = `${fieldName}Upload`;
+
+                    return (
+                      <div key={fieldName} className="rounded-3xl border border-ice-200 bg-slate-50 p-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <label className="form-label" htmlFor={fieldName}>{config.label.replace(' Upload', ' URL')}</label>
+                            <input
+                              id={fieldName}
+                              name={fieldName}
+                              value={listingForm[fieldName]}
+                              onChange={handleListingFieldChange}
+                              className="form-input"
+                              placeholder={isVideoField ? 'https://youtube.com/...' : 'https://...'}
+                            />
+                          </div>
+                          <button type="button" onClick={() => clearMediaField(fieldName)} className="rounded-full bg-white px-3 py-2 text-xs font-semibold text-rose-600 shadow-sm">
+                            Clear
+                          </button>
+                        </div>
+                        <label
+                          htmlFor={inputId}
+                          onDragOver={(event) => handleMediaDragOver(fieldName, event)}
+                          onDragLeave={() => setDraggingField('')}
+                          onDrop={(event) => handleMediaDrop(fieldName, event)}
+                          className={`mt-4 flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed px-5 py-6 text-center transition ${
+                            draggingField === fieldName
+                              ? 'border-brand-500 bg-brand-50'
+                              : 'border-ice-200 bg-white hover:border-brand-300 hover:bg-brand-50/40'
+                          }`}
+                        >
+                          <input
+                            id={inputId}
+                            type="file"
+                            accept={config.accept}
+                            onChange={(event) => handleMediaUpload(fieldName, event)}
+                            className="hidden"
+                          />
+                          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
+                            <Icon name="upload" />
+                          </span>
+                          <div className="mt-3 font-semibold text-brand-950">Drag and drop or browse</div>
+                          <p className="mt-1 text-sm text-slate-500">{config.helper}</p>
+                          {asset?.name ? (
+                            <div className="mt-3 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
+                              {asset.name} · {formatFileSize(asset.size)}
+                            </div>
+                          ) : null}
+                        </label>
+                        <div className="mt-4 rounded-2xl border border-ice-200 bg-white p-3">
+                          <div className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Preview</div>
+                          {isVideoField ? (
+                            preview ? (
+                              <video src={preview} controls className="h-40 w-full rounded-2xl object-cover" />
+                            ) : (
+                              <div className="flex h-40 items-center justify-center rounded-2xl bg-ice-50 text-xs text-slate-400">
+                                No video uploaded
+                              </div>
+                            )
+                          ) : (
+                            <img src={preview || selectedListing?.image} alt={`${listingForm.name} ${config.label.toLowerCase()}`} className="h-40 w-full rounded-2xl object-cover" />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <label className="form-label" htmlFor="videoUrl">Video Walkthrough URL</label>
-                    <input id="videoUrl" name="videoUrl" value={listingForm.videoUrl} onChange={handleListingFieldChange} className="form-input" placeholder="https://youtube.com/..." />
-                    <label className="form-label mt-3" htmlFor="videoUpload">{MEDIA_FIELD_CONFIG.videoUrl.label}</label>
-                    <input
-                      id="videoUpload"
-                      type="file"
-                      accept={MEDIA_FIELD_CONFIG.videoUrl.accept}
-                      onChange={(event) => handleMediaUpload('videoUrl', event)}
-                      className="form-input"
-                    />
-                    <button type="button" onClick={() => clearMediaField('videoUrl')} className="mt-2 text-xs font-semibold text-rose-600">
-                      Delete / Replace video media
-                    </button>
-                    <p className="mt-2 text-xs text-slate-400">{MEDIA_FIELD_CONFIG.videoUrl.helper}</p>
-                  </div>
-                  <div>
-                    <label className="form-label" htmlFor="schedule">Schedule</label>
-                    <input id="schedule" name="schedule" value={listingForm.schedule} onChange={handleListingFieldChange} className="form-input" placeholder="Daily check-in from 3:00 PM" />
-                    <p className="mt-2 text-xs text-slate-400">Use this for check-in, check-out, weekday availability, or blackout notes.</p>
-                  </div>
+                <div>
+                  <label className="form-label" htmlFor="schedule">Schedule</label>
+                  <input id="schedule" name="schedule" value={listingForm.schedule} onChange={handleListingFieldChange} className="form-input" placeholder="Daily check-in from 3:00 PM" />
+                  <p className="mt-2 text-xs text-slate-400">Use this for check-in, check-out, weekday availability, or blackout notes.</p>
                 </div>
                 <div>
                   <label className="form-label" htmlFor="facilitiesText">Facilities</label>
@@ -1064,37 +1377,14 @@ export function DashboardPage({
                   />
                   <p className="mt-2 text-xs text-slate-400">Separate facilities with commas so they publish as client-facing tags.</p>
                 </div>
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                  <div className="rounded-2xl border border-ice-200 p-3">
-                    <div className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Hero Preview</div>
-                    <img src={getMediaPreview('image') || selectedListing?.image} alt={`${listingForm.name} hero preview`} className="h-28 w-full rounded-xl object-cover" />
-                  </div>
-                  <div className="rounded-2xl border border-ice-200 p-3">
-                    <div className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Summary Preview</div>
-                    <img src={getMediaPreview('summaryImage') || selectedListing?.summaryImage} alt={`${listingForm.name} summary preview`} className="h-28 w-full rounded-xl object-cover" />
-                  </div>
-                  <div className="rounded-2xl border border-ice-200 p-3">
-                    <div className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Thumbnail Preview</div>
-                    <img src={getMediaPreview('thumbnail') || selectedListing?.thumbnail} alt={`${listingForm.name} thumbnail preview`} className="h-28 w-full rounded-xl object-cover" />
-                  </div>
-                  <div className="rounded-2xl border border-ice-200 p-3">
-                    <div className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Video Preview</div>
-                    {getMediaPreview('videoUrl') || selectedListing?.videoUrl ? (
-                      <video
-                        src={getMediaPreview('videoUrl') || selectedListing?.videoUrl}
-                        controls
-                        className="h-28 w-full rounded-xl object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-28 items-center justify-center rounded-xl bg-ice-50 text-xs text-slate-400">
-                        No video uploaded
-                      </div>
-                    )}
-                  </div>
-                </div>
                 {uploadError ? (
                   <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">
                     {uploadError}
+                  </div>
+                ) : null}
+                {studioMessage ? (
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                    {studioMessage}
                   </div>
                 ) : null}
                 <div className="grid gap-4 md:grid-cols-2">
@@ -1110,7 +1400,8 @@ export function DashboardPage({
                 <div className="rounded-2xl bg-ice-50 p-4 text-sm text-slate-500">
                   Changes here update the public staycation cards and the booking flow because management is now the source of truth for listing content.
                   {isUploadingMedia ? ` Uploading ${MEDIA_FIELD_CONFIG[isUploadingMedia]?.label.toLowerCase()}...` : ''}
-                  {!isUploadingMedia && Object.keys(pendingMediaFiles).length ? ' Ready to sync uploaded files on save.' : ''}
+                  {isBulkUploading ? ' Processing the bulk upload queue...' : ''}
+                  {!isUploadingMedia && !isBulkUploading && Object.keys(pendingMediaFiles).length ? ' Ready to sync uploaded files on save.' : ''}
                 </div>
                 <button type="submit" disabled={isSavingListing} className="btn-primary w-full py-4 text-base disabled:cursor-not-allowed disabled:opacity-60">
                   {isSavingListing ? 'Saving Listing…' : 'Save Listing Update'}

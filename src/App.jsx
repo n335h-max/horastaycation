@@ -1,8 +1,10 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { SiteFooter, SiteHeader, ToastStack } from './components/SiteChrome';
 import { FEATURED_PROPERTIES } from './data/siteData';
 import { getMediaObjectUrl, revokeMediaObjectUrls } from './lib/mediaStorage';
+import { DEFAULT_COOKIE_PREFERENCES, readCookiePreferences, saveCookiePreferences } from './lib/privacyPreferences';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import { validateWithSchema, bookingSchema, paymentSchema } from './lib/validation';
 import { APP_PATHS, getPageFromPath, getPathFromPage } from './lib/routes';
@@ -19,10 +21,11 @@ import {
 } from './services/horaApi';
 import {
   getCurrentSession,
-  getResolvedUserRole,
+  getResolvedAuthState,
   getUserProfile,
   signInWithGoogle,
   signOutCurrentUser,
+  switchUserRole,
   syncUserProfile,
 } from './services/authApi';
 
@@ -48,17 +51,20 @@ const BookingPageRoute = lazy(() =>
 const ReviewPageRoute = lazy(() =>
   import('./pages/ReviewPageRoute').then((module) => ({ default: module.ReviewPageRoute })),
 );
-const ManagementLoginPageRoute = lazy(() =>
-  import('./pages/ManagementLoginPageRoute').then((module) => ({ default: module.ManagementLoginPageRoute })),
-);
 const DashboardPageRoute = lazy(() =>
   import('./pages/DashboardPageRoute').then((module) => ({ default: module.DashboardPageRoute })),
 );
 const SuccessPageRoute = lazy(() =>
   import('./pages/SuccessPageRoute').then((module) => ({ default: module.SuccessPageRoute })),
 );
+const PrivacyPolicyPageRoute = lazy(() =>
+  import('./pages/PrivacyPolicyPageRoute').then((module) => ({ default: module.PrivacyPolicyPageRoute })),
+);
 const PaymentModal = lazy(() =>
   import('./components/PaymentModal').then((module) => ({ default: module.PaymentModal })),
+);
+const AuthLoginPageRoute = lazy(() =>
+  import('./pages/AuthLoginPageRoute').then((module) => ({ default: module.AuthLoginPageRoute })),
 );
 
 function RouteLoadingFallback() {
@@ -109,10 +115,66 @@ function useFormatters() {
   };
 }
 
+const ROLE_DEFAULT_PATHS = {
+  owner: APP_PATHS.ownerSignup,
+  client: APP_PATHS.booking,
+  management: APP_PATHS.dashboard,
+};
+
+function getDefaultPathForRole(role) {
+  return ROLE_DEFAULT_PATHS[role] || APP_PATHS.booking;
+}
+
+function getSafeNextPath(nextPath, role) {
+  if (typeof nextPath === 'string' && nextPath.startsWith('/') && !nextPath.startsWith('//')) {
+    return nextPath;
+  }
+
+  return getDefaultPathForRole(role);
+}
+
+function buildAuthPath(role, nextPath) {
+  const params = new URLSearchParams();
+  params.set('role', role);
+  params.set('next', getSafeNextPath(nextPath, role));
+  return `${APP_PATHS.authLogin}?${params.toString()}`;
+}
+
+function getRouteRole(pathname) {
+  if (pathname === APP_PATHS.ownerSignup || pathname === APP_PATHS.ownerDashboard) {
+    return 'owner';
+  }
+
+  if (pathname === APP_PATHS.booking) {
+    return 'client';
+  }
+
+  if (pathname === APP_PATHS.dashboard) {
+    return 'management';
+  }
+
+  return null;
+}
+
+function RoleProtectedRoute({ authUser, availableRoles, requiredRole, fallbackPath, children }) {
+  if (!authUser) {
+    return <Navigate to={fallbackPath} replace />;
+  }
+
+  if (!availableRoles.includes(requiredRole)) {
+    return <Navigate to={fallbackPath} replace />;
+  }
+
+  return children;
+}
+
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const activePage = getPageFromPath(location.pathname);
+  const authSearchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const requestedAuthRole = authSearchParams.get('role') || authSearchParams.get('auth_role') || 'client';
+  const requestedNextPath = authSearchParams.get('next') || '';
   const [mobileOpen, setMobileOpen] = useState(false);
   const [toasts, setToasts] = useState([]);
   const [store, setStore] = useState(() => getSnapshot());
@@ -126,9 +188,12 @@ export default function App() {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [resolvedListings, setResolvedListings] = useState([]);
+  const [cookiePreferences, setCookiePreferences] = useState(() => readCookiePreferences());
+  const [cookieBannerOpen, setCookieBannerOpen] = useState(() => !readCookiePreferences());
   const [authSession, setAuthSession] = useState(null);
   const [authProfile, setAuthProfile] = useState(null);
   const [authRole, setAuthRole] = useState('client');
+  const [availableRoles, setAvailableRoles] = useState(['client']);
   const [isAuthLoading, setIsAuthLoading] = useState(Boolean(isSupabaseConfigured));
 
   const { formatCurrency, formatCompactNumber, formatDate } = useFormatters();
@@ -213,6 +278,7 @@ export default function App() {
       if (!session?.user) {
         setAuthProfile(null);
         setAuthRole('client');
+        setAvailableRoles(['client']);
         setIsAuthLoading(false);
         return;
       }
@@ -224,7 +290,9 @@ export default function App() {
       }
 
       setAuthProfile(profile);
-      setAuthRole(getResolvedUserRole(session, profile));
+      const authState = getResolvedAuthState(session, profile);
+      setAuthRole(authState.activeRole);
+      setAvailableRoles(authState.availableRoles);
       setIsAuthLoading(false);
     }
 
@@ -242,6 +310,7 @@ export default function App() {
       if (!session?.user) {
         setAuthProfile(null);
         setAuthRole('client');
+        setAvailableRoles(['client']);
         return;
       }
 
@@ -252,7 +321,9 @@ export default function App() {
       }
 
       setAuthProfile(profile);
-      setAuthRole(getResolvedUserRole(session, profile));
+      const authState = getResolvedAuthState(session, profile);
+      setAuthRole(authState.activeRole);
+      setAvailableRoles(authState.availableRoles);
     });
 
     return () => {
@@ -271,33 +342,22 @@ export default function App() {
 
       const params = new URLSearchParams(location.search);
       const requestedRole = params.get('auth_role');
+      const nextPath = params.get('next');
 
       if (!requestedRole) {
         return;
       }
 
-      const resolvedRole = await syncUserProfile(authSession, requestedRole);
+      const authState = await syncUserProfile(authSession, requestedRole);
 
-      if (!isActive) {
+      if (!isActive || !authState) {
         return;
       }
 
-      const profile = await getUserProfile(authSession.user.id);
-
-      if (!isActive) {
-        return;
-      }
-
-      setAuthProfile(profile);
-      setAuthRole(resolvedRole);
-      params.delete('auth_role');
-      navigate(
-        {
-          pathname: location.pathname,
-          search: params.toString() ? `?${params.toString()}` : '',
-        },
-        { replace: true },
-      );
+      setAuthProfile(authState.profile);
+      setAuthRole(authState.activeRole);
+      setAvailableRoles(authState.availableRoles);
+      navigate(getSafeNextPath(nextPath, authState.activeRole), { replace: true });
       pushToast(
         requestedRole === 'management'
           ? 'Google sign-in complete. Management access is now checked against the allowed email list.'
@@ -315,14 +375,36 @@ export default function App() {
   }, [authSession, location.pathname, location.search, navigate]);
 
   useEffect(() => {
-    if (!authSession?.user) {
+    if (!authSession?.user || !availableRoles.length) {
       return;
     }
 
-    if (location.pathname === APP_PATHS.managementLogin && authRole === 'management') {
-      navigate(APP_PATHS.dashboard, { replace: true });
+    const routeRole = getRouteRole(location.pathname);
+
+    if (!routeRole || routeRole === authRole || !availableRoles.includes(routeRole)) {
+      return;
     }
-  }, [authRole, authSession, location.pathname, navigate]);
+
+    let isActive = true;
+
+    async function syncRoleToRoute() {
+      const nextAuthState = await switchUserRole(authSession, routeRole);
+
+      if (!isActive || !nextAuthState) {
+        return;
+      }
+
+      setAuthProfile(nextAuthState.profile);
+      setAuthRole(nextAuthState.activeRole);
+      setAvailableRoles(nextAuthState.availableRoles);
+    }
+
+    syncRoleToRoute();
+
+    return () => {
+      isActive = false;
+    };
+  }, [authRole, authSession, availableRoles, location.pathname]);
 
   useEffect(() => {
     let isActive = true;
@@ -389,6 +471,36 @@ export default function App() {
 
   function showPage(page) {
     navigate(getPathFromPage(page));
+  }
+
+  function handleCookiePreferenceChange(preferences) {
+    const nextPreferences = saveCookiePreferences(preferences);
+    setCookiePreferences(nextPreferences);
+    setCookieBannerOpen(false);
+    return nextPreferences;
+  }
+
+  function handleAcceptAllCookies() {
+    handleCookiePreferenceChange({
+      essential: true,
+      analytics: true,
+      personalization: true,
+    });
+    pushToast('Cookie preferences updated. Optional analytics and personalization are enabled.', 'success', 'lock');
+  }
+
+  function handleEssentialOnlyCookies() {
+    handleCookiePreferenceChange({
+      essential: true,
+      analytics: false,
+      personalization: false,
+    });
+    pushToast('Cookie preferences updated. Only essential storage stays active.', 'info', 'lock');
+  }
+
+  function handleManageCookies() {
+    setCookieBannerOpen(true);
+    navigate(APP_PATHS.privacyPolicy);
   }
 
   function scrollToSection(sectionId, closeMobile = false) {
@@ -603,10 +715,43 @@ export default function App() {
     return false;
   }
 
-  async function handleGoogleSignIn(role, redirectPath) {
+  function openAuthPage(role = 'client', nextPath) {
+    navigate(buildAuthPath(role, nextPath || location.pathname));
+  }
+
+  async function handleGoogleSignIn(role, nextPath) {
     setIsLoggingIn(true);
-    await signInWithGoogle(role, redirectPath);
+    const result = await signInWithGoogle(role, buildAuthPath(role, nextPath));
+    if (!result?.started) {
+      pushToast('Google sign-in is unavailable until Supabase is configured.', 'warning', 'lock');
+    }
     setIsLoggingIn(false);
+  }
+
+  async function handleRoleSelect(role, nextPath, options = {}) {
+    if (!authSession?.user) {
+      await handleGoogleSignIn(role, nextPath);
+      return;
+    }
+
+    const nextAuthState = await switchUserRole(authSession, role);
+
+    if (!nextAuthState) {
+      return;
+    }
+
+    setAuthProfile(nextAuthState.profile);
+    setAuthRole(nextAuthState.activeRole);
+    setAvailableRoles(nextAuthState.availableRoles);
+
+    if (!options.silent) {
+      pushToast(`Switched to ${nextAuthState.activeRole} role.`, 'success', 'lock');
+    }
+
+    const targetPath = getSafeNextPath(nextPath, nextAuthState.activeRole);
+    if (options.navigate !== false && location.pathname !== targetPath) {
+      navigate(targetPath);
+    }
   }
 
   async function handleManagementListingSave(values) {
@@ -652,7 +797,8 @@ export default function App() {
   const showFooter =
     location.pathname !== APP_PATHS.dashboard &&
     location.pathname !== APP_PATHS.ownerDashboard &&
-    location.pathname !== APP_PATHS.managementLogin;
+    location.pathname !== APP_PATHS.managementLogin &&
+    location.pathname !== APP_PATHS.authLogin;
 
   return (
     <>
@@ -666,6 +812,10 @@ export default function App() {
         onScrollToSection={scrollToSection}
         authUser={authSession?.user}
         authRole={authRole}
+        availableRoles={availableRoles}
+        onRoleSwitch={(role) => handleRoleSelect(role, getDefaultPathForRole(role))}
+        onOpenAuth={() => openAuthPage('client', APP_PATHS.booking)}
+        onSignOut={handleSignOut}
       />
 
       <main id="main-content">
@@ -684,6 +834,32 @@ export default function App() {
               }
             />
             <Route
+              path={APP_PATHS.privacyPolicy}
+              element={
+                <PrivacyPolicyPageRoute
+                  onShowPage={showPage}
+                  onManageCookies={() => setCookieBannerOpen(true)}
+                />
+              }
+            />
+            <Route
+              path={APP_PATHS.authLogin}
+              element={
+                <AuthLoginPageRoute
+                  authUser={authSession?.user}
+                  authRole={authRole}
+                  availableRoles={availableRoles}
+                  isSubmitting={isLoggingIn}
+                  isAuthLoading={isAuthLoading}
+                  requestedRole={requestedAuthRole}
+                  nextPath={requestedNextPath}
+                  onSelectRole={(role) => handleRoleSelect(role, requestedNextPath || getDefaultPathForRole(role))}
+                  onShowPage={showPage}
+                  onSignOut={handleSignOut}
+                />
+              }
+            />
+            <Route
               path={APP_PATHS.ownerSignup}
               element={
                 <OwnerSignupPageRoute
@@ -692,15 +868,21 @@ export default function App() {
                   isSubmitting={isSubmittingOwner}
                   authUser={authSession?.user}
                   authRole={authRole}
+                  availableRoles={availableRoles}
                   isAuthLoading={isAuthLoading}
-                  onGoogleSignIn={() => handleGoogleSignIn('owner', APP_PATHS.ownerSignup)}
+                  onOpenAuth={() => openAuthPage('owner', APP_PATHS.ownerSignup)}
                 />
               }
             />
             <Route
               path={APP_PATHS.ownerDashboard}
               element={
-                authSession?.user && authRole === 'owner' ? (
+                <RoleProtectedRoute
+                  authUser={authSession?.user}
+                  availableRoles={availableRoles}
+                  requiredRole="owner"
+                  fallbackPath={buildAuthPath('owner', APP_PATHS.ownerDashboard)}
+                >
                   <OwnerDashboardPageRoute
                     ownerApplications={store.ownerApplications}
                     bookingTransactions={store.bookingTransactions}
@@ -710,9 +892,7 @@ export default function App() {
                     authUser={authSession?.user}
                     formatCurrency={formatCurrency}
                   />
-                ) : (
-                  <Navigate to={APP_PATHS.ownerSignup} replace />
-                )
+                </RoleProtectedRoute>
               }
             />
             <Route
@@ -731,8 +911,9 @@ export default function App() {
                   formatDate={formatDate}
                   authUser={authSession?.user}
                   authRole={authRole}
+                  availableRoles={availableRoles}
                   isAuthLoading={isAuthLoading}
-                  onGoogleSignIn={() => handleGoogleSignIn('client', APP_PATHS.booking)}
+                  onOpenAuth={() => openAuthPage('client', APP_PATHS.booking)}
                 />
               }
             />
@@ -742,17 +923,7 @@ export default function App() {
             />
             <Route
               path={APP_PATHS.managementLogin}
-              element={
-                <ManagementLoginPageRoute
-                  onShowPage={showPage}
-                  isSubmitting={isLoggingIn}
-                  authUser={authSession?.user}
-                  authRole={authRole}
-                  isAuthLoading={isAuthLoading}
-                  onGoogleSignIn={() => handleGoogleSignIn('management', APP_PATHS.managementLogin)}
-                  onSignOut={handleSignOut}
-                />
-              }
+              element={<Navigate to={buildAuthPath('management', APP_PATHS.dashboard)} replace />}
             />
             <Route path={APP_PATHS.bookingSuccess} element={<SuccessPageRoute variant="booking" onShowPage={showPage} />} />
             <Route path={APP_PATHS.ownerSuccess} element={<SuccessPageRoute variant="owner" onShowPage={showPage} />} />
@@ -760,7 +931,12 @@ export default function App() {
             <Route
               path={APP_PATHS.dashboard}
               element={
-                authSession?.user && authRole === 'management' ? (
+                <RoleProtectedRoute
+                  authUser={authSession?.user}
+                  availableRoles={availableRoles}
+                  requiredRole="management"
+                  fallbackPath={buildAuthPath('management', APP_PATHS.dashboard)}
+                >
                   <DashboardPageRoute
                     listings={dashboardListings}
                     bookings={store.dashboardBookings}
@@ -777,9 +953,7 @@ export default function App() {
                     authUser={authSession?.user}
                     formatCurrency={formatCurrency}
                   />
-                ) : (
-                  <Navigate to={APP_PATHS.managementLogin} replace />
-                )
+                </RoleProtectedRoute>
               }
             />
             <Route path="*" element={<Navigate to={APP_PATHS.landing} replace />} />
@@ -787,7 +961,7 @@ export default function App() {
         </Suspense>
       </main>
 
-      {showFooter ? <SiteFooter onShowPage={showPage} /> : null}
+      {showFooter ? <SiteFooter onShowPage={showPage} onManageCookies={handleManageCookies} /> : null}
 
       {paymentOpen && bookingSummary ? (
         <Suspense fallback={<ModalLoadingFallback />}>
@@ -804,6 +978,14 @@ export default function App() {
           />
         </Suspense>
       ) : null}
+
+      <CookieConsentBanner
+        open={cookieBannerOpen}
+        preferences={cookiePreferences || DEFAULT_COOKIE_PREFERENCES}
+        onAcceptAll={handleAcceptAllCookies}
+        onEssentialOnly={handleEssentialOnlyCookies}
+        onManagePrivacy={() => navigate(APP_PATHS.privacyPolicy)}
+      />
     </>
   );
 }

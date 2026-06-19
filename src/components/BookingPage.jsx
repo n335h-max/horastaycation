@@ -14,12 +14,13 @@ export function BookingPage({
   formatDate,
   authUser,
   authRole,
+  availableRoles = ['client'],
   isAuthLoading,
-  onGoogleSignIn,
+  onOpenAuth,
 }) {
-  const googleConnected = Boolean(authUser && authRole === 'client');
+  const googleConnected = Boolean(authUser && availableRoles.includes('client'));
   const steps = [
-    { number: '01', label: 'Google Client Sign-In' },
+    { number: '01', label: 'Unified Sign-In' },
     { number: '02', label: 'Browse Staycations' },
     { number: '03', label: 'Guest & Stay Details' },
     { number: '04', label: 'Payment' },
@@ -35,7 +36,7 @@ export function BookingPage({
 
         <div className="mb-8">
           <h1 className="font-display text-4xl font-bold text-brand-950 md:text-5xl">Book Your Staycation</h1>
-          <p className="mt-3 text-lg text-slate-600">This client flow starts with Google sign-in, then lets the guest browse placeholder staycations and book with a Booking.com or Airbnb-style structure.</p>
+          <p className="mt-3 text-lg text-slate-600">Sign in once, switch to the client role, then browse staycations and complete the booking flow without juggling separate login entry points.</p>
         </div>
 
         <div className="mb-8 rounded-3xl border border-brand-100 bg-white p-5 shadow-sm">
@@ -87,7 +88,7 @@ export function BookingPage({
               Client Role
             </div>
             <h2 className="font-display text-3xl font-bold text-brand-950">Sign in as Client</h2>
-            <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-600">After the guest continues with Google, the booking flow opens and they can browse the staycation choices below as a client.</p>
+            <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-600">Use the unified login to choose the client role. Hora remembers your session and sends you straight back to listings after Google sign-in.</p>
             <div className="mt-6 grid gap-4 md:grid-cols-3">
               {properties.map((property) => (
                 <div key={property.id} className="rounded-2xl border border-ice-200 bg-ice-50 p-4">
@@ -104,9 +105,9 @@ export function BookingPage({
                 Signed in as {authUser.email}
               </div>
             ) : null}
-            <button type="button" onClick={onGoogleSignIn} disabled={isSubmitting || isAuthLoading} className="btn-primary mt-8 w-full py-4 text-base disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60">
+            <button type="button" onClick={onOpenAuth} disabled={isSubmitting || isAuthLoading} className="btn-primary mt-8 w-full py-4 text-base disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60">
               <span className="inline-flex items-center gap-2">
-                {isSubmitting || isAuthLoading ? 'Opening Google Sign-In…' : 'Continue With Google as Client'}
+                {isSubmitting || isAuthLoading ? 'Opening unified sign-in...' : 'Continue to Unified Sign-In'}
                 <Icon name="arrow-right" />
               </span>
             </button>
@@ -118,7 +119,7 @@ export function BookingPage({
                 <div className="rounded-2xl border border-ice-200 bg-white p-6 shadow-md">
                   <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-brand-900 px-4 py-2 text-sm font-semibold text-white">
                     <Icon name="lock" />
-                    Signed in as Client
+                    Active role: {authRole.charAt(0).toUpperCase() + authRole.slice(1)}
                   </div>
                   <h2 className="mb-4 font-display text-xl font-bold text-brand-900">Browse Staycation Choices</h2>
                   <p className="mb-5 text-sm text-slate-500">These are placeholder choices for now. Later you can replace them with your real staycation listings.</p>

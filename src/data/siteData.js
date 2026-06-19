@@ -57,6 +57,39 @@ export const FEATURE_PILLARS = [
   },
 ];
 
+export const PLATFORM_FEATURES = [
+  {
+    title: 'Search Bar',
+    description: 'Users expect to search by location and date before they decide where to stay.',
+    implementation: 'Elastic Search or Algolia',
+    icon: 'location',
+  },
+  {
+    title: 'Wishlist',
+    description: 'Lets guests save favorite properties for later and return with higher booking intent.',
+    implementation: 'Heart icon with user account storage',
+    icon: 'star',
+  },
+  {
+    title: 'Chat Support',
+    description: 'Answers guest questions faster during browsing and booking.',
+    implementation: 'Intercom or Zendesk integration',
+    icon: 'email',
+  },
+  {
+    title: 'Mobile App',
+    description: 'About 60% of bookings happen on mobile, so the experience needs a strong mobile-first flow.',
+    implementation: 'React Native app or PWA',
+    icon: 'bars',
+  },
+  {
+    title: 'Analytics',
+    description: 'Tracks bookings, revenue, and user behavior so the business can improve conversion.',
+    implementation: 'Google Analytics plus a custom dashboard',
+    icon: 'chart',
+  },
+];
+
 export const STATS = [
   { label: 'Projects Shown', value: 7 },
   { label: 'Core HORA Values', value: 4 },

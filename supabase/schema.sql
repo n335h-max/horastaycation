@@ -80,9 +80,18 @@ create table if not exists public.user_profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text not null default '',
   full_name text not null default '',
+  available_roles text[] not null default array['client'],
   preferred_role text not null default 'client',
   updated_at timestamptz not null default now()
 );
+
+alter table public.user_profiles
+add column if not exists available_roles text[] not null default array['client'];
+
+update public.user_profiles
+set available_roles = array[preferred_role, 'client']
+where available_roles is null
+   or array_length(available_roles, 1) is null;
 
 alter table public.owner_applications enable row level security;
 alter table public.review_submissions enable row level security;

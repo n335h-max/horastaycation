@@ -6,6 +6,7 @@ import {
   FEATURE_PILLARS,
   HORA_VALUES,
   OWNER_BENEFITS,
+  PLATFORM_FEATURES,
   PREVIOUS_PROJECTS,
   STARTING_PACKAGE,
   STATS,
@@ -34,6 +35,22 @@ function PillarCard({ pillar }) {
       </div>
       <h3 className="font-display text-lg font-bold text-brand-900">{pillar.title}</h3>
       <p className="mt-2 text-sm leading-relaxed text-slate-500">{pillar.description}</p>
+    </article>
+  );
+}
+
+function PlatformFeatureCard({ feature }) {
+  return (
+    <article className="rounded-3xl border border-brand-100 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+      <div className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
+        <Icon name={feature.icon} className="text-xl" />
+      </div>
+      <h3 className="font-display text-2xl font-bold text-brand-950">{feature.title}</h3>
+      <p className="mt-3 text-sm leading-relaxed text-slate-500">{feature.description}</p>
+      <div className="mt-5 rounded-2xl bg-ice-50 px-4 py-3">
+        <div className="text-xs font-semibold uppercase tracking-[0.22em] text-brand-500">Implementation</div>
+        <div className="mt-2 text-sm font-medium text-brand-900">{feature.implementation}</div>
+      </div>
     </article>
   );
 }
@@ -180,6 +197,23 @@ export function LandingPage({ onShowPage, onScrollToSection, featuredProperties 
           <div className="grid gap-8 md:grid-cols-3">
             {FEATURE_PILLARS.map((pillar) => (
               <PillarCard key={pillar.title} pillar={pillar} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white py-24">
+        <div className="mx-auto max-w-7xl px-4 md:px-8">
+          <div className="mx-auto mb-12 max-w-3xl text-center">
+            <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-brand-500">Platform Roadmap</p>
+            <h2 className="font-display text-4xl font-bold text-brand-950 md:text-5xl">Features Planned for HoraStaycation.co</h2>
+            <p className="mt-4 text-lg leading-relaxed text-slate-600">
+              These are the product features that strengthen discovery, conversion, support, mobile booking, and business reporting.
+            </p>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {PLATFORM_FEATURES.map((feature) => (
+              <PlatformFeatureCard key={feature.title} feature={feature} />
             ))}
           </div>
         </div>

@@ -1,5 +1,7 @@
 export const APP_PATHS = {
   landing: '/',
+  privacyPolicy: '/privacy',
+  authLogin: '/auth/login',
   ownerSignup: '/owners/apply',
   ownerDashboard: '/owners/dashboard',
   ownerSuccess: '/owners/success',
@@ -13,6 +15,10 @@ export const APP_PATHS = {
 
 export function getPageFromPath(pathname) {
   switch (pathname) {
+    case APP_PATHS.authLogin:
+      return 'auth-login';
+    case APP_PATHS.privacyPolicy:
+      return 'privacy-policy';
     case APP_PATHS.ownerSignup:
       return 'owner-signup';
     case APP_PATHS.ownerDashboard:
@@ -38,6 +44,10 @@ export function getPageFromPath(pathname) {
 
 export function getPathFromPage(page) {
   switch (page) {
+    case 'auth-login':
+      return APP_PATHS.authLogin;
+    case 'privacy-policy':
+      return APP_PATHS.privacyPolicy;
     case 'owner-signup':
       return APP_PATHS.ownerSignup;
     case 'owner-dashboard':
