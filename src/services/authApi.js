@@ -90,6 +90,7 @@ export async function syncUserProfile(session, requestedRole) {
     id: session.user.id,
     email,
     full_name: fullName,
+    available_roles: getPersistedAvailableRoles(existingProfile, role),
     preferred_role: getPersistedPreferredRole(existingProfile, role),
     updated_at: new Date().toISOString(),
   };
@@ -152,6 +153,7 @@ export async function switchUserRole(session, nextRole) {
         profile?.full_name ||
         session.user.email ||
         '',
+      available_roles: getPersistedAvailableRoles(profile, requestedRole),
       preferred_role: requestedRole,
       updated_at: new Date().toISOString(),
     };
@@ -184,6 +186,15 @@ function getPersistedPreferredRole(profile, requestedRole) {
   }
 
   return requestedRole;
+}
+
+function getPersistedAvailableRoles(profile, requestedRole) {
+  return normalizeRoles([
+    'client',
+    ...(requestedRole && requestedRole !== 'management' ? [requestedRole] : []),
+    ...(Array.isArray(profile?.available_roles) ? profile.available_roles : []),
+    profile?.preferred_role,
+  ]);
 }
 
 function getAvailableRoles(session, profile, requestedRole) {

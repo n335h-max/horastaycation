@@ -70,6 +70,24 @@ async function upsertRemote(table, payload, onConflict = 'id') {
   };
 }
 
+async function updateRemote(table, payload, matchField, matchValue) {
+  if (!isSupabaseConfigured || !supabase) {
+    return { saved: false, error: null, data: null };
+  }
+
+  const { data, error } = await supabase
+    .from(table)
+    .update(payload)
+    .eq(matchField, matchValue)
+    .select();
+
+  return {
+    saved: !error,
+    error,
+    data: data ?? null,
+  };
+}
+
 async function deleteRemote(table, matchField, matchValue) {
   if (!isSupabaseConfigured || !supabase) {
     return { saved: false, error: null };
@@ -77,6 +95,18 @@ async function deleteRemote(table, matchField, matchValue) {
 
   const { error } = await supabase.from(table).delete().eq(matchField, matchValue);
   return { saved: !error, error };
+}
+
+async function getAuthenticatedUser() {
+  if (!isSupabaseConfigured || !supabase) {
+    return null;
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  return user || null;
 }
 
 function sanitizeStorageSegment(value) {
@@ -204,6 +234,7 @@ function toRemoteManagementListing(listing) {
     blocked_dates: Array.isArray(listing.blockedDates) ? listing.blockedDates : [],
     is_deleted: Boolean(listing.isDeleted),
     amenities: Array.isArray(listing.amenities) ? listing.amenities : [],
+    updated_by: listing.updatedBy || null,
     updated_at: new Date().toISOString(),
   };
 }
@@ -355,6 +386,7 @@ export async function saveBookingDraft(draft) {
 
 export async function saveManagementListing(listingInput) {
   const store = loadStore();
+  const currentUser = await getAuthenticatedUser();
   const mediaFiles = listingInput.mediaFiles || {};
   const listing = normalizeListingPayload(listingInput);
   const uploadFields = Object.entries(mediaFiles).filter(([, file]) => file instanceof File);
@@ -392,6 +424,8 @@ export async function saveManagementListing(listingInput) {
     }
   });
 
+  remoteListing.updatedBy = currentUser?.id || null;
+
   const remote = await upsertRemote('management_listings', toRemoteManagementListing(remoteListing));
   const savedListing = remote.saved && remote.data?.[0]
     ? fromRemoteManagementListing(remote.data[0])
@@ -421,6 +455,7 @@ export async function saveManagementListing(listingInput) {
 
 export async function deleteManagementListing(listingId) {
   const store = loadStore();
+  const currentUser = await getAuthenticatedUser();
   const existingListing = store.managementListings.find((listing) => listing.id === listingId);
 
   if (!existingListing) {
@@ -429,8 +464,14 @@ export async function deleteManagementListing(listingId) {
 
   const isDefaultListing = FEATURED_PROPERTIES.some((listing) => listing.id === listingId);
   const remote = isDefaultListing
-    ? await upsertRemote('management_listings', toRemoteManagementListing({ ...existingListing, isDeleted: true }))
-    : await upsertRemote('management_listings', toRemoteManagementListing({ ...existingListing, isDeleted: true }));
+    ? await upsertRemote(
+        'management_listings',
+        toRemoteManagementListing({ ...existingListing, isDeleted: true, updatedBy: currentUser?.id || null }),
+      )
+    : await upsertRemote(
+        'management_listings',
+        toRemoteManagementListing({ ...existingListing, isDeleted: true, updatedBy: currentUser?.id || null }),
+      );
 
   store.managementListings = mergeManagementListings(
     store.managementListings
@@ -461,7 +502,7 @@ export async function updateBookingTransactionStatus(bookingId, bookingStatus) {
   }));
   saveStore(store);
 
-  const remote = await upsertRemote('booking_transactions', { id: bookingId, booking_status: bookingStatus });
+  const remote = await updateRemote('booking_transactions', { booking_status: bookingStatus }, 'id', bookingId);
   await delay();
 
   return { store, remote };
@@ -469,6 +510,7 @@ export async function updateBookingTransactionStatus(bookingId, bookingStatus) {
 
 export async function submitOwnerApplication(application) {
   const store = loadStore();
+  const currentUser = await getAuthenticatedUser();
   const record = { id: crypto.randomUUID(), submittedAt: new Date().toISOString(), ...application };
   store.ownerApplications = [
     record,
@@ -482,6 +524,7 @@ export async function submitOwnerApplication(application) {
   const ownerNameParts = application.ownerName.trim().split(/\s+/);
   const nightlyBudget = Number.parseFloat(String(application.budget).replace(/[^\d.]/g, ''));
   const remote = await insertRemote('owner_applications', {
+    owner_user_id: currentUser?.id || null,
     owner_first_name: ownerNameParts[0] || application.ownerName,
     owner_last_name: ownerNameParts.slice(1).join(' ') || 'Owner',
     owner_email: application.ownerEmail,
@@ -527,6 +570,7 @@ export async function submitReview(review) {
 
 export async function submitBooking({ bookingForm, bookingSummary, paymentForm }) {
   const store = loadStore();
+  const currentUser = await getAuthenticatedUser();
   const guest = bookingForm.guestName || RANDOM_GUEST_NAMES[0];
 
   store.bookingTransactions = [
@@ -562,6 +606,7 @@ export async function submitBooking({ bookingForm, bookingSummary, paymentForm }
   store.bookingDraft = clone(initialBookingDraft);
   saveStore(store);
   const remote = await insertRemote('booking_transactions', {
+    client_user_id: currentUser?.id || null,
     property_id: bookingForm.property,
     property_name: bookingSummary.name,
     property_location: bookingSummary.location,
