@@ -744,6 +744,17 @@ export default function App() {
     setAuthRole(nextAuthState.activeRole);
     setAvailableRoles(nextAuthState.availableRoles);
 
+    if (!nextAuthState.availableRoles.includes(role) || nextAuthState.activeRole !== role) {
+      pushToast(
+        role === 'management'
+          ? 'Management access is limited to allowed emails.'
+          : `Unable to switch to ${role}.`,
+        'warning',
+        'lock',
+      );
+      return;
+    }
+
     if (!options.silent) {
       pushToast(`Switched to ${nextAuthState.activeRole} role.`, 'success', 'lock');
     }
@@ -814,7 +825,7 @@ export default function App() {
         authRole={authRole}
         availableRoles={availableRoles}
         onRoleSwitch={(role) => handleRoleSelect(role, getDefaultPathForRole(role))}
-        onOpenAuth={() => openAuthPage('client', APP_PATHS.booking)}
+        onOpenAuth={() => openAuthPage(getRouteRole(location.pathname) || 'client', location.pathname)}
         onSignOut={handleSignOut}
       />
 
