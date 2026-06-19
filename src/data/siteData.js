@@ -91,10 +91,10 @@ export const PLATFORM_FEATURES = [
 ];
 
 export const STATS = [
-  { label: 'Projects Shown', value: 7 },
-  { label: 'Core HORA Values', value: 4 },
-  { label: 'Featured Concepts', value: 5 },
-  { label: 'Starter Budget (RM)', value: 80, prefix: 'RM', suffix: 'K' },
+  { label: 'Happy Guests', value: 100 },
+  { label: 'Star Rated', value: 5, suffix: '' },
+  { label: 'Featured Escapes', value: 7 },
+  { label: 'Starter Builds', value: 80, prefix: 'RM', suffix: 'K+' },
 ];
 
 export const FEATURED_PROPERTIES = [
@@ -110,9 +110,9 @@ export const FEATURED_PROPERTIES = [
     statusNote: 'Proposal reference project',
     mood: 'Tiny-house comfort with clean landscape lines, peaceful lighting, and easy guest movement.',
     bestFor: 'Best for first Hora showcase',
-    image: 'https://picsum.photos/seed/ayer-keroh-hora/500/375.jpg',
-    summaryImage: 'https://picsum.photos/seed/ayer-keroh-hora/400/200.jpg',
-    thumbnail: 'https://picsum.photos/seed/ayer-keroh-hora/80/60.jpg',
+    image: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=modern%20tiny-house%20staycation%20in%20melaka%2C%20lush%20garden%2C%20warm%20evening%20lighting%2C%20premium%20hospitality%20photography%2C%20photorealistic&image_size=landscape_4_3',
+    summaryImage: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=modern%20tiny-house%20staycation%20in%20melaka%2C%20lush%20garden%2C%20warm%20evening%20lighting%2C%20premium%20hospitality%20photography%2C%20photorealistic&image_size=landscape_16_9',
+    thumbnail: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=modern%20tiny-house%20staycation%20in%20melaka%2C%20lush%20garden%2C%20warm%20evening%20lighting%2C%20premium%20hospitality%20photography%2C%20photorealistic&image_size=square',
     videoUrl: '',
     schedule: 'Daily check-in from 3:00 PM · Check-out before 11:00 AM',
     amenities: ['Tiny House', 'Modern Design', 'Landscape'],
@@ -129,9 +129,9 @@ export const FEATURED_PROPERTIES = [
     statusNote: 'Proposal reference project',
     mood: 'Resort-style lawn, pool, and outdoor gathering areas shaped for relaxed family stays.',
     bestFor: 'Best for poolside family stays',
-    image: 'https://picsum.photos/seed/sama-sama-tido-hora/500/375.jpg',
-    summaryImage: 'https://picsum.photos/seed/sama-sama-tido-hora/400/200.jpg',
-    thumbnail: 'https://picsum.photos/seed/sama-sama-tido-hora/80/60.jpg',
+    image: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=resort-style%20family%20staycation%20villa%20with%20pool%20and%20outdoor%20kitchen%2C%20tropical%20landscape%2C%20bright%20premium%20travel%20photo%2C%20photorealistic&image_size=landscape_4_3',
+    summaryImage: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=resort-style%20family%20staycation%20villa%20with%20pool%20and%20outdoor%20kitchen%2C%20tropical%20landscape%2C%20bright%20premium%20travel%20photo%2C%20photorealistic&image_size=landscape_16_9',
+    thumbnail: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=resort-style%20family%20staycation%20villa%20with%20pool%20and%20outdoor%20kitchen%2C%20tropical%20landscape%2C%20bright%20premium%20travel%20photo%2C%20photorealistic&image_size=square',
     videoUrl: '',
     schedule: 'Weekend priority stays · Check-in from 3:00 PM',
     amenities: ['Pool', 'BBQ Place', 'Outdoor Kitchen'],
@@ -148,9 +148,9 @@ export const FEATURED_PROPERTIES = [
     statusNote: 'Proposal reference project',
     mood: 'A stronger ambience-led direction with greenery, identity signage, and a memorable guest arrival feel.',
     bestFor: 'Best for concept-led branding',
-    image: 'https://picsum.photos/seed/bohejiwa-hora/500/375.jpg',
-    summaryImage: 'https://picsum.photos/seed/bohejiwa-hora/400/200.jpg',
-    thumbnail: 'https://picsum.photos/seed/bohejiwa-hora/80/60.jpg',
+    image: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=design-led%20beachfront%20staycation%20retreat%20with%20greenery%2C%20boutique%20branding%20moments%2C%20warm%20coastal%20light%2C%20photorealistic&image_size=landscape_4_3',
+    summaryImage: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=design-led%20beachfront%20staycation%20retreat%20with%20greenery%2C%20boutique%20branding%20moments%2C%20warm%20coastal%20light%2C%20photorealistic&image_size=landscape_16_9',
+    thumbnail: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=design-led%20beachfront%20staycation%20retreat%20with%20greenery%2C%20boutique%20branding%20moments%2C%20warm%20coastal%20light%2C%20photorealistic&image_size=square',
     videoUrl: '',
     schedule: 'Flexible weekday stays · Check-in from 2:00 PM',
     amenities: ['Ambience', 'Signboard', 'Marketing'],
@@ -399,6 +399,21 @@ export const GUEST_OPTIONS = [
   { value: '2', label: '2 Guests' },
   { value: '3', label: '3 Guests' },
   { value: '4', label: '4 Guests' },
+];
+
+export const BUDGET_OPTIONS = [
+  { value: 'RM 50,000 - RM 80,000', label: 'RM 50,000 - RM 80,000' },
+  { value: 'RM 80,000 - RM 120,000', label: 'RM 80,000 - RM 120,000' },
+  { value: 'RM 120,000 - RM 180,000', label: 'RM 120,000 - RM 180,000' },
+  { value: 'RM 180,000+', label: 'RM 180,000+' },
+];
+
+export const SPECIAL_REQUEST_OPTIONS = [
+  { value: '', label: 'No special request' },
+  { value: 'Early check-in request', label: 'Early check-in' },
+  { value: 'Late check-out request', label: 'Late check-out' },
+  { value: 'Romantic setup request', label: 'Romantic setup' },
+  { value: 'Family-ready setup request', label: 'Family-ready setup' },
 ];
 
 export const RATING_OPTIONS = [

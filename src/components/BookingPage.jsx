@@ -1,4 +1,4 @@
-import { FEATURED_PROPERTIES, GUEST_OPTIONS } from '../data/siteData';
+import { FEATURED_PROPERTIES, GUEST_OPTIONS, SPECIAL_REQUEST_OPTIONS } from '../data/siteData';
 import { Icon } from './Icon';
 
 export function BookingPage({
@@ -127,7 +127,7 @@ export function BookingPage({
                     {properties.map((property) => (
                       <label
                         key={property.id}
-                        className={`property-option flex cursor-pointer items-center gap-4 rounded-xl border-2 p-4 transition-colors ${
+                        className={`property-option flex cursor-pointer flex-col gap-4 rounded-xl border-2 p-4 transition-colors sm:flex-row sm:items-center ${
                           bookingForm.property === property.id ? 'border-brand-500 bg-brand-50/50' : 'border-ice-200 hover:border-brand-400'
                         }`}
                       >
@@ -148,14 +148,14 @@ export function BookingPage({
                           loading="lazy"
                           className="h-14 w-20 rounded-lg object-cover"
                         />
-                        <div className="flex-1">
+                        <div className="flex-1 self-start sm:self-auto">
                           <div className="font-semibold text-brand-900">{property.name}</div>
                           <div className="text-sm text-slate-500">{property.location}</div>
                           <div className="mt-1 text-xs font-semibold text-brand-600">{property.statusNote}</div>
                           {property.schedule ? <div className="mt-1 text-xs text-slate-400">{property.schedule}</div> : null}
                           {property.videoUrl ? <div className="mt-1 text-xs text-brand-500">Video walkthrough available</div> : null}
                         </div>
-                        <div className="text-right">
+                        <div className="self-start text-left sm:self-auto sm:text-right">
                           <div className="font-bold text-brand-700">{formatCurrency(property.price)}</div>
                           <div className="text-xs text-slate-400">/night</div>
                         </div>
@@ -202,7 +202,7 @@ export function BookingPage({
 
                 <div className="rounded-2xl border border-ice-200 bg-white p-6 shadow-md">
                   <h2 className="mb-4 font-display text-xl font-bold text-brand-900">Client Details</h2>
-                  <p className="mb-4 text-sm text-slate-500">This form keeps the details simple: name, email, and stay information first. You can add special requests if needed.</p>
+                  <p className="mb-4 text-sm text-slate-500">This form keeps typing light on mobile by using quick-select options wherever possible.</p>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
                       <label className="form-label" htmlFor="guestName">
@@ -222,7 +222,14 @@ export function BookingPage({
                       <label className="form-label" htmlFor="specialRequests">
                         Special Requests
                       </label>
-                      <input id="specialRequests" name="specialRequests" type="text" value={bookingForm.specialRequests} onChange={onBookingChange} className="form-input" placeholder="Airport pickup, early check-in, room preference, etc." />
+                      <select id="specialRequests" name="specialRequests" value={bookingForm.specialRequests} onChange={onBookingChange} className="form-input">
+                        {SPECIAL_REQUEST_OPTIONS.map((option) => (
+                          <option key={option.label} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="mt-2 text-xs text-slate-400">Choose a common request without needing to type on mobile.</p>
                     </div>
                   </div>
                 </div>

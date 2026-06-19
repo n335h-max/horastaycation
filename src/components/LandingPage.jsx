@@ -14,6 +14,8 @@ import {
 } from '../data/siteData';
 import { Icon } from './Icon';
 
+const HERO_TRUST_SIGNALS = ['100+ Happy Guests', '5-Star Rated', 'Owner-Ready Listings'];
+
 function StatCard({ stat, formatter }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/10 px-3 py-4 text-center backdrop-blur-sm">
@@ -116,33 +118,79 @@ export function LandingPage({ onShowPage, onScrollToSection, featuredProperties 
         <div className="animate-float-slow absolute bottom-32 left-10 h-32 w-32 rounded-full bg-brand-400/10 blur-sm" />
 
         <div className="mx-auto w-full max-w-7xl px-4 pb-16 pt-28 md:px-8">
-          <div className="mx-auto max-w-5xl text-center">
-            <div className="glass-panel mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2">
-              <span className="h-2 w-2 rounded-full bg-accent-400" />
-              <span className="text-sm font-medium text-white/80">Your Staycation Partner</span>
-            </div>
-            <h1 className="font-display text-5xl leading-tight font-black text-white md:text-7xl">
-              HORA STAYCATION
-            </h1>
-            <p className="mt-4 text-lg leading-relaxed text-white/80 md:text-xl">
-              Tiny-house staycation experiences shaped by healing, outdoor living, retreat energy, and memorable ambience.
-            </p>
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-              <button type="button" onClick={() => onShowPage('booking')} className="btn-primary px-7 py-4 text-base">
-                <span className="inline-flex items-center gap-2">
-                  Explore Stays
-                  <Icon name="arrow-right" />
-                </span>
-              </button>
-              <button type="button" onClick={() => onShowPage('owner-signup')} className="btn-accent px-7 py-4 text-base">
-                Sign Up as Owner
-              </button>
+          <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="max-w-3xl text-center lg:text-left">
+              <div className="glass-panel mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2">
+                <span className="h-2 w-2 rounded-full bg-accent-400" />
+                <span className="text-sm font-medium text-white/80">Curated escapes for guests and owners</span>
+              </div>
+              <h1 className="font-display text-5xl leading-tight font-black text-white md:text-7xl">
+                Book Your Escape
+              </h1>
+              <p className="mt-4 text-lg leading-relaxed text-white/80 md:text-xl">
+                HORA Staycation pairs peaceful tiny-house stays, elevated ambience, and owner-ready hospitality tools in one refined experience.
+              </p>
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+                {HERO_TRUST_SIGNALS.map((signal) => (
+                  <span key={signal} className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white/85 backdrop-blur-sm">
+                    {signal}
+                  </span>
+                ))}
+              </div>
+              <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-center lg:justify-start">
+                <button type="button" onClick={() => onShowPage('booking')} className="btn-primary px-7 py-4 text-base">
+                  <span className="inline-flex items-center gap-2">
+                    Book Your Escape
+                    <Icon name="arrow-right" />
+                  </span>
+                </button>
+                <button type="button" onClick={() => onShowPage('owner-signup')} className="btn-accent px-7 py-4 text-base">
+                  Build With Hora
+                </button>
+              </div>
+
+              <div className="mt-12 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {STATS.map((stat) => (
+                  <StatCard key={stat.label} stat={stat} formatter={formatCompactNumber} />
+                ))}
+              </div>
             </div>
 
-            <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {STATS.map((stat) => (
-                <StatCard key={stat.label} stat={stat} formatter={formatCompactNumber} />
-              ))}
+            <div className="relative">
+              <article className="overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 shadow-2xl backdrop-blur-sm">
+                <div className="relative aspect-[4/5] sm:aspect-[16/11] lg:aspect-[4/5]">
+                  <img
+                    src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=luxury%20tiny-house%20staycation%20resort%20in%20lush%20tropical%20greenery%2C%20warm%20cinematic%20sunset%20lighting%2C%20modern%20wood%20and%20glass%20architecture%2C%20inviting%20outdoor%20deck%2C%20premium%20hospitality%20banner%20image%2C%20highly%20detailed%2C%20photorealistic&image_size=portrait_16_9"
+                    alt="Premium tiny-house staycation banner"
+                    width="900"
+                    height="1200"
+                    fetchPriority="high"
+                    className="h-full w-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-brand-950/85 via-brand-950/20 to-transparent" />
+                  <div className="absolute left-5 top-5 inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-brand-900">
+                    <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                    Banner Preview
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                    <div className="rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur-md">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <div className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">Weekend Highlight</div>
+                          <div className="mt-2 font-display text-3xl font-bold">Private tropical reset</div>
+                          <p className="mt-2 max-w-md text-sm leading-relaxed text-white/75">
+                            High-conversion banner styling with a premium stay feel, stronger trust, and a clearer path into booking.
+                          </p>
+                        </div>
+                        <div className="hidden rounded-2xl bg-white/15 px-4 py-3 text-right sm:block">
+                          <div className="text-xs uppercase tracking-[0.2em] text-white/55">Starting From</div>
+                          <div className="mt-1 text-2xl font-bold">{formatCurrency(featuredProperties[0]?.price ?? 289)}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </article>
             </div>
           </div>
         </div>
@@ -161,7 +209,7 @@ export function LandingPage({ onShowPage, onScrollToSection, featuredProperties 
             </p>
             <div className="overflow-hidden rounded-3xl shadow-2xl">
               <img
-                src="https://picsum.photos/seed/tiny-house-stay/600/500.jpg"
+                src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=stylish%20modern%20tiny-house%20staycation%20interior%20with%20warm%20wood%20textures%2C%20soft%20natural%20light%2C%20premium%20boutique%20hospitality%20photo%2C%20photorealistic&image_size=landscape_4_3"
                 alt="Stylish staycation house"
                 width="600"
                 height="500"
@@ -273,7 +321,7 @@ export function LandingPage({ onShowPage, onScrollToSection, featuredProperties 
 
           <div className="relative">
             <img
-              src="https://picsum.photos/seed/property-owner-blue/600/700.jpg"
+              src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=property%20owner%20reviewing%20luxury%20staycation%20development%20plans%20outdoors%2C%20modern%20hospitality%20project%2C%20tropical%20landscape%2C%20photorealistic&image_size=portrait_4_3"
               alt="Property owner dashboard preview"
               width="600"
               height="700"
@@ -459,7 +507,7 @@ export function LandingPage({ onShowPage, onScrollToSection, featuredProperties 
           <div className="order-2 md:order-1">
             <div className="relative">
               <img
-                src="https://picsum.photos/seed/evaluation-review-blue/600/500.jpg"
+                src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=happy%20guests%20reviewing%20a%20premium%20staycation%20retreat%20with%20warm%20hospitality%20ambience%2C%20modern%20tiny-house%20escape%2C%20photorealistic&image_size=landscape_4_3"
                 alt="Guest review moment"
                 width="600"
                 height="500"

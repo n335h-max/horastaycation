@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FEATURED_PROPERTIES } from '../data/siteData';
+import { BUDGET_OPTIONS, FEATURED_PROPERTIES } from '../data/siteData';
 import { deleteMediaFile, saveMediaFile } from '../lib/mediaStorage';
 import { validateWithSchema, ownerSchema, reviewSchema } from '../lib/validation';
 import { Icon } from './Icon';
@@ -125,7 +125,7 @@ export function OwnerSignupPage({
         </button>
         <div className="mb-8 text-center">
           <h1 className="font-display text-4xl font-bold text-brand-950 md:text-5xl">Build / Refurbish With Us</h1>
-          <p className="mt-3 text-lg text-slate-600">Use unified sign-in to activate the owner role, then submit the refurbish details Hora needs for follow-up.</p>
+          <p className="mt-3 text-lg text-slate-600">Use unified sign-in to activate the owner role, then submit the refurbish details Hora needs with quick mobile-friendly dropdowns.</p>
         </div>
         {!googleConnected ? (
           <GoogleEntryCard
@@ -174,7 +174,15 @@ export function OwnerSignupPage({
               </div>
               <div>
                 <label className="form-label" htmlFor="budget">Budget</label>
-                <input id="budget" name="budget" value={form.budget} onChange={handleChange} className="form-input" placeholder="RM 80,000" />
+                <select id="budget" name="budget" value={form.budget} onChange={handleChange} className="form-input">
+                  <option value="">Select budget range</option>
+                  {BUDGET_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-2 text-xs text-slate-400">Preset ranges reduce typing and keep owner requests consistent.</p>
                 <FieldError errors={errors} name="budget" />
               </div>
             </div>
@@ -338,6 +346,7 @@ function DashboardStat({ stat, formatCurrency }) {
 
 export function OwnerDashboardPage({ ownerApplications, bookingTransactions, emails, onShowPage, onSignOut, authUser, formatCurrency }) {
   const latestOwner = ownerApplications[0] ?? null;
+  const latestBooking = bookingTransactions[0] ?? null;
   const ownerStats = useMemo(
     () => [
       { id: 'requests', label: 'Owner Requests', value: ownerApplications.length, icon: 'home' },
@@ -399,6 +408,27 @@ export function OwnerDashboardPage({ ownerApplications, bookingTransactions, ema
 
         <div className="mt-8 grid gap-8 xl:grid-cols-[0.95fr_1.05fr]">
           <div className="space-y-8">
+            {latestBooking ? (
+              <div className="rounded-3xl border border-brand-200 bg-gradient-to-r from-brand-900 via-brand-800 to-brand-700 p-6 text-white shadow-xl">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white/75">
+                      <Icon name="calendar" />
+                      New booking request!
+                    </div>
+                    <h2 className="mt-3 font-display text-2xl font-bold">{latestBooking.bookingSummary.name}</h2>
+                    <p className="mt-2 text-sm text-white/75">
+                      {latestBooking.bookingForm.guestName} requested {latestBooking.bookingSummary.nights} night(s) from {latestBooking.bookingForm.checkin} to {latestBooking.bookingForm.checkout}.
+                    </p>
+                  </div>
+                  <div className="rounded-2xl bg-white/10 px-5 py-4 text-left md:text-right">
+                    <div className="text-xs uppercase tracking-[0.2em] text-white/55">Expected payout</div>
+                    <div className="mt-1 text-2xl font-bold">{formatCurrency(latestBooking.bookingSummary.total)}</div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
             <div className="rounded-3xl border border-ice-200 bg-white p-6 shadow-sm">
               <h2 className="mb-6 font-display text-2xl font-bold text-brand-950">Current Request Status</h2>
               {latestOwner ? (
@@ -682,6 +712,7 @@ export function DashboardPage({
   authUser,
   formatCurrency,
 }) {
+  const latestBooking = bookingTransactions[0] ?? null;
   const stats = useMemo(
     () => [
       { id: 'bookings', label: 'Bookings', value: bookings.length, icon: 'calendar' },
@@ -1082,6 +1113,27 @@ export function DashboardPage({
 
         <div className="mt-8 grid gap-8 xl:grid-cols-[1.15fr_0.85fr]">
           <div className="space-y-8">
+            {latestBooking ? (
+              <div className="rounded-3xl border border-accent-300/40 bg-gradient-to-r from-brand-950 via-brand-900 to-accent-500 p-6 text-white shadow-xl">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white/75">
+                      <Icon name="email" />
+                      New booking request!
+                    </div>
+                    <h2 className="mt-3 font-display text-2xl font-bold">{latestBooking.bookingSummary.name}</h2>
+                    <p className="mt-2 text-sm text-white/75">
+                      {latestBooking.bookingForm.guestName} for {latestBooking.bookingForm.guests} guest(s) · {latestBooking.bookingForm.checkin} to {latestBooking.bookingForm.checkout}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl bg-white/10 px-5 py-4 text-left md:text-right">
+                    <div className="text-xs uppercase tracking-[0.2em] text-white/55">Booking total</div>
+                    <div className="mt-1 text-2xl font-bold">{formatCurrency(latestBooking.bookingSummary.total)}</div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
             <div className="rounded-3xl border border-ice-200 bg-white p-6 shadow-sm">
               <div className="mb-6 flex items-center justify-between">
                 <h2 className="font-display text-2xl font-bold text-brand-950">Live Booking Queue</h2>
