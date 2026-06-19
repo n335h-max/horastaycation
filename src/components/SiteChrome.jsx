@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { NAV_ITEMS, SOCIAL_LINKS } from '../data/siteData';
 import { Icon } from './Icon';
 
@@ -69,6 +70,110 @@ function UserAvatarIndicator({ authUser, authRole, isLanding = false }) {
         </div>
       )}
       <span className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full ring-2 ${statusDotClass}`} />
+    </div>
+  );
+}
+
+function UserProfileMenu({ authUser, authRole, availableRoles, onRoleSwitch, onSignOut, isLanding = false }) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef(null);
+  const badge = getAuthBadgeCopy(authUser, authRole);
+
+  useEffect(() => {
+    if (!open) {
+      return undefined;
+    }
+
+    function handlePointerDown(event) {
+      if (!containerRef.current?.contains(event.target)) {
+        setOpen(false);
+      }
+    }
+
+    function handleEscape(event) {
+      if (event.key === 'Escape') {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [open]);
+
+  if (!badge) {
+    return null;
+  }
+
+  const dropdownClass = isLanding
+    ? 'border-white/15 bg-brand-950/92 text-white shadow-[0_24px_60px_rgba(2,6,23,0.32)]'
+    : 'border-brand-100 bg-white text-brand-950 shadow-[0_20px_50px_rgba(15,23,42,0.14)]';
+  const mutedTextClass = isLanding ? 'text-white/60' : 'text-slate-500';
+  const roleChipClass = isLanding ? 'bg-white/10 text-white' : 'bg-brand-50 text-brand-700';
+  const signOutClass = isLanding
+    ? 'bg-white/10 text-white hover:bg-white/16'
+    : 'bg-ice-50 text-brand-900 hover:bg-ice-100';
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        className="rounded-full"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Open profile menu"
+      >
+        <UserAvatarIndicator authUser={authUser} authRole={authRole} isLanding={isLanding} />
+      </button>
+
+      {open ? (
+        <div className={`absolute right-0 mt-3 w-64 rounded-3xl border p-4 ${dropdownClass}`}>
+          <div className="flex items-center gap-3">
+            <UserAvatarIndicator authUser={authUser} authRole={authRole} isLanding={isLanding} />
+            <div className="min-w-0">
+              <div className="truncate text-sm font-semibold">{badge.displayName}</div>
+              <div className={`truncate text-xs ${mutedTextClass}`}>{badge.subtitle}</div>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+            <div className={`text-xs font-semibold uppercase tracking-[0.18em] ${mutedTextClass}`}>Role</div>
+            {availableRoles.length > 1 ? (
+              <select
+                value={authRole}
+                onChange={(event) => onRoleSwitch?.(event.target.value)}
+                className={`mt-2 w-full rounded-xl border border-white/10 bg-transparent px-3 py-2 text-sm outline-none ${isLanding ? 'text-white' : 'text-brand-900'}`}
+              >
+                {availableRoles.map((role) => (
+                  <option key={role} value={role} className="text-slate-900">
+                    {role.charAt(0).toUpperCase() + role.slice(1)}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className={`mt-2 inline-flex rounded-full px-3 py-1 text-sm font-semibold ${roleChipClass}`}>
+                {badge.roleLabel}
+              </div>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              onSignOut?.();
+            }}
+            className={`mt-4 flex w-full items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition ${signOutClass}`}
+          >
+            Sign Out
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -154,35 +259,22 @@ export function SiteHeader({
             <button type="button" onClick={() => onShowPage('booking')} className="btn-accent px-5 py-2 text-sm">
               Book Now
             </button>
-            {authUser ? (
-              <>
-                {availableRoles.length > 1 ? (
-                  <label className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${isLanding ? 'bg-white/10 text-white' : 'bg-white text-slate-600 shadow-sm'}`}>
-                    <span>Role</span>
-                    <select
-                      value={authRole}
-                      onChange={(event) => onRoleSwitch?.(event.target.value)}
-                      className={`bg-transparent text-sm outline-none ${isLanding ? 'text-white' : 'text-slate-700'}`}
-                    >
-                      {availableRoles.map((role) => (
-                        <option key={role} value={role} className="text-slate-900">
-                          {role.charAt(0).toUpperCase() + role.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                ) : null}
-                <button type="button" onClick={onSignOut} className={authButtonClass}>
-                  Sign Out
-                </button>
-              </>
-            ) : (
+            {authUser ? null : (
               <button type="button" onClick={onOpenAuth} className={authButtonClass}>
                 Sign In
               </button>
             )}
           </nav>
-          <UserAvatarIndicator authUser={authUser} authRole={authRole} isLanding={isLanding} />
+          {authUser ? (
+            <UserProfileMenu
+              authUser={authUser}
+              authRole={authRole}
+              availableRoles={availableRoles}
+              onRoleSwitch={onRoleSwitch}
+              onSignOut={onSignOut}
+              isLanding={isLanding}
+            />
+          ) : null}
         </div>
 
         <button
