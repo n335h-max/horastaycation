@@ -33,6 +33,16 @@ function HeroCarousel({ properties, activeIndex, onStep }) {
     onStep(deltaX < 0 ? 1 : -1);
   }
 
+  function handleKeyDown(event) {
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      onStep(-1);
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      onStep(1);
+    }
+  }
+
   return (
     <article className="overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 shadow-2xl backdrop-blur-sm">
       <div className="relative aspect-[4/5] sm:aspect-[16/11] lg:aspect-[4/5]">
@@ -40,6 +50,11 @@ function HeroCarousel({ properties, activeIndex, onStep }) {
           className="hero-carousel absolute inset-0"
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
+          onKeyDown={handleKeyDown}
+          role="region"
+          aria-label="Staycation carousel"
+          aria-roledescription="carousel"
+          tabIndex={0}
         >
           <div
             className="hero-carousel-track"
@@ -51,7 +66,10 @@ function HeroCarousel({ properties, activeIndex, onStep }) {
               <article
                 key={property.id}
                 className={`hero-carousel-card ${index === activeIndex ? 'is-active' : ''}`}
-                aria-hidden={index !== activeIndex}
+                          aria-hidden={index !== activeIndex}
+                          role="group"
+                          aria-roledescription="slide"
+                          aria-label={`${index + 1} of ${properties.length}: ${property.name}`}
               >
                 <img
                   src={property.summaryImage || property.image}
