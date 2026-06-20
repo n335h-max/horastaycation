@@ -1,15 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
-  <title>Hora Staycation Logo</title>
-  <circle cx="32" cy="32" r="29" fill="#153f8a" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-labelledby="hora-logo-title">
+  <title id="hora-logo-title">Hora Staycation Logo</title>
+  <circle cx="100" cy="100" r="96" fill="#1a5bb7" />
   <text
-    x="32"
-    y="41"
+    x="100"
+    y="140"
     fill="#ffffff"
-    font-family="Georgia, 'Times New Roman', serif"
-    font-size="38"
-    font-weight="700"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="130"
+    font-weight="900"
     text-anchor="middle"
-  >
-    H
-  </text>
+    letter-spacing="-4"
+  >H</text>
 </svg>
