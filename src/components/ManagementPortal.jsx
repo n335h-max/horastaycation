@@ -981,36 +981,47 @@ function ListingsStudio({
   return (
     <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="space-y-6">
-        <section className="rounded-[1.8rem] border border-brand-100 bg-gradient-to-br from-brand-950 via-brand-900 to-brand-800 p-6 text-white shadow-xl">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-3xl">
-              <div className="text-xs font-semibold uppercase tracking-[0.25em] text-cyan-300">Dedicated Listings Route</div>
-              <h2 className="mt-3 font-display text-3xl font-bold">Management Upload Studio</h2>
-              <p className="mt-3 text-sm leading-relaxed text-white/72">
-                The listing builder now lives on its own page so operators can focus on creation without scrolling past analytics, queues, and inbox activity.
+        <section style={{
+          borderRadius: '1.8rem', background: '#0F1F3D', padding: 24, color: '#fff',
+          boxShadow: '0 4px 20px rgba(15,31,61,0.18)',
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, justifyContent: 'space-between', alignItems: 'flex-start' }}
+            className="lg:flex-row lg:items-center"
+          >
+            <div style={{ maxWidth: '48rem' }}>
+              <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.25em', color: 'rgba(255,255,255,0.55)' }}>Management Upload Studio</div>
+              <h2 style={{ marginTop: 8, fontSize: 28, fontWeight: 700, lineHeight: 1.2 }}>Listings workspace</h2>
+              <p style={{ marginTop: 8, fontSize: 14, lineHeight: 1.6, color: 'rgba(255,255,255,0.7)' }}>
+                Create, edit, and manage all staycation properties in one place. Changes publish to the public catalog immediately.
               </p>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <button type="button" onClick={studio.handleCreateListing} className="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-brand-900">
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+              <button type="button" onClick={studio.handleCreateListing} style={{
+                borderRadius: 12, background: '#fff', padding: '10px 20px', fontSize: 13,
+                fontWeight: 600, color: '#0F1F3D', border: 'none', cursor: 'pointer',
+              }}>
                 + New Listing
               </button>
-              <button type="button" onClick={() => onShowPage('dashboard')} className="rounded-2xl border border-white/15 px-5 py-3 text-sm font-semibold text-white/80">
+              <button type="button" onClick={() => onShowPage('dashboard')} style={{
+                borderRadius: 12, border: '1px solid rgba(255,255,255,0.2)', padding: '10px 20px',
+                fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.8)', background: 'transparent', cursor: 'pointer',
+              }}>
                 Back to Dashboard
               </button>
             </div>
           </div>
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-3xl bg-white/8 p-4">
-              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-white/55">Managed Listings</div>
-              <div className="mt-3 text-3xl font-black">{studio.availableListings.length}</div>
+          <div style={{ marginTop: 24, display: 'grid', gap: 12, gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
+            <div style={{ borderRadius: 12, background: 'rgba(255,255,255,0.1)', padding: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.5)' }}>Managed Listings</div>
+              <div style={{ marginTop: 8, fontSize: 28, fontWeight: 700 }}>{studio.availableListings.length}</div>
             </div>
-            <div className="rounded-3xl bg-white/8 p-4">
-              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-white/55">Bulk Targets</div>
-              <div className="mt-3 text-3xl font-black">{studio.selectedBulkListings.length}</div>
+            <div style={{ borderRadius: 12, background: 'rgba(255,255,255,0.1)', padding: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.5)' }}>Bulk Targets</div>
+              <div style={{ marginTop: 8, fontSize: 28, fontWeight: 700 }}>{studio.selectedBulkListings.length}</div>
             </div>
-            <div className="rounded-3xl bg-white/8 p-4">
-              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-white/55">Pending Uploads</div>
-              <div className="mt-3 text-3xl font-black">{Object.keys(studio.pendingMediaFiles).length}</div>
+            <div style={{ borderRadius: 12, background: 'rgba(255,255,255,0.1)', padding: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.5)' }}>Pending Uploads</div>
+              <div style={{ marginTop: 8, fontSize: 28, fontWeight: 700 }}>{Object.keys(studio.pendingMediaFiles).length}</div>
             </div>
           </div>
         </section>
@@ -1029,7 +1040,7 @@ function ListingsStudio({
             </span>
           </div>
           <div className="mt-6 grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
-            <div className="rounded-3xl bg-slate-950 p-5 text-white">
+            <div style={{ borderRadius: '1.5rem', background: '#0F1F3D', padding: 20, color: '#fff' }}>
               <label className="form-label text-white" htmlFor="bulkUploadField">Asset Type</label>
               <select
                 id="bulkUploadField"
