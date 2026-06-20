@@ -108,3 +108,38 @@ export async function updateBookingTransactionAdmin(matchField, matchValue, upda
     };
   }
 }
+
+export async function hasProcessedStripeEvent(eventId) {
+  if (!canUseSupabaseAdmin()) return false;
+
+  try {
+    const query = `/rest/v1/stripe_events?event_id=eq.${encodeURIComponent(eventId)}`;
+    const data = await restFetch(query, { method: 'GET' });
+    return Array.isArray(data) && data.length > 0;
+  } catch (error) {
+    return false;
+  }
+}
+
+export async function recordProcessedStripeEvent(eventId, eventType = '') {
+  if (!canUseSupabaseAdmin()) {
+    return { recorded: false, reason: 'missing_supabase_admin_env' };
+  }
+
+  try {
+    const payload = {
+      event_id: eventId,
+      event_type: eventType,
+      processed_at: new Date().toISOString(),
+    };
+    const data = await restFetch('/rest/v1/stripe_events', {
+      method: 'POST',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify([payload]),
+    });
+
+    return { recorded: true, data };
+  } catch (error) {
+    return { recorded: false, reason: error instanceof Error ? error.message : 'stripe_event_record_failed' };
+  }
+}

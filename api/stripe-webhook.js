@@ -1,4 +1,4 @@
-import { mapWebhookMetadataToBookingRecord, updateBookingTransactionAdmin, upsertBookingTransactionAdmin } from './_lib/supabaseAdmin.js';
+import { mapWebhookMetadataToBookingRecord, updateBookingTransactionAdmin, upsertBookingTransactionAdmin, hasProcessedStripeEvent, recordProcessedStripeEvent } from './_lib/supabaseAdmin.js';
 import { getStripeClient, readRawRequestBody } from './_lib/stripeServer.js';
 
 function getHeader(req, name) {
@@ -26,6 +26,17 @@ export default async function handler(req, res) {
     const stripe = getStripeClient();
     const rawBody = await readRawRequestBody(req);
     const event = stripe.webhooks.constructEvent(rawBody, signature, process.env.STRIPE_WEBHOOK_SECRET);
+
+    // Idempotency: skip already-processed events
+    try {
+      const already = await hasProcessedStripeEvent(event.id);
+      if (already) {
+        return res.status(200).json({ received: true, skipped: 'duplicate_event' });
+      }
+    } catch (err) {
+      // If the dedupe check fails, continue processing but log a warning
+      console.warn('Failed to check dedupe for stripe event', err);
+    }
 
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
@@ -72,6 +83,12 @@ export default async function handler(req, res) {
         refunded_at: charge.refunded ? new Date().toISOString() : null,
         status_note: charge.refunded ? 'Stripe refund completed.' : 'Stripe refund update received.',
       });
+    }
+    // Record that we've processed this Stripe event to avoid duplicates
+    try {
+      await recordProcessedStripeEvent(event.id, event.type);
+    } catch (err) {
+      console.warn('Failed to record processed stripe event', err);
     }
 
     return res.status(200).json({ received: true });
