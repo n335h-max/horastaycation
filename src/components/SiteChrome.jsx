@@ -232,7 +232,7 @@ export function SiteHeader({
           className="group flex items-center gap-3"
           aria-label="Go to the home page"
         >
-          <img src="/hora-logo.svg" alt="Hora Staycation logo" className="h-10 w-10 rounded-xl object-cover" />
+          <img src="/hora-logo.png" alt="Hora Staycation logo" className="h-10 w-10 rounded-xl object-cover" />
           <span className={`font-display text-xl font-bold transition-colors ${brandTextClass}`}>
             HORA<span className="text-accent-500"> Staycation</span>
           </span>
@@ -419,7 +419,7 @@ export function SiteFooter({ onShowPage, onManageCookies }) {
         <div className="mb-8 grid gap-8 md:grid-cols-4">
           <div>
             <div className="mb-4 flex items-center gap-2">
-              <img src="/hora-logo.svg" alt="Hora Staycation logo" className="h-8 w-8 rounded-lg object-cover" />
+              <img src="/hora-logo.png" alt="Hora Staycation logo" className="h-8 w-8 rounded-lg object-cover" />
               <span className="font-display text-lg font-bold text-white">HORA Staycation</span>
             </div>
             <p className="text-sm leading-relaxed text-white/50">

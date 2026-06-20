@@ -9,15 +9,15 @@
   "scope": "/",
   "icons": [
     {
-      "src": "/favicon-transparent-v4.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/hora-logo.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/hora-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ]
