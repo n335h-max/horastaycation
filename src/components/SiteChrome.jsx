@@ -190,6 +190,7 @@ export function SiteHeader({
   onRoleSwitch,
   onOpenAuth,
   onSignOut,
+  headerAction,
 }) {
   const [mobileProfileOpen, setMobileProfileOpen] = useState(false);
   const isLanding = activePage === 'landing';
@@ -265,6 +266,11 @@ export function SiteHeader({
                 </button>
               ),
             )}
+            {headerAction ? (
+              <button type="button" onClick={headerAction.onClick} className="btn-primary px-5 py-2 text-sm">
+                <span>{headerAction.label}</span>
+              </button>
+            ) : null}
             <button type="button" onClick={() => onShowPage('booking')} className="btn-accent px-5 py-2 text-sm">
               Book Now
             </button>
@@ -383,6 +389,18 @@ export function SiteHeader({
                 </button>
               ),
             )}
+            {headerAction ? (
+              <button
+                type="button"
+                onClick={() => {
+                  headerAction.onClick?.();
+                  onToggleMobile(false);
+                }}
+                className="btn-primary w-full py-3 text-sm"
+              >
+                <span>{headerAction.label}</span>
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={() => {

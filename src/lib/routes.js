@@ -11,6 +11,7 @@ export const APP_PATHS = {
   reviewSuccess: '/reviews/success',
   managementLogin: '/management/login',
   dashboard: '/management/dashboard',
+  managementListings: '/dashboard/listings',
 };
 
 export function getPageFromPath(pathname) {
@@ -37,6 +38,8 @@ export function getPageFromPath(pathname) {
       return 'management-login';
     case APP_PATHS.dashboard:
       return 'dashboard';
+    case APP_PATHS.managementListings:
+      return 'management-listings';
     default:
       return 'landing';
   }
@@ -66,6 +69,8 @@ export function getPathFromPage(page) {
       return APP_PATHS.managementLogin;
     case 'dashboard':
       return APP_PATHS.dashboard;
+    case 'management-listings':
+      return APP_PATHS.managementListings;
     default:
       return APP_PATHS.landing;
   }

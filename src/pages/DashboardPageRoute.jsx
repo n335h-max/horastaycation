@@ -1,4 +1,4 @@
-import { DashboardPage } from '../components/ExperiencePages';
+import { DashboardPage } from '../components/ManagementPortal';
 
 export function DashboardPageRoute(props) {
   return <DashboardPage {...props} />;

@@ -54,6 +54,9 @@ const ReviewPageRoute = lazy(() =>
 const DashboardPageRoute = lazy(() =>
   import('./pages/DashboardPageRoute').then((module) => ({ default: module.DashboardPageRoute })),
 );
+const ManagementListingsPageRoute = lazy(() =>
+  import('./pages/ManagementListingsPageRoute').then((module) => ({ default: module.ManagementListingsPageRoute })),
+);
 const SuccessPageRoute = lazy(() =>
   import('./pages/SuccessPageRoute').then((module) => ({ default: module.SuccessPageRoute })),
 );
@@ -120,7 +123,7 @@ const ROLE_DEFAULT_PATHS = {
   client: APP_PATHS.booking,
   management: APP_PATHS.dashboard,
 };
-const LISTING_SYNC_PATHS = new Set([APP_PATHS.landing, APP_PATHS.booking, APP_PATHS.dashboard]);
+const LISTING_SYNC_PATHS = new Set([APP_PATHS.landing, APP_PATHS.booking, APP_PATHS.dashboard, APP_PATHS.managementListings]);
 const BOOKING_SYNC_PATHS = new Set([APP_PATHS.dashboard]);
 
 function getDefaultPathForRole(role) {
@@ -151,7 +154,7 @@ function getRouteRole(pathname) {
     return 'client';
   }
 
-  if (pathname === APP_PATHS.dashboard) {
+  if (pathname === APP_PATHS.dashboard || pathname === APP_PATHS.managementListings) {
     return 'management';
   }
 
@@ -227,6 +230,12 @@ export default function App() {
     [store.analyticsEvents, store.bookingTransactions, store.supportRequests, store.wishlistByUser],
   );
   const canInstallApp = Boolean(deferredInstallPrompt);
+  const headerAction =
+    location.pathname === APP_PATHS.dashboard
+      ? { label: '+ New Listing', onClick: () => navigate(APP_PATHS.managementListings) }
+      : location.pathname === APP_PATHS.managementListings
+        ? { label: 'Back to Dashboard', onClick: () => navigate(APP_PATHS.dashboard) }
+        : null;
 
   useEffect(() => {
     setMobileOpen(false);
@@ -1030,11 +1039,13 @@ export default function App() {
 
   const showFooter =
     location.pathname !== APP_PATHS.dashboard &&
+    location.pathname !== APP_PATHS.managementListings &&
     location.pathname !== APP_PATHS.ownerDashboard &&
     location.pathname !== APP_PATHS.managementLogin &&
     location.pathname !== APP_PATHS.authLogin;
   const showSupportWidget =
     location.pathname !== APP_PATHS.dashboard &&
+    location.pathname !== APP_PATHS.managementListings &&
     location.pathname !== APP_PATHS.ownerDashboard &&
     location.pathname !== APP_PATHS.authLogin;
 
@@ -1054,6 +1065,7 @@ export default function App() {
         onRoleSwitch={(role) => handleRoleSelect(role, getDefaultPathForRole(role))}
         onOpenAuth={() => openAuthPage(getRouteRole(location.pathname) || 'client', location.pathname)}
         onSignOut={handleSignOut}
+        headerAction={headerAction}
       />
 
       <main id="main-content">
@@ -1213,7 +1225,33 @@ export default function App() {
                     onSignOut={handleSignOut}
                     authUser={authSession?.user}
                     formatCurrency={formatCurrency}
-                    analyticsSummary={analyticsSummary}
+                    analyticsEvents={store.analyticsEvents}
+                    supportRequests={store.supportRequests}
+                  />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path={APP_PATHS.managementListings}
+              element={
+                <RoleProtectedRoute
+                  authUser={authSession?.user}
+                  availableRoles={availableRoles}
+                  requiredRole="management"
+                  fallbackPath={buildAuthPath('management', APP_PATHS.managementListings)}
+                >
+                  <ManagementListingsPageRoute
+                    listings={dashboardListings}
+                    bookings={store.dashboardBookings}
+                    revenue={store.dashboardRevenue}
+                    ownerApplications={store.ownerApplications}
+                    reviewSubmissions={store.reviewSubmissions}
+                    onSaveListing={handleManagementListingSave}
+                    onDeleteListing={handleManagementListingDelete}
+                    onShowPage={showPage}
+                    onSignOut={handleSignOut}
+                    authUser={authSession?.user}
+                    formatCurrency={formatCurrency}
                   />
                 </RoleProtectedRoute>
               }
