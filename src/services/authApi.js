@@ -1,10 +1,23 @@
 import { isManagementEmailAllowed, isSupabaseConfigured, supabase } from '../lib/supabase';
+import { SUPPORTED_ROLES_SET, ACTIVE_ROLE_STORAGE_KEY, AVAILABLE_ROLES_STORAGE_KEY } from '../lib/constants';
 
 const PROFILE_TABLE = 'user_profiles';
-const SUPPORTED_ROLES = new Set(['owner', 'client', 'management']);
-const ACTIVE_ROLE_COOKIE = 'hora_active_role';
-const AVAILABLE_ROLES_COOKIE = 'hora_available_roles';
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
+const SUPPORTED_ROLES = SUPPORTED_ROLES_SET;
+
+function readStorage(key) {
+  if (typeof window === 'undefined') return '';
+  try { return window.localStorage.getItem(key) || ''; } catch { return ''; }
+}
+
+function writeStorage(key, value) {
+  if (typeof window === 'undefined') return;
+  try { window.localStorage.setItem(key, value); } catch { /* noop */ }
+}
+
+function removeStorage(key) {
+  if (typeof window === 'undefined') return;
+  try { window.localStorage.removeItem(key); } catch { /* noop */ }
+}
 
 export function getRequestedRole(role) {
   return SUPPORTED_ROLES.has(role) ? role : 'client';
@@ -115,7 +128,7 @@ export function getResolvedAuthState(session, profile, requestedRole) {
   const availableRoles = getAvailableRoles(session, profile, requestedRole);
   const preferredRole = [
     requestedRole ? getRequestedRole(requestedRole) : null,
-    readCookie(ACTIVE_ROLE_COOKIE),
+    readStorage(ACTIVE_ROLE_STORAGE_KEY),
     profile?.preferred_role,
     availableRoles.includes('management') ? 'management' : null,
     'client',
@@ -172,12 +185,8 @@ export async function switchUserRole(session, nextRole) {
 }
 
 export function clearStoredRoleState() {
-  if (typeof document === 'undefined') {
-    return;
-  }
-
-  document.cookie = `${ACTIVE_ROLE_COOKIE}=; Max-Age=0; path=/; SameSite=Lax`;
-  document.cookie = `${AVAILABLE_ROLES_COOKIE}=; Max-Age=0; path=/; SameSite=Lax`;
+  removeStorage(ACTIVE_ROLE_STORAGE_KEY);
+  removeStorage(AVAILABLE_ROLES_STORAGE_KEY);
 }
 
 function getPersistedPreferredRole(profile, requestedRole) {
@@ -200,7 +209,7 @@ function getPersistedAvailableRoles(profile, requestedRole) {
 function getAvailableRoles(session, profile, requestedRole) {
   const email = session?.user?.email || profile?.email || '';
   const requested = requestedRole ? getRequestedRole(requestedRole) : null;
-  const storedRoles = parseRoles(readCookie(AVAILABLE_ROLES_COOKIE));
+  const storedRoles = parseRoles(readStorage(AVAILABLE_ROLES_STORAGE_KEY));
   const profileRoles = parseRoles(profile?.available_roles);
   const normalizedRoles = normalizeRoles([
     'client',
@@ -218,26 +227,8 @@ function getAvailableRoles(session, profile, requestedRole) {
 }
 
 function persistRoleState(activeRole, availableRoles) {
-  if (typeof document === 'undefined') {
-    return;
-  }
-
-  document.cookie = `${ACTIVE_ROLE_COOKIE}=${encodeURIComponent(activeRole)}; Max-Age=${COOKIE_MAX_AGE}; path=/; SameSite=Lax`;
-  document.cookie = `${AVAILABLE_ROLES_COOKIE}=${encodeURIComponent(availableRoles.join(','))}; Max-Age=${COOKIE_MAX_AGE}; path=/; SameSite=Lax`;
-}
-
-function readCookie(name) {
-  if (typeof document === 'undefined') {
-    return '';
-  }
-
-  const key = `${name}=`;
-  const match = document.cookie
-    .split(';')
-    .map((entry) => entry.trim())
-    .find((entry) => entry.startsWith(key));
-
-  return match ? decodeURIComponent(match.slice(key.length)) : '';
+  writeStorage(ACTIVE_ROLE_STORAGE_KEY, activeRole);
+  writeStorage(AVAILABLE_ROLES_STORAGE_KEY, availableRoles.join(','));
 }
 
 function parseRoles(value) {

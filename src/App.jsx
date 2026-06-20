@@ -26,6 +26,8 @@ import {
   updateBookingTransactionDetails,
   updateBookingTransactionStatus,
 } from './services/horaApi';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { SERVICE_FEE_RATE, TOAST_DURATION_MS, INSTALL_PROMPT_EVENT } from './lib/constants';
 import {
   getCurrentSession,
   getResolvedAuthState,
@@ -259,8 +261,8 @@ export default function App() {
       setDeferredInstallPrompt(event);
     }
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener(INSTALL_PROMPT_EVENT, handleBeforeInstallPrompt);
+    return () => window.removeEventListener(INSTALL_PROMPT_EVENT, handleBeforeInstallPrompt);
   }, []);
 
   useEffect(() => {
@@ -270,7 +272,7 @@ export default function App() {
 
     const timer = window.setTimeout(() => {
       setToasts((current) => current.slice(1));
-    }, 3200);
+    }, TOAST_DURATION_MS);
 
     return () => window.clearTimeout(timer);
   }, [toasts]);
@@ -627,7 +629,7 @@ export default function App() {
     }
 
     const subtotal = diffInDays * property.price;
-    const serviceFee = Math.round(subtotal * 0.12);
+    const serviceFee = Math.round(subtotal * SERVICE_FEE_RATE);
 
     return {
       name: property.name,

@@ -2,6 +2,13 @@ import { FEATURED_PROPERTIES, INITIAL_BOOKINGS, INITIAL_EMAILS, RANDOM_GUEST_NAM
 import { getWishlistKey } from '../lib/guestFeatures';
 import { readBookingDraft, readStorage, writeBookingDraft, writeStorage } from '../lib/storage';
 import { isSupabaseConfigured, SUPABASE_BUCKETS, supabase } from '../lib/supabase';
+import {
+  API_DELAY_MS,
+  MAX_SUPPORT_REQUESTS,
+  MAX_ANALYTICS_EVENTS,
+  MAX_DASHBOARD_PREVIEW_ITEMS,
+  REMOTE_BOOKING_LIMIT,
+} from '../lib/constants';
 
 export const initialBookingDraft = {
   property: 'villa-serena',
@@ -66,7 +73,7 @@ function saveStore(store) {
 }
 
 function refreshBookingDashboard(store) {
-  store.dashboardBookings = store.bookingTransactions.slice(0, 6).map(buildDashboardBooking);
+  store.dashboardBookings = store.bookingTransactions.slice(0, MAX_DASHBOARD_PREVIEW_ITEMS).map(buildDashboardBooking);
   store.dashboardRevenue = store.bookingTransactions.reduce(
     (total, transaction) => total + (transaction.paymentStatus === 'refunded' ? 0 : Number(transaction.bookingSummary.total) || 0),
     0,
@@ -229,7 +236,7 @@ async function uploadListingMediaFile(listingId, fieldName, file) {
   };
 }
 
-function delay(ms = 120) {
+function delay(ms = API_DELAY_MS) {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms);
   });
@@ -413,7 +420,7 @@ async function fetchRemoteBookingTransactions() {
     .from('booking_transactions')
     .select('*')
     .order('submitted_at', { ascending: false })
-    .limit(20);
+    .limit(REMOTE_BOOKING_LIMIT);
 
   if (error) {
     return { saved: false, error, transactions: [] };
@@ -491,11 +498,11 @@ export async function submitSupportRequest(request) {
     ...request,
   };
 
-  store.supportRequests = [record, ...store.supportRequests].slice(0, 50);
+  store.supportRequests = [record, ...store.supportRequests].slice(0, MAX_SUPPORT_REQUESTS);
   store.dashboardEmails = [
     { title: 'New Support Request', detail: `${request.topic} · ${request.email || 'guest message'}`, tone: 'indigo' },
     ...store.dashboardEmails,
-  ].slice(0, 6);
+  ].slice(0, MAX_DASHBOARD_PREVIEW_ITEMS);
 
   saveStore(store);
   await delay();
@@ -514,7 +521,7 @@ export async function trackAnalyticsEvent(event) {
     ...event,
   };
 
-  store.analyticsEvents = [record, ...store.analyticsEvents].slice(0, 250);
+  store.analyticsEvents = [record, ...store.analyticsEvents].slice(0, MAX_ANALYTICS_EVENTS);
   saveStore(store);
   await delay(40);
 
@@ -579,7 +586,7 @@ export async function saveManagementListing(listingInput) {
   store.dashboardEmails = [
     { title: 'Listing Updated — Management', detail: `Saved for ${savedListing.name}`, tone: 'accent' },
     ...store.dashboardEmails,
-  ].slice(0, 6);
+  ].slice(0, MAX_DASHBOARD_PREVIEW_ITEMS);
   saveStore(store);
   await delay();
   return {
@@ -621,7 +628,7 @@ export async function deleteManagementListing(listingId) {
   store.dashboardEmails = [
     { title: 'Listing Deleted — Management', detail: `Removed ${existingListing.name}`, tone: 'accent' },
     ...store.dashboardEmails,
-  ].slice(0, 6);
+  ].slice(0, MAX_DASHBOARD_PREVIEW_ITEMS);
   saveStore(store);
   await delay();
 
@@ -659,7 +666,7 @@ export async function updateBookingTransactionDetails(bookingId, updates = {}) {
         tone: 'indigo',
       },
       ...store.dashboardEmails,
-    ].slice(0, 6);
+    ].slice(0, MAX_DASHBOARD_PREVIEW_ITEMS);
   }
 
   saveStore(store);
@@ -703,7 +710,7 @@ export async function submitOwnerApplication(application) {
   store.dashboardEmails = [
     { title: 'New Owner Lead', detail: `Sent for ${application.ownerEmail}`, tone: 'brand' },
     ...store.dashboardEmails,
-  ].slice(0, 6);
+  ].slice(0, MAX_DASHBOARD_PREVIEW_ITEMS);
   saveStore(store);
   const ownerNameParts = application.ownerName.trim().split(/\s+/);
   const nightlyBudget = Number.parseFloat(String(application.budget).replace(/[^\d.]/g, ''));
@@ -735,7 +742,7 @@ export async function submitReview(review) {
   store.dashboardEmails = [
     { title: 'New Evaluation Request', detail: `Sent for ${review.evaluatorEmail}`, tone: 'brand' },
     ...store.dashboardEmails,
-  ].slice(0, 6);
+  ].slice(0, MAX_DASHBOARD_PREVIEW_ITEMS);
   saveStore(store);
   const remote = await insertRemote('review_submissions', {
     review_property: 'Evaluation With Us',
@@ -800,14 +807,14 @@ export async function submitBooking({ bookingForm, bookingSummary, paymentForm =
       image: `https://picsum.photos/seed/${encodeURIComponent(guest)}/40/40.jpg`,
     },
     ...store.dashboardBookings,
-  ].slice(0, 6);
+  ].slice(0, MAX_DASHBOARD_PREVIEW_ITEMS);
 
   store.dashboardEmails = [
     { title: 'Booking Confirmed — Customer', detail: `Sent to ${customerReceiptEmail}`, tone: 'indigo' },
     { title: 'New Booking Alert — Owner', detail: `Sent for ${bookingSummary.name}`, tone: 'brand' },
     { title: 'New Booking Alert — Management', detail: 'Sent to admin@horastaycation.com', tone: 'accent' },
     ...store.dashboardEmails,
-  ].slice(0, 6);
+  ].slice(0, MAX_DASHBOARD_PREVIEW_ITEMS);
 
   store.dashboardRevenue += bookingSummary.total;
   store.bookingDraft = clone(initialBookingDraft);
