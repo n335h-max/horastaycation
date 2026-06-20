@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { SiteFooter, SiteHeader, ToastStack } from './components/SiteChrome';
@@ -120,6 +120,8 @@ const ROLE_DEFAULT_PATHS = {
   client: APP_PATHS.booking,
   management: APP_PATHS.dashboard,
 };
+const LISTING_SYNC_PATHS = new Set([APP_PATHS.landing, APP_PATHS.booking, APP_PATHS.dashboard]);
+const BOOKING_SYNC_PATHS = new Set([APP_PATHS.dashboard]);
 
 function getDefaultPathForRole(role) {
   return ROLE_DEFAULT_PATHS[role] || APP_PATHS.booking;
@@ -177,6 +179,8 @@ export default function App() {
   const requestedNextPath = authSearchParams.get('next') || '';
   const bookingSuccessSessionId = authSearchParams.get('session_id') || '';
   const bookingCheckoutState = authSearchParams.get('checkout') || '';
+  const shouldSyncListings = LISTING_SYNC_PATHS.has(location.pathname);
+  const shouldSyncBookings = BOOKING_SYNC_PATHS.has(location.pathname);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [toasts, setToasts] = useState([]);
   const [store, setStore] = useState(() => getSnapshot());
@@ -199,6 +203,8 @@ export default function App() {
   const [authRole, setAuthRole] = useState('client');
   const [availableRoles, setAvailableRoles] = useState(['client']);
   const [isAuthLoading, setIsAuthLoading] = useState(Boolean(isSupabaseConfigured));
+  const hasHydratedListingsRef = useRef(false);
+  const hasHydratedBookingsRef = useRef(false);
 
   const { formatCurrency, formatCompactNumber, formatDate } = useFormatters();
   const sourceListings = store.managementListings?.length ? store.managementListings : FEATURED_PROPERTIES;
@@ -263,22 +269,35 @@ export default function App() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       saveBookingDraft(store.bookingDraft);
-    }, 150);
+    }, 1000);
 
     return () => window.clearTimeout(timer);
   }, [store.bookingDraft]);
 
   useEffect(() => {
     let isActive = true;
+    const includeListings = shouldSyncListings && !hasHydratedListingsRef.current;
+    const includeBookings = shouldSyncBookings && !hasHydratedBookingsRef.current;
+    const shouldHydrate = includeListings || includeBookings;
+
+    if (!shouldHydrate) {
+      return undefined;
+    }
 
     async function hydrateRemoteData() {
-      const result = await syncRemoteData();
+      const result = await syncRemoteData({ includeBookings, includeListings });
 
       if (!isActive) {
         return;
       }
 
       setStore(result.store);
+      if (includeListings) {
+        hasHydratedListingsRef.current = true;
+      }
+      if (includeBookings) {
+        hasHydratedBookingsRef.current = true;
+      }
     }
 
     hydrateRemoteData();
@@ -286,7 +305,7 @@ export default function App() {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [shouldSyncBookings, shouldSyncListings]);
 
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) {
@@ -436,6 +455,11 @@ export default function App() {
   }, [authRole, authSession, availableRoles, location.pathname]);
 
   useEffect(() => {
+    if (!shouldSyncListings) {
+      setResolvedListings([]);
+      return undefined;
+    }
+
     let isActive = true;
     let nextUrls = [];
 
@@ -489,7 +513,7 @@ export default function App() {
       isActive = false;
       revokeMediaObjectUrls(nextUrls);
     };
-  }, [sourceListings]);
+  }, [shouldSyncListings, sourceListings]);
 
   function pushToast(message, type = 'info', icon = 'email') {
     setToasts((current) => [

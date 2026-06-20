@@ -37,34 +37,44 @@ export function BookingPage({
     { number: '03', label: 'Guest & Stay Details' },
     { number: '04', label: 'Payment' },
   ];
+  const wishlistIdSet = useMemo(() => new Set(wishlistIds), [wishlistIds]);
   const locationOptions = useMemo(
     () => ['Any location', ...new Set([...SEARCH_LOCATIONS.filter((item) => item !== 'Any location'), ...properties.map((property) => property.location)])],
+    [properties],
+  );
+  const searchableProperties = useMemo(
+    () =>
+      properties.map((property) => ({
+        property,
+        searchIndex: [
+          property.name,
+          property.location,
+          property.mood,
+          property.bestFor,
+          ...(property.amenities || []),
+        ]
+          .join(' ')
+          .toLowerCase(),
+      })),
     [properties],
   );
   const filteredProperties = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
-    return properties.filter((property) => {
-      const matchesQuery = !normalizedQuery || [
-        property.name,
-        property.location,
-        property.mood,
-        property.bestFor,
-        ...(property.amenities || []),
-      ]
-        .join(' ')
-        .toLowerCase()
-        .includes(normalizedQuery);
+    return searchableProperties
+      .filter(({ property, searchIndex }) => {
+        const matchesQuery = !normalizedQuery || searchIndex.includes(normalizedQuery);
       const matchesLocation = selectedLocation === 'Any location' || property.location === selectedLocation;
-      const matchesWishlist = !savedOnly || wishlistIds.includes(property.id);
+        const matchesWishlist = !savedOnly || wishlistIdSet.has(property.id);
       const matchesAvailability =
         !bookingForm.checkin ||
         !bookingForm.checkout ||
         !isRangeBlocked(property, bookingForm.checkin, bookingForm.checkout);
 
-      return matchesQuery && matchesLocation && matchesWishlist && matchesAvailability;
-    });
-  }, [bookingForm.checkin, bookingForm.checkout, properties, savedOnly, searchQuery, selectedLocation, wishlistIds]);
+        return matchesQuery && matchesLocation && matchesWishlist && matchesAvailability;
+      })
+      .map(({ property }) => property);
+  }, [bookingForm.checkin, bookingForm.checkout, savedOnly, searchQuery, searchableProperties, selectedLocation, wishlistIdSet]);
 
   function handleWishlistClick(event, propertyId) {
     event.preventDefault();
@@ -301,8 +311,8 @@ export function BookingPage({
                     <button
                       type="button"
                       onClick={(event) => handleWishlistClick(event, property.id)}
-                      className={`rounded-full p-2 ${wishlistIds.includes(property.id) ? 'bg-rose-100 text-rose-600' : 'bg-white text-slate-400'}`}
-                      aria-label={wishlistIds.includes(property.id) ? 'Remove from wishlist' : 'Save to wishlist'}
+                      className={`rounded-full p-2 ${wishlistIdSet.has(property.id) ? 'bg-rose-100 text-rose-600' : 'bg-white text-slate-400'}`}
+                      aria-label={wishlistIdSet.has(property.id) ? 'Remove from wishlist' : 'Save to wishlist'}
                     >
                       <Icon name="heart" />
                     </button>
@@ -379,8 +389,8 @@ export function BookingPage({
                             <button
                               type="button"
                               onClick={(event) => handleWishlistClick(event, property.id)}
-                              className={`rounded-full p-2 ${wishlistIds.includes(property.id) ? 'bg-rose-100 text-rose-600' : 'bg-ice-50 text-slate-400'}`}
-                              aria-label={wishlistIds.includes(property.id) ? 'Remove from wishlist' : 'Save to wishlist'}
+                              className={`rounded-full p-2 ${wishlistIdSet.has(property.id) ? 'bg-rose-100 text-rose-600' : 'bg-ice-50 text-slate-400'}`}
+                              aria-label={wishlistIdSet.has(property.id) ? 'Remove from wishlist' : 'Save to wishlist'}
                             >
                               <Icon name="heart" />
                             </button>

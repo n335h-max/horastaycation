@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'hora-staycation-store:v1';
+const BOOKING_DRAFT_KEY = 'hora-staycation-booking-draft:v1';
 
 export function readStorage(defaultValue) {
   if (typeof window === 'undefined') {
@@ -23,4 +24,30 @@ export function writeStorage(value) {
   }
 
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+}
+
+export function readBookingDraft(defaultValue) {
+  if (typeof window === 'undefined') {
+    return defaultValue;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(BOOKING_DRAFT_KEY);
+    if (!raw) {
+      return defaultValue;
+    }
+
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? { ...defaultValue, ...parsed } : defaultValue;
+  } catch {
+    return defaultValue;
+  }
+}
+
+export function writeBookingDraft(value) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.localStorage.setItem(BOOKING_DRAFT_KEY, JSON.stringify(value));
 }

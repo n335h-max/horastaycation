@@ -1,6 +1,6 @@
 import { FEATURED_PROPERTIES, INITIAL_BOOKINGS, INITIAL_EMAILS, RANDOM_GUEST_NAMES } from '../data/siteData';
 import { getWishlistKey } from '../lib/guestFeatures';
-import { readStorage, writeStorage } from '../lib/storage';
+import { readBookingDraft, readStorage, writeBookingDraft, writeStorage } from '../lib/storage';
 import { isSupabaseConfigured, SUPABASE_BUCKETS, supabase } from '../lib/supabase';
 
 export const initialBookingDraft = {
@@ -55,7 +55,9 @@ function withDefaults(store) {
 }
 
 function loadStore() {
-  return withDefaults(readStorage(DEFAULT_STORE));
+  const store = withDefaults(readStorage(DEFAULT_STORE));
+  store.bookingDraft = readBookingDraft(store.bookingDraft);
+  return store;
 }
 
 function saveStore(store) {
@@ -424,18 +426,19 @@ async function fetchRemoteBookingTransactions() {
   };
 }
 
-export async function syncRemoteData() {
+export async function syncRemoteData(options = {}) {
+  const { includeBookings = true, includeListings = true } = options;
   const store = loadStore();
   const [remoteListings, remoteBookings] = await Promise.all([
-    fetchRemoteManagementListings(),
-    fetchRemoteBookingTransactions(),
+    includeListings ? fetchRemoteManagementListings() : Promise.resolve({ saved: false, error: null, listings: [] }),
+    includeBookings ? fetchRemoteBookingTransactions() : Promise.resolve({ saved: false, error: null, transactions: [] }),
   ]);
 
-  if (remoteListings.saved && remoteListings.listings.length) {
+  if (includeListings && remoteListings.saved && remoteListings.listings.length) {
     store.managementListings = remoteListings.listings;
   }
 
-  if (remoteBookings.saved) {
+  if (includeBookings && remoteBookings.saved) {
     store.bookingTransactions = remoteBookings.transactions;
     refreshBookingDashboard(store);
   }
@@ -452,11 +455,9 @@ export async function syncRemoteData() {
 }
 
 export async function saveBookingDraft(draft) {
-  const store = loadStore();
-  store.bookingDraft = draft;
-  saveStore(store);
+  writeBookingDraft(draft);
   await delay();
-  return store;
+  return draft;
 }
 
 export async function toggleWishlistProperty({ authUser, propertyId }) {
