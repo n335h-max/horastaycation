@@ -1,3 +1,4 @@
+
 import { isManagementEmailAllowed, isSupabaseConfigured, supabase } from '../lib/supabase';
 import { SUPPORTED_ROLES_SET, ACTIVE_ROLE_STORAGE_KEY, AVAILABLE_ROLES_STORAGE_KEY } from '../lib/constants';
 

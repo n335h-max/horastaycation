@@ -8,8 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "check-env": "node ./scripts/checkEnv.js",
-    "lint": "echo \"No lint configured yet\"",
-    "format": "echo \"No formatter configured yet\"",
+    "lint": "eslint src/",
+    "format": "prettier --write src/",
     "test": "echo \"No tests configured yet\""
   },
   "dependencies": {
@@ -24,6 +24,11 @@
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.1",
     "@vitejs/plugin-react": "^6.0.2",
+    "eslint": "^9.39.4",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "prettier": "^3.8.4",
     "supabase": "^2.106.0",
     "tailwindcss": "^4.3.1",
     "vite": "^8.0.16"

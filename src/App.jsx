@@ -1071,6 +1071,7 @@ export default function App() {
       />
 
       <main id="main-content">
+        <ErrorBoundary>
         <Suspense fallback={<RouteLoadingFallback />}>
           <Routes>
             <Route
@@ -1261,6 +1262,7 @@ export default function App() {
             <Route path="*" element={<Navigate to={APP_PATHS.landing} replace />} />
           </Routes>
         </Suspense>
+        </ErrorBoundary>
       </main>
 
       {showFooter ? <SiteFooter onShowPage={showPage} onManageCookies={handleManageCookies} /> : null}

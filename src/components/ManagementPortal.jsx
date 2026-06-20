@@ -1041,7 +1041,7 @@ function ListingsStudio({
     <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="space-y-6">
         <section style={{
-          borderRadius: '1.8rem', background: '#0F1F3D', padding: 24, color: '#fff',
+          borderRadius: '1.8rem', background: 'linear-gradient(135deg, #1a2f52 0%, #0F1F3D 100%)', padding: 24, color: '#fff',
           boxShadow: '0 4px 20px rgba(15,31,61,0.18)',
         }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16, justifyContent: 'space-between', alignItems: 'flex-start' }}
@@ -1099,7 +1099,7 @@ function ListingsStudio({
             </span>
           </div>
           <div className="mt-6 grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
-            <div style={{ borderRadius: '1.5rem', background: '#0F1F3D', padding: 20, color: '#fff' }}>
+            <div style={{ borderRadius: '1.5rem', background: 'linear-gradient(135deg, #1a2f52 0%, #0F1F3D 100%)', padding: 20, color: '#fff' }}>
               <label className="form-label text-white" htmlFor="bulkUploadField">Asset Type</label>
               <select
                 id="bulkUploadField"

@@ -1,6 +1,6 @@
 Improvement tasks for Manage Listings / Upload Studio:
-- [ ] Fix hero gradient section and bulk upload dark panel to match navy/white theme
-- [ ] Add delete confirmation dialog
-- [ ] Add listing search filter above listing selector
-- [ ] Add listing thumbnail preview to sidebar card
-- [ ] Add unsaved changes indicator
+- [x] Fix hero gradient section and bulk upload dark panel to match navy/white theme
+- [x] Add delete confirmation dialog
+- [x] Add listing search filter above listing selector
+- [x] Add listing thumbnail preview to sidebar card
+- [x] Add unsaved changes indicator

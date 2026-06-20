@@ -1,0 +1,372 @@
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { FEATURED_PROPERTIES } from '../data/siteData';
+import { deleteMediaFile, saveMediaFile } from '../lib/mediaStorage';
+
+const WINDOW_OPTIONS = [
+  { id: '7d', label: '7D', description: 'Last 7 days', days: 7, buckets: 7 },
+  { id: '30d', label: '30D', description: 'Last 30 days', days: 30, buckets: 6 },
+  { id: '90d', label: '90D', description: 'Last 90 days', days: 90, buckets: 6 },
+  { id: 'all', label: 'All', description: 'All tracked time', days: null, buckets: 6 },
+];
+
+const MEDIA_FIELD_CONFIG = {
+  image: { assetField: 'imageAsset', accept: 'image/*', label: 'Hero Photo Upload', helper: 'Upload the main client-facing hero image.' },
+  summaryImage: { assetField: 'summaryImageAsset', accept: 'image/*', label: 'Summary Photo Upload', helper: 'Upload the image shown in booking summaries.' },
+  thumbnail: { assetField: 'thumbnailAsset', accept: 'image/*', label: 'Thumbnail Upload', helper: 'Upload the smaller card image used in the booking list.' },
+  videoUrl: { assetField: 'videoAsset', accept: 'video/*', label: 'Video Walkthrough Upload', helper: 'Upload a short walkthrough video for the listing.' },
+};
+
+const LISTING_PRESETS = [
+  {
+    id: 'beachfront-villa', title: 'Beachfront Villa',
+    facilities: ['Infinity Pool', 'Private Beach Access', 'BBQ Deck', 'WiFi', 'Outdoor Shower'],
+    schedule: 'Daily check-in from 3:00 PM · Sunset concierge from 5:30 PM · Check-out before 11:00 AM',
+    statusNote: 'Beachfront highlight now live', mood: 'Ocean-facing stay with breezy social spaces, polished arrival moments, and sunset-ready lounging.',
+    bestFor: 'Best for family holidays, bridal parties, and premium short escapes',
+  },
+  {
+    id: 'forest-cabin', title: 'Forest Cabin',
+    facilities: ['Fire Pit', 'Mountain View Deck', 'Coffee Bar', 'WiFi', 'Private Parking'],
+    schedule: 'Self check-in from 4:00 PM · Quiet hours from 10:00 PM · Check-out before 11:00 AM',
+    statusNote: 'Forest retreat schedule refreshed', mood: 'A calm woodland escape shaped for slower mornings, layered textures, and private evening gatherings.',
+    bestFor: 'Best for couples, creators, and restorative weekend stays',
+  },
+  {
+    id: 'urban-loft', title: 'Urban Loft',
+    facilities: ['Rooftop Access', 'Smart Lock', 'Workspace', 'Streaming TV', 'Fast WiFi'],
+    schedule: 'Express check-in from 2:00 PM · Weekday priority stays · Check-out before 12:00 PM',
+    statusNote: 'Urban quick-stay preset active', mood: 'A compact city stay with efficient flow, strong visual styling, and easy work-to-rest transitions.',
+    bestFor: 'Best for business trips, staycations, and content shoots',
+  },
+];
+
+const MEDIA_FIELD_ORDER = ['image', 'summaryImage', 'thumbnail', 'videoUrl'];
+const STUDIO_SECTIONS = [
+  { id: 'basic', eyebrow: 'Basic Info', title: 'Core listing settings' },
+  { id: 'media', eyebrow: 'Media', title: 'Photos, thumbnails, and video' },
+  { id: 'schedule', eyebrow: 'Schedule & Availability', title: 'Guest windows and blocked dates' },
+  { id: 'copy', eyebrow: 'Copy & Description', title: 'Guest-facing story and amenities' },
+];
+
+function getTimestamp(value) {
+  if (!value) return null;
+  const parsed = new Date(value).getTime();
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+function getWindowConfig(windowId = '30d') {
+  return WINDOW_OPTIONS.find((option) => option.id === windowId) || WINDOW_OPTIONS[1];
+}
+
+function isInWindow(value, windowId) {
+  const config = getWindowConfig(windowId);
+  if (!config.days) return true;
+  const timestamp = getTimestamp(value);
+  if (!timestamp) return false;
+  const cutoff = Date.now() - config.days * 86400000;
+  return timestamp >= cutoff;
+}
+
+function buildDefaultListing() {
+  return {
+    id: `listing-${crypto.randomUUID().slice(0, 8)}`,
+    name: '',
+    location: '',
+    price: 0,
+    statusNote: '',
+    publishStatus: 'draft',
+    schedule: '',
+    mood: '',
+    bestFor: '',
+    facilities: [],
+    facilitiesText: '',
+    image: '',
+    summaryImage: '',
+    thumbnail: '',
+    videoUrl: '',
+    imageAsset: null,
+    summaryImageAsset: null,
+    thumbnailAsset: null,
+    videoAsset: null,
+    blockedDates: [],
+    isDeleted: false,
+    amenities: [],
+    ratingLabel: 'New',
+    reviewCount: 0,
+    reviewSnippet: '',
+    guestCapacity: 2,
+  };
+}
+
+export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
+  const availableListings = listings?.length ? listings : FEATURED_PROPERTIES;
+  const [selectedListingId, setSelectedListingId] = useState(availableListings[0]?.id ?? '');
+  const [listingSearch, setListingSearch] = useState('');
+  const [draftListing, setDraftListing] = useState(null);
+  const [isSavingListing, setIsSavingListing] = useState(false);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [studioMessage, setStudioMessage] = useState('');
+  const [draggingField, setDraggingField] = useState(null);
+  const [bulkUploadField, setBulkUploadField] = useState('image');
+  const [bulkListingIds, setBulkListingIds] = useState(new Set());
+  const [isBulkUploading, setIsBulkUploading] = useState(false);
+  const [pendingMediaFiles, setPendingMediaFiles] = useState({});
+  const [originalFormSnapshot, setOriginalFormSnapshot] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const selectedListing = draftListing || availableListings.find((item) => item.id === selectedListingId) || availableListings[0];
+
+  const [listingForm, setListingForm] = useState({
+    name: selectedListing?.name || '',
+    location: selectedListing?.location || '',
+    price: selectedListing?.price || 0,
+    statusNote: selectedListing?.statusNote || '',
+    publishStatus: selectedListing?.publishStatus || 'published',
+    schedule: selectedListing?.schedule || '',
+    mood: selectedListing?.mood || '',
+    bestFor: selectedListing?.bestFor || '',
+    facilitiesText: selectedListing?.facilities?.join(', ') || '',
+  });
+
+  useEffect(() => {
+    if (!selectedListing) return;
+    setListingForm({
+      name: selectedListing.name || '',
+      location: selectedListing.location || '',
+      price: selectedListing.price || 0,
+      statusNote: selectedListing.statusNote || '',
+      publishStatus: selectedListing.publishStatus || 'published',
+      schedule: selectedListing.schedule || '',
+      mood: selectedListing.mood || '',
+      bestFor: selectedListing.bestFor || '',
+      facilitiesText: (selectedListing.facilities || []).join(', '),
+    });
+    setOriginalFormSnapshot({
+      name: selectedListing.name || '',
+      location: selectedListing.location || '',
+      price: selectedListing.price || 0,
+      statusNote: selectedListing.statusNote || '',
+      publishStatus: selectedListing.publishStatus || 'published',
+      schedule: selectedListing.schedule || '',
+      mood: selectedListing.mood || '',
+      bestFor: selectedListing.bestFor || '',
+      facilitiesText: (selectedListing.facilities || []).join(', '),
+    });
+  }, [selectedListingId, draftListing]);
+
+  const mediaCards = selectedListing ? MEDIA_FIELD_ORDER.map((field) => {
+    const config = MEDIA_FIELD_CONFIG[field];
+    const pendingFile = pendingMediaFiles[field];
+    const currentUrl = selectedListing[field] || '';
+    const currentAsset = selectedListing[config.assetField];
+    return { field, config, pendingFile, currentUrl, currentAsset, hasPending: !!pendingFile };
+  }) : [];
+
+  const selectedBulkListings = availableListings.filter((l) => bulkListingIds.has(l.id));
+
+  const handleListingFieldChange = useCallback((event) => {
+    const { name, value } = event.target;
+    setListingForm((current) => ({ ...current, [name]: value }));
+  }, []);
+
+  const handlePresetApply = useCallback((presetId) => {
+    const preset = LISTING_PRESETS.find((p) => p.id === presetId);
+    if (!preset) return;
+    setListingForm((current) => ({
+      ...current,
+      name: current.name || preset.title,
+      mood: current.mood || preset.mood,
+      bestFor: current.bestFor || preset.bestFor,
+      schedule: current.schedule || preset.schedule,
+      statusNote: current.statusNote || preset.statusNote,
+      facilitiesText: current.facilitiesText || preset.facilities.join(', '),
+    }));
+  }, []);
+
+  const handleCreateListing = useCallback(() => {
+    const newListing = buildDefaultListing();
+    setDraftListing(newListing);
+    setSelectedListingId(newListing.id);
+    setStudioMessage('New draft listing created. Fill in the fields and save to publish.');
+  }, []);
+
+  const handleMediaUpload = useCallback(async (field, file) => {
+    if (!file) return;
+    setIsUploadingMedia(true);
+    setUploadError('');
+    try {
+      const mediaRef = await saveMediaFile(file, field);
+      if (mediaRef) {
+        setPendingMediaFiles((current) => ({ ...current, [field]: mediaRef }));
+        setStudioMessage(`Media file saved for upload: ${file.name}`);
+      }
+    } catch {
+      setUploadError(`Upload failed for ${field}.`);
+    } finally {
+      setIsUploadingMedia(false);
+    }
+  }, []);
+
+  const clearMediaField = useCallback((field) => {
+    if (pendingMediaFiles[field]) {
+      deleteMediaFile(pendingMediaFiles[field]);
+      setPendingMediaFiles((current) => {
+        const next = { ...current };
+        delete next[field];
+        return next;
+      });
+    }
+  }, [pendingMediaFiles]);
+
+  const handleMediaDragOver = useCallback((event) => {
+    event.preventDefault();
+    event.stopPropagation();
+  }, []);
+
+  const handleMediaDrop = useCallback((field, event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setDraggingField(null);
+    const file = event.dataTransfer?.files?.[0];
+    if (file) handleMediaUpload(field, file);
+  }, [handleMediaUpload]);
+
+  const toggleBulkListing = useCallback((listingId) => {
+    setBulkListingIds((current) => {
+      const next = new Set(current);
+      if (next.has(listingId)) next.delete(listingId);
+      else next.add(listingId);
+      return next;
+    });
+  }, []);
+
+  const toggleAllBulkListings = useCallback(() => {
+    setBulkListingIds((current) => {
+      if (current.size === availableListings.length) return new Set();
+      return new Set(availableListings.map((l) => l.id));
+    });
+  }, [availableListings]);
+
+  const handleBulkUpload = useCallback(async () => {
+    const field = bulkUploadField;
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = MEDIA_FIELD_CONFIG[field]?.accept || 'image/*';
+    fileInput.multiple = true;
+
+    fileInput.addEventListener('change', async () => {
+      const files = Array.from(fileInput.files || []);
+      if (!files.length) return;
+      setIsBulkUploading(true);
+      try {
+        for (const file of files) {
+          await saveMediaFile(file, field);
+        }
+        setStudioMessage(`Bulk upload complete: ${files.length} file(s) saved.`);
+      } catch {
+        setUploadError('Bulk upload failed.');
+      } finally {
+        setIsBulkUploading(false);
+      }
+    });
+
+    fileInput.click();
+  }, [bulkUploadField]);
+
+  const handleListingSubmit = useCallback(async () => {
+    setIsSavingListing(true);
+    try {
+      await onSaveListing({
+        ...selectedListing,
+        ...listingForm,
+        mediaFiles: pendingMediaFiles,
+      });
+      setDraftListing(null);
+      setPendingMediaFiles({});
+      setStudioMessage('Listing content saved. The public staycation cards now use the latest management portal data.');
+    } finally {
+      setIsSavingListing(false);
+    }
+  }, [selectedListing, listingForm, pendingMediaFiles, onSaveListing]);
+
+  const handleDeleteListing = useCallback(async () => {
+    if (draftListing?.id === selectedListing.id) {
+      setDraftListing(null);
+      setSelectedListingId(availableListings[0]?.id ?? '');
+      setStudioMessage('Draft listing removed before publishing.');
+      return;
+    }
+    await onDeleteListing(selectedListing.id);
+    setDraftListing(null);
+    setSelectedListingId(availableListings.find((l) => l.id !== selectedListing.id)?.id ?? availableListings[0]?.id ?? '');
+    setStudioMessage('Listing removed from the management portal.');
+  }, [draftListing, selectedListing, availableListings, onDeleteListing]);
+
+  const hasUnsavedChanges = useMemo(() => {
+    if (!originalFormSnapshot || !selectedListing) return false;
+    const current = listingForm;
+    return (
+      current.name !== originalFormSnapshot.name ||
+      current.location !== originalFormSnapshot.location ||
+      current.price !== originalFormSnapshot.price ||
+      current.statusNote !== originalFormSnapshot.statusNote ||
+      current.publishStatus !== originalFormSnapshot.publishStatus ||
+      current.schedule !== originalFormSnapshot.schedule ||
+      current.mood !== originalFormSnapshot.mood ||
+      current.bestFor !== originalFormSnapshot.bestFor ||
+      current.facilitiesText !== originalFormSnapshot.facilitiesText
+    );
+  }, [listingForm, originalFormSnapshot, selectedListing]);
+
+  const filteredListings = useMemo(() => {
+    if (!listingSearch.trim()) return availableListings;
+    const query = listingSearch.toLowerCase();
+    return availableListings.filter(
+      (l) => l.name.toLowerCase().includes(query) || (l.location || '').toLowerCase().includes(query),
+    );
+  }, [availableListings, listingSearch]);
+
+  return {
+    availableListings,
+    selectedListing,
+    selectedListingId,
+    listingForm,
+    mediaCards,
+    isSavingListing,
+    isUploadingMedia,
+    uploadError,
+    studioMessage,
+    draggingField,
+    bulkUploadField,
+    bulkListingIds,
+    selectedBulkListings,
+    isBulkUploading,
+    pendingMediaFiles,
+    listingSearch,
+    showDeleteConfirm,
+    hasUnsavedChanges,
+    filteredListings,
+    setSelectedListingId,
+    setBulkUploadField,
+    setListingSearch,
+    setDraggingField,
+    setShowDeleteConfirm,
+    handleListingFieldChange,
+    handleMediaUpload,
+    handleCreateListing,
+    clearMediaField,
+    handleMediaDragOver,
+    handleMediaDrop,
+    handlePresetApply,
+    toggleBulkListing,
+    toggleAllBulkListings,
+    handleBulkUpload,
+    handleListingSubmit,
+    handleDeleteListing,
+    confirmDelete: () => { setShowDeleteConfirm(false); handleDeleteListing(); },
+    cancelDelete: () => setShowDeleteConfirm(false),
+  };
+}
+
+export { getWindowConfig, isInWindow, MEDIA_FIELD_CONFIG, MEDIA_FIELD_ORDER, STUDIO_SECTIONS, LISTING_PRESETS, WINDOW_OPTIONS };
