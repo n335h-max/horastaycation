@@ -2130,6 +2130,7 @@ export function ManagementListingsPage({
     ? formatCurrency(Math.round(listings.reduce((sum, listing) => sum + Number(listing.price || 0), 0) / listings.length))
     : formatCurrency(0);
   const userName = authUser?.user_metadata?.full_name || authUser?.email || 'Hora Admin';
+  const initial = String(userName).trim().charAt(0).toUpperCase() || 'H';
   const listingsNav = [
     {
       title: 'Overview',
@@ -2156,143 +2157,222 @@ export function ManagementListingsPage({
     },
   ];
 
-  return (
-    <section className="min-h-screen bg-[#0b0d10] px-4 pb-10 pt-24 md:px-6">
-      <div className="mx-auto max-w-[1500px] overflow-hidden rounded-[2rem] border border-white/8 bg-[#151618] shadow-[0_30px_120px_rgba(0,0,0,0.45)]">
-        <div className="grid min-h-[calc(100vh-8rem)] lg:grid-cols-[280px_minmax(0,1fr)]">
-          <aside className="flex flex-col border-b border-white/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] lg:border-b-0 lg:border-r lg:border-white/6">
-            <div className="flex items-center gap-3 border-b border-white/6 px-6 py-5">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-accent-500 text-lg font-bold text-white shadow-lg shadow-brand-950/35">
-                H
-              </div>
-              <div>
-                <div className="font-semibold text-white">Hora</div>
-                <div className="text-sm text-white/55">Staycation</div>
-              </div>
-            </div>
-            <div className="flex-1 space-y-7 px-5 py-6">
-              {listingsNav.map((group) => (
-                <div key={group.title}>
-                  <div className="px-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/32">{group.title}</div>
-                  <div className="mt-3 space-y-1">
-                    {group.items.map((item) => {
-                      const iconName =
-                        item.id === 'dashboard' ? 'chart'
-                          : item.id === 'bookings' ? 'calendar'
-                            : item.id === 'analytics' ? 'trend'
-                              : item.id === 'manage-listings' ? 'home'
-                                : item.id === 'upload-studio' ? 'upload'
-                                  : item.id === 'owner-leads' ? 'users'
-                                    : item.id === 'evaluate-leads' ? 'pen'
-                                      : 'email';
+  const getIcon = (id) =>
+    id === 'dashboard' ? 'chart'
+      : id === 'bookings' ? 'calendar'
+        : id === 'analytics' ? 'trend'
+          : id === 'manage-listings' ? 'home'
+            : id === 'upload-studio' ? 'upload'
+              : id === 'owner-leads' ? 'users'
+                : id === 'evaluate-leads' ? 'pen'
+                  : 'email';
 
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={item.onClick}
-                          className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-medium transition ${
-                            item.active ? 'bg-[#dff7ef] text-brand-950 shadow-sm' : 'text-white/70 hover:bg-white/6 hover:text-white'
-                          }`}
-                        >
-                          <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${item.active ? 'bg-white text-brand-700' : 'bg-white/6 text-white/55'}`}>
-                            <Icon name={iconName} />
-                          </span>
-                          <span className="truncate">{item.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+  return (
+    <div style={{
+      display: 'flex',
+      height: '100vh',
+      overflow: 'hidden',
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      fontSize: 14,
+      color: '#0F1F3D',
+      background: '#F5F7FA',
+    }}>
+      {/* ── Sidebar ── */}
+      <aside className="sidebar" style={{
+        width: 220,
+        minWidth: 220,
+        background: '#0F1F3D',
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        flexShrink: 0,
+      }}>
+        <div style={{
+          padding: '20px 18px 16px',
+          borderBottom: '1px solid rgba(255,255,255,0.10)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+        }}>
+          <div className="logo-mark" style={{
+            width: 30, height: 30, background: '#1D9E75', borderRadius: 8,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 14, fontWeight: 700, color: '#fff', flexShrink: 0,
+          }}>H</div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#FFFFFF' }}>Hora</div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', marginTop: 1 }}>Staycation</div>
+          </div>
+        </div>
+
+        <nav className="sidebar-nav" style={{
+          flex: 1, padding: '14px 10px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto',
+        }}>
+          {listingsNav.map((group) => (
+            <div key={group.title}>
+              <div className="nav-section" style={{
+                fontSize: 10, color: 'rgba(255,255,255,0.35)', padding: '10px 8px 4px',
+                letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 500,
+              }}>{group.title}</div>
+              {group.items.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={item.onClick}
+                  className="nav-item"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 9, padding: '8px 10px', borderRadius: 6,
+                    fontSize: 13, color: item.active ? '#fff' : 'rgba(255,255,255,0.55)',
+                    cursor: 'pointer', border: 'none', background: item.active ? '#1E3560' : 'transparent',
+                    width: '100%', textAlign: 'left', fontWeight: item.active ? 500 : 400,
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" style={{ width: 16, height: 16, flexShrink: 0, stroke: 'currentColor', fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                    {item.id === 'dashboard' ? <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>
+                      : item.id === 'bookings' ? <><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>
+                        : item.id === 'analytics' ? <><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></>
+                          : item.id === 'manage-listings' ? <><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>
+                            : item.id === 'upload-studio' ? <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></>
+                              : item.id === 'owner-leads' ? <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></>
+                                : item.id === 'evaluate-leads' ? <><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></>
+                                  : <><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></>}
+                  </svg>
+                  <span style={{ flex: 1 }}>{item.label}</span>
+                </button>
               ))}
             </div>
-            <div className="border-t border-white/6 px-5 py-5">
-              <div className="flex items-center gap-3 rounded-2xl border border-white/6 bg-white/[0.03] px-4 py-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#dff7ef] font-semibold text-brand-950">
-                  {String(userName).trim().charAt(0).toUpperCase() || 'H'}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-white">{authUser?.email || 'management@horastaycation.com'}</div>
-                  <div className="text-xs uppercase tracking-[0.18em] text-white/38">Admin</div>
-                </div>
-                <button type="button" onClick={onSignOut} className="rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/60 hover:border-white/20 hover:text-white">
-                  Out
-                </button>
-              </div>
-              <button type="button" onClick={() => onShowPage('landing')} className="mt-3 w-full rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm font-semibold text-white/72 transition hover:bg-white/[0.07] hover:text-white">
-                Return to site
-              </button>
+          ))}
+        </nav>
+
+        <div className="sidebar-footer" style={{
+          padding: '14px 16px', borderTop: '1px solid rgba(255,255,255,0.10)',
+          display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0,
+        }}>
+          <div className="avatar" style={{
+            width: 30, height: 30, borderRadius: '50%', background: '#1E3560',
+            border: '1.5px solid #2A4578', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', fontSize: 12, fontWeight: 600, color: '#fff', flexShrink: 0,
+          }}>{initial}</div>
+          <div className="footer-info" style={{ flex: 1, minWidth: 0 }}>
+            <div className="footer-name" style={{ fontSize: 12, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{authUser?.email || 'management@horastaycation.com'}</div>
+            <div className="footer-role" style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)' }}>Admin</div>
+          </div>
+          <button type="button" onClick={onSignOut} className="icon-btn" style={{
+            background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.35)',
+            display: 'flex', alignItems: 'center', padding: 4, borderRadius: 4,
+          }}>
+            <svg viewBox="0 0 24 24" style={{ width: 16, height: 16, stroke: 'currentColor', fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </aside>
+
+      {/* ── Main ── */}
+      <div className="main" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', minWidth: 0 }}>
+
+        {/* ── Topbar ── */}
+        <div className="topbar" style={{
+          background: '#fff', borderBottom: '1px solid rgba(15,31,61,0.12)',
+          padding: '0 24px', height: 52, display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0,
+        }}>
+          <span className="topbar-title" style={{ fontSize: 14, fontWeight: 600, color: '#0F1F3D' }}>Listings workspace</span>
+          <div className="topbar-right" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span className="chip" style={{
+              fontSize: 12, color: '#5A6A84', background: '#F5F7FA', padding: '5px 12px',
+              borderRadius: 20, border: '1px solid rgba(15,31,61,0.12)', display: 'flex', alignItems: 'center', gap: 5,
+            }}>
+              <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, stroke: 'currentColor', fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              {currentMonthLabel}
+            </span>
+            <button type="button" onClick={() => onShowPage('landing')} className="btn-outline" style={{
+              fontSize: 12, fontWeight: 500, color: '#0F1F3D', background: '#fff',
+              border: '1px solid rgba(15,31,61,0.12)', padding: '6px 14px', borderRadius: 6, cursor: 'pointer',
+            }}>Return to site</button>
+            <button type="button" onClick={() => onShowPage('dashboard')} className="btn-primary" style={{
+              background: '#0F1F3D', color: '#fff', border: 'none', padding: '7px 14px',
+              borderRadius: 6, fontSize: 12, fontWeight: 500, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}>
+              <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, stroke: 'currentColor', fill: 'none', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+              Back to dashboard
+            </button>
+          </div>
+        </div>
+
+        {/* ── Content ── */}
+        <div className="content" style={{
+          flex: 1, overflowY: 'auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 18,
+        }}>
+          {/* ── Snapshot bar ── */}
+          <div className="snapbar" style={{
+            background: '#0F1F3D', borderRadius: 14, padding: '18px 24px', display: 'flex', alignItems: 'stretch', gap: 0,
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: 0 }}>
+              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Listings live</span>
+              <span style={{ fontSize: 22, fontWeight: 600, color: '#fff' }}>{liveListingsCount}</span>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>{draftListingsCount ? `${draftListingsCount} draft in progress` : 'All active listings are published'}</span>
             </div>
-          </aside>
-
-          <div className="min-w-0">
-            <header className="flex flex-col gap-4 border-b border-white/6 px-6 py-5 md:flex-row md:items-center md:justify-between lg:px-8">
-              <div>
-                <div className="text-sm font-medium text-white/55">Listings workspace</div>
-                <div className="mt-1 text-xl font-semibold text-white">Management upload studio</div>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-medium text-white/70">
-                  {currentMonthLabel}
-                </div>
-                <button type="button" onClick={() => onShowPage('dashboard')} className="rounded-2xl border border-white/12 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.08]">
-                  Back to dashboard
-                </button>
-              </div>
-            </header>
-
-            <div className="space-y-6 p-6 lg:p-8">
-              <section className="overflow-hidden rounded-[1.6rem] border border-brand-500/18 bg-gradient-to-br from-[#055c50] via-[#0b5d57] to-[#103a57] px-5 py-5 text-white shadow-[0_24px_60px_rgba(3,105,98,0.28)]">
-                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-                  <div>
-                    <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">Listings live</div>
-                    <div className="mt-2 text-4xl font-black">{liveListingsCount}</div>
-                    <div className="mt-2 text-sm text-white/68">{draftListingsCount ? `${draftListingsCount} draft in progress` : 'All active listings are published'}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">Average nightly</div>
-                    <div className="mt-2 text-4xl font-black">{averageNightly}</div>
-                    <div className="mt-2 text-sm text-white/68">Calculated across current management listings</div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">Bookings connected</div>
-                    <div className="mt-2 text-4xl font-black">{bookings.length}</div>
-                    <div className="mt-2 text-sm text-white/68">The studio updates what guests actually book</div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">Lead pipeline</div>
-                    <div className="mt-2 text-4xl font-black">{ownerApplications.length + reviewSubmissions.length}</div>
-                    <div className="mt-2 text-sm text-white/68">Owner and evaluation demand connected to this workspace</div>
-                  </div>
-                </div>
-              </section>
-
-              <div className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-1">
-                <ListingsStudio
-                  listings={listings}
-                  onSaveListing={onSaveListing}
-                  onDeleteListing={onDeleteListing}
-                  onShowPage={onShowPage}
-                  formatCurrency={formatCurrency}
-                />
-              </div>
-
-              <section id="catalog-preview" className="rounded-[1.5rem] border border-white/8 bg-white/[0.04] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-                <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-                  <div>
-                    <div className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">Published staycation choices</div>
-                    <h2 className="mt-2 font-display text-3xl font-bold text-white">Live catalog preview</h2>
-                  </div>
-                  <button type="button" onClick={() => onShowPage('dashboard')} className="rounded-2xl border border-white/12 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.08]">
-                    Back to dashboard
-                  </button>
-                </div>
-                <PublishedListingsGrid listings={listings} formatCurrency={formatCurrency} />
-              </section>
+            <div style={{ width: 1, background: 'rgba(255,255,255,0.10)', margin: '0 24px', alignSelf: 'stretch', flexShrink: 0 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Average nightly</span>
+              <span style={{ fontSize: 22, fontWeight: 600, color: '#fff' }}>{averageNightly}</span>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>Calculated across current management listings</span>
             </div>
+            <div style={{ width: 1, background: 'rgba(255,255,255,0.10)', margin: '0 24px', alignSelf: 'stretch', flexShrink: 0 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Bookings connected</span>
+              <span style={{ fontSize: 22, fontWeight: 600, color: '#fff' }}>{bookings.length}</span>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>The studio updates what guests actually book</span>
+            </div>
+            <div style={{ width: 1, background: 'rgba(255,255,255,0.10)', margin: '0 24px', alignSelf: 'stretch', flexShrink: 0 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Lead pipeline</span>
+              <span style={{ fontSize: 22, fontWeight: 600, color: '#fff' }}>{ownerApplications.length + reviewSubmissions.length}</span>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>Owner and evaluation demand connected to this workspace</span>
+            </div>
+            <div style={{ width: 1, background: 'rgba(255,255,255,0.10)', margin: '0 24px', alignSelf: 'stretch', flexShrink: 0 }} />
+            <div style={{ flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, paddingLeft: 24, display: 'flex', alignItems: 'center' }}>
+              The listing studio is the source of truth for the public staycation catalog.
+            </div>
+          </div>
+
+          {/* ── Studio wrapper ── */}
+          <div className="card" style={{
+            background: '#fff', border: '1px solid rgba(15,31,61,0.12)', borderRadius: 10, padding: 18,
+          }}>
+            <ListingsStudio
+              listings={listings}
+              onSaveListing={onSaveListing}
+              onDeleteListing={onDeleteListing}
+              onShowPage={onShowPage}
+              formatCurrency={formatCurrency}
+            />
+          </div>
+
+          {/* ── Catalog preview ── */}
+          <div className="card" style={{
+            background: '#fff', border: '1px solid rgba(15,31,61,0.12)', borderRadius: 10, padding: 18,
+          }}>
+            <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <span className="card-title" style={{ fontSize: 13, fontWeight: 600, color: '#0F1F3D', display: 'flex', alignItems: 'center', gap: 7 }}>
+                <svg viewBox="0 0 24 24" style={{ width: 15, height: 15, stroke: '#5A6A84', fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                Live catalog preview
+              </span>
+              <button type="button" onClick={() => onShowPage('dashboard')} className="card-action" style={{
+                fontSize: 12, color: '#0F1F3D', cursor: 'pointer', fontWeight: 500, background: 'none', border: 'none',
+              }}>Back to dashboard</button>
+            </div>
+            <PublishedListingsGrid listings={listings} formatCurrency={formatCurrency} />
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
