@@ -1425,83 +1425,8 @@ export function DashboardPage({
   const liveListingsCount = listings.filter((listing) => listing.publishStatus !== 'draft' && !listing.isDeleted).length;
   const draftListingsCount = listings.filter((listing) => listing.publishStatus === 'draft' && !listing.isDeleted).length;
   const confirmedBookings = bookingTransactions.filter((booking) => (booking.bookingStatus || 'confirmed') === 'confirmed').length;
-  const overviewCards = [
-    { id: 'bookings', label: 'Bookings', value: bookings.length, caption: 'This month' },
-    { id: 'revenue', label: 'Revenue', value: formatCurrency(revenue), caption: 'Confirmed only' },
-    { id: 'emails', label: 'Emails Sent', value: emails.length, caption: 'All triggers active' },
-    { id: 'listings', label: 'Listings Live', value: liveListingsCount, caption: draftListingsCount ? `${draftListingsCount} draft` : 'All published' },
-  ];
-  const compactCards = [
-    { id: 'confirmed', label: 'Confirmed bookings', value: confirmedBookings, caption: confirmedBookings ? 'Ready to host' : 'No bookings yet' },
-    { id: 'compact-revenue', label: 'Revenue', value: formatCurrency(revenue), caption: 'This month' },
-    { id: 'owners', label: 'Owner leads', value: ownerApplications.length, caption: ownerApplications.length ? 'Needs review' : 'Awaiting follow-up' },
-    { id: 'evaluations', label: 'Evaluate leads', value: reviewSubmissions.length, caption: reviewSubmissions.length ? 'Needs review' : 'Pending review' },
-  ];
-  const queuePreview = bookingTransactions.slice(0, 3);
-  const recentActivity = useMemo(() => {
-    const items = [];
 
-    if (bookingTransactions[0]) {
-      items.push({
-        id: `booking-${bookingTransactions[0].id}`,
-        icon: 'calendar-check',
-        title: 'Booking confirmed',
-        detail: bookingTransactions[0].bookingSummary.name,
-        meta: `${bookingTransactions[0].bookingForm.checkin} · ${formatCurrency(bookingTransactions[0].bookingSummary.total)}`,
-        tone: 'brand',
-      });
-    }
-
-    if (ownerApplications[0]) {
-      items.push({
-        id: `owner-${ownerApplications[0].id}`,
-        icon: 'home',
-        title: 'Owner lead received',
-        detail: ownerApplications[0].ownerAddress,
-        meta: ownerApplications[0].submittedAt
-          ? new Date(ownerApplications[0].submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-          : 'Awaiting review',
-        tone: 'accent',
-      });
-    }
-
-    if (analyticsSummary.recentEvents[0]) {
-      items.push({
-        id: `analytics-${analyticsSummary.recentEvents[0].id}`,
-        icon: 'chart',
-        title: formatAnalyticsEventLabel(analyticsSummary.recentEvents[0].type),
-        detail: analyticsSummary.recentEvents[0].path || analyticsSummary.recentEvents[0].page || 'HoraStaycation',
-        meta: analyticsSummary.searches ? `${analyticsSummary.searches} tracked searches` : 'No tracked searches yet',
-        tone: 'ice',
-      });
-    }
-
-    if (!items.length) {
-      items.push({
-        id: 'activity-empty',
-        icon: 'chart',
-        title: 'Workspace ready',
-        detail: 'No recent activity yet',
-        meta: 'Bookings, owner leads, and analytics will populate this feed',
-        tone: 'ice',
-      });
-    }
-
-    return items.slice(0, 3);
-  }, [analyticsSummary, bookingTransactions, formatCurrency, ownerApplications]);
-  const emailTriggers = useMemo(() => {
-    if (emails.length) {
-      return emails.slice(0, 3).map((email, index) => ({
-        id: `${email.title}-${index}`,
-        title: email.title,
-        detail: email.detail,
-      }));
-    }
-
-    return [
-      { id: 'email-empty', title: 'Triggers standing by', detail: 'Guest, owner, and management emails will appear here once activity begins.' },
-    ];
-  }, [emails]);
+  // ── Navigation / Sidebar data ──
   const dashboardNav = [
     {
       title: 'Overview',
@@ -1527,357 +1452,661 @@ export function DashboardPage({
       ],
     },
   ];
-  const userName = authUser?.user_metadata?.full_name || authUser?.email || 'Hora Admin';
+
+  // ── Snapshot items ──
+  const snapItems = [
+    { id: 'bookings', label: 'Bookings', value: bookings.length, sub: 'This month' },
+    { id: 'revenue', label: 'Revenue', value: formatCurrency(revenue), sub: 'Confirmed only' },
+    { id: 'emails', label: 'Emails Sent', value: emails.length, sub: 'All triggers active' },
+    { id: 'listings', label: 'Listings Live', value: liveListingsCount, sub: draftListingsCount ? `${draftListingsCount} draft` : 'All published' },
+  ];
   const healthCopy = liveListingsCount
     ? 'System is healthy. Queue, email triggers, and live listings are running normally.'
     : 'System is ready. Publish your first listing to activate the operator workflow.';
 
+  // ── Stat grid ──
+  const statCards = [
+    { id: 'confirmed', label: 'Confirmed bookings', value: confirmedBookings, caption: confirmedBookings ? 'Ready to host' : 'No bookings yet' },
+    { id: 'compact-revenue', label: 'Revenue', value: formatCurrency(revenue), caption: 'This month' },
+    { id: 'owners', label: 'Owner leads', value: ownerApplications.length, caption: ownerApplications.length ? 'Needs review' : 'Awaiting follow-up' },
+    { id: 'evaluations', label: 'Evaluate leads', value: reviewSubmissions.length, caption: reviewSubmissions.length ? 'Needs review' : 'Pending review' },
+  ];
+
+  // ── Live booking queue ──
+  const queuePreview = bookingTransactions.slice(0, 3);
+
+  // ── Recent activity ──
+  const recentActivity = useMemo(() => {
+    const items = [];
+    if (bookingTransactions[0]) {
+      items.push({
+        id: `booking-${bookingTransactions[0].id}`,
+        icon: 'calendar-check',
+        title: 'Booking confirmed',
+        detail: bookingTransactions[0].bookingSummary.name,
+        meta: `${bookingTransactions[0].bookingForm.checkin} · ${formatCurrency(bookingTransactions[0].bookingSummary.total)}`,
+        tone: 'brand',
+      });
+    }
+    if (ownerApplications[0]) {
+      items.push({
+        id: `owner-${ownerApplications[0].id}`,
+        icon: 'home',
+        title: 'Owner lead received',
+        detail: ownerApplications[0].ownerAddress,
+        meta: ownerApplications[0].submittedAt
+          ? new Date(ownerApplications[0].submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          : 'Awaiting review',
+        tone: 'accent',
+      });
+    }
+    if (analyticsSummary.recentEvents[0]) {
+      items.push({
+        id: `analytics-${analyticsSummary.recentEvents[0].id}`,
+        icon: 'chart',
+        title: formatAnalyticsEventLabel(analyticsSummary.recentEvents[0].type),
+        detail: analyticsSummary.recentEvents[0].path || analyticsSummary.recentEvents[0].page || 'HoraStaycation',
+        meta: analyticsSummary.searches ? `${analyticsSummary.searches} tracked searches` : 'No tracked searches yet',
+        tone: 'ice',
+      });
+    }
+    if (!items.length) {
+      items.push({
+        id: 'activity-empty',
+        icon: 'chart',
+        title: 'Workspace ready',
+        detail: 'No recent activity yet',
+        meta: 'Bookings, owner leads, and analytics will populate this feed',
+        tone: 'ice',
+      });
+    }
+    return items.slice(0, 3);
+  }, [analyticsSummary, bookingTransactions, formatCurrency, ownerApplications]);
+
+  // ── Email triggers ──
+  const emailTriggers = useMemo(() => {
+    if (emails.length) {
+      return emails.slice(0, 3).map((email, index) => ({
+        id: `${email.title}-${index}`,
+        title: email.title,
+        detail: email.detail,
+      }));
+    }
+    return [
+      { id: 'email-empty', title: 'Triggers standing by', detail: 'Guest, owner, and management emails will appear here once activity begins.' },
+    ];
+  }, [emails]);
+
+  // ── Published listings (all 7 homestays with real images) ──
+  const publishedListings = listings.filter((l) => !l.isDeleted);
+
+  // ── Owner / Evaluate ──
+  const ownerLeads = ownerApplications.slice(0, 3);
+  const evalLeads = reviewSubmissions.slice(0, 3);
+
+  // ── User ──
+  const userName = authUser?.user_metadata?.full_name || authUser?.email || 'Hora Admin';
+  const initial = String(userName).trim().charAt(0).toUpperCase() || 'H';
+
+  // ── Shared helpers ──
+  const getIcon = (id) =>
+    id === 'dashboard' ? 'chart'
+      : id === 'bookings' ? 'calendar'
+        : id === 'analytics' ? 'trend'
+          : id === 'manage-listings' ? 'home'
+            : id === 'upload-studio' ? 'upload'
+              : id === 'owner-leads' ? 'users'
+                : id === 'evaluate-leads' ? 'pen'
+                  : 'email';
+
+  const getInitials = (name) =>
+    String(name || '')
+      .split(' ')
+      .slice(0, 2)
+      .map((p) => p.charAt(0))
+      .join('')
+      .toUpperCase();
+
   return (
-    <section className="min-h-screen bg-[#0b0d10] px-4 pb-10 pt-24 md:px-6">
-      <div className="mx-auto max-w-[1500px] overflow-hidden rounded-[2rem] border border-white/8 bg-[#151618] shadow-[0_30px_120px_rgba(0,0,0,0.45)]">
-        <div className="grid min-h-[calc(100vh-8rem)] lg:grid-cols-[280px_minmax(0,1fr)]">
-          <aside className="flex flex-col border-b border-white/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] lg:border-b-0 lg:border-r lg:border-white/6">
-            <div className="flex items-center gap-3 border-b border-white/6 px-6 py-5">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-accent-500 text-lg font-bold text-white shadow-lg shadow-brand-950/35">
-                H
+    <div className="shell" style={{
+      display: 'flex',
+      height: '100vh',
+      overflow: 'hidden',
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      fontSize: 14,
+      color: '#0F1F3D',
+      background: '#F5F7FA',
+    }}>
+      {/* ── Sidebar ── */}
+      <aside className="sidebar" style={{
+        width: 220,
+        minWidth: 220,
+        background: '#0F1F3D',
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        flexShrink: 0,
+      }}>
+        <div style={{
+          padding: '20px 18px 16px',
+          borderBottom: '1px solid rgba(255,255,255,0.10)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+        }}>
+          <div className="logo-mark" style={{
+            width: 30,
+            height: 30,
+            background: '#1D9E75',
+            borderRadius: 8,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 14,
+            fontWeight: 700,
+            color: '#fff',
+            flexShrink: 0,
+          }}>H</div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#FFFFFF' }}>Hora</div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', marginTop: 1 }}>Staycation</div>
+          </div>
+        </div>
+
+        <nav className="sidebar-nav" style={{
+          flex: 1,
+          padding: '14px 10px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+          overflowY: 'auto',
+        }}>
+          {dashboardNav.map((group) => (
+            <div key={group.title}>
+              <div className="nav-section" style={{
+                fontSize: 10,
+                color: 'rgba(255,255,255,0.35)',
+                padding: '10px 8px 4px',
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                fontWeight: 500,
+              }}>{group.title}</div>
+              {group.items.map((item) => {
+                const content = (
+                  <>
+                    <svg viewBox="0 0 24 24" style={{ width: 16, height: 16, flexShrink: 0, stroke: 'currentColor', fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                      {item.id === 'dashboard' ? <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>
+                        : item.id === 'bookings' ? <><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>
+                          : item.id === 'analytics' ? <><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></>
+                            : item.id === 'manage-listings' ? <><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>
+                              : item.id === 'upload-studio' ? <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></>
+                                : item.id === 'owner-leads' ? <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></>
+                                  : item.id === 'evaluate-leads' ? <><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></>
+                                    : <><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></>}
+                    </svg>
+                    <span style={{ flex: 1 }}>{item.label}</span>
+                    {item.badge ? <span className="nav-badge" style={{
+                      marginLeft: 'auto',
+                      background: '#1D9E75',
+                      color: '#fff',
+                      fontSize: 10,
+                      fontWeight: 600,
+                      padding: '1px 6px',
+                      borderRadius: 20,
+                    }}>{item.badge}</span> : null}
+                  </>
+                );
+                if (item.href) {
+                  return (
+                    <a key={item.id} href={item.href} className="nav-item" style={{
+                      display: 'flex', alignItems: 'center', gap: 9, padding: '8px 10px', borderRadius: 6,
+                      fontSize: 13, color: item.active ? '#fff' : 'rgba(255,255,255,0.55)',
+                      cursor: 'pointer', textDecoration: 'none',
+                      background: item.active ? '#1E3560' : 'transparent',
+                      fontWeight: item.active ? 500 : 400,
+                    }}>{content}</a>
+                  );
+                }
+                return (
+                  <button key={item.id} type="button" onClick={item.onClick} className="nav-item" style={{
+                    display: 'flex', alignItems: 'center', gap: 9, padding: '8px 10px', borderRadius: 6,
+                    fontSize: 13, color: item.active ? '#fff' : 'rgba(255,255,255,0.55)',
+                    cursor: 'pointer', border: 'none', background: item.active ? '#1E3560' : 'transparent',
+                    width: '100%', textAlign: 'left', fontWeight: item.active ? 500 : 400,
+                  }}>{content}</button>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
+
+        <div className="sidebar-footer" style={{
+          padding: '14px 16px',
+          borderTop: '1px solid rgba(255,255,255,0.10)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          flexShrink: 0,
+        }}>
+          <div className="avatar" style={{
+            width: 30, height: 30, borderRadius: '50%', background: '#1E3560',
+            border: '1.5px solid #2A4578', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', fontSize: 12, fontWeight: 600, color: '#fff', flexShrink: 0,
+          }}>{initial}</div>
+          <div className="footer-info" style={{ flex: 1, minWidth: 0 }}>
+            <div className="footer-name" style={{ fontSize: 12, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{authUser?.email || 'management@horastaycation.com'}</div>
+            <div className="footer-role" style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)' }}>Admin</div>
+          </div>
+          <button type="button" onClick={onSignOut} className="icon-btn" style={{
+            background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.35)',
+            display: 'flex', alignItems: 'center', padding: 4, borderRadius: 4,
+          }}>
+            <svg viewBox="0 0 24 24" style={{ width: 16, height: 16, stroke: 'currentColor', fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </aside>
+
+      {/* ── Main ── */}
+      <div className="main" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', minWidth: 0 }}>
+
+        {/* ── Topbar ── */}
+        <div className="topbar" style={{
+          background: '#fff', borderBottom: '1px solid rgba(15,31,61,0.12)',
+          padding: '0 24px', height: 52, display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0,
+        }}>
+          <span className="topbar-title" style={{ fontSize: 14, fontWeight: 600, color: '#0F1F3D' }}>Operations dashboard</span>
+          <div className="topbar-right" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span className="chip" style={{
+              fontSize: 12, color: '#5A6A84', background: '#F5F7FA', padding: '5px 12px',
+              borderRadius: 20, border: '1px solid rgba(15,31,61,0.12)', display: 'flex', alignItems: 'center', gap: 5,
+            }}>
+              <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, stroke: 'currentColor', fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              {currentMonthLabel}
+            </span>
+            <button type="button" onClick={() => onShowPage('landing')} className="btn-outline" style={{
+              fontSize: 12, fontWeight: 500, color: '#0F1F3D', background: '#fff',
+              border: '1px solid rgba(15,31,61,0.12)', padding: '6px 14px', borderRadius: 6, cursor: 'pointer',
+            }}>Return to site</button>
+            <button type="button" onClick={() => onShowPage('management-listings')} className="btn-primary" style={{
+              background: '#0F1F3D', color: '#fff', border: 'none', padding: '7px 14px',
+              borderRadius: 6, fontSize: 12, fontWeight: 500, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}>
+              <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, stroke: 'currentColor', fill: 'none', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              New listing
+            </button>
+          </div>
+        </div>
+
+        {/* ── Content ── */}
+        <div className="content" style={{
+          flex: 1, overflowY: 'auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 18,
+        }}>
+          {/* ── Snapshot bar ── */}
+          <div className="snapbar" style={{
+            background: '#0F1F3D', borderRadius: 14, padding: '18px 24px', display: 'flex', alignItems: 'stretch', gap: 0,
+          }}>
+            {snapItems.map((item, idx) => (
+              <div key={item.id} style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: idx === 0 ? '0 24px 0 0' : '0 24px' }}>
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{item.label}</span>
+                <span style={{ fontSize: 22, fontWeight: 600, color: '#fff' }}>{item.value}</span>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>{item.sub}</span>
               </div>
-              <div>
-                <div className="font-semibold text-white">Hora</div>
-                <div className="text-sm text-white/55">Staycation</div>
+            ))}
+            <div style={{ width: 1, background: 'rgba(255,255,255,0.10)', alignSelf: 'stretch', flexShrink: 0 }} />
+            <div style={{ flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, paddingLeft: 24, display: 'flex', alignItems: 'center' }}>
+              {healthCopy}
+            </div>
+          </div>
+
+          {/* ── Stat grid ── */}
+          <div className="stat-grid" style={{
+            display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12,
+          }}>
+            {statCards.map((card) => (
+              <div key={card.id} className="stat-card" style={{
+                background: '#fff', border: '1px solid rgba(15,31,61,0.12)', borderRadius: 10, padding: 16,
+              }}>
+                <div className="stat-label" style={{ fontSize: 11, color: '#5A6A84', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, stroke: 'currentColor', fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                    <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                  </svg>
+                  {card.label}
+                </div>
+                <div className="stat-val" style={{ fontSize: 26, fontWeight: 600, color: '#0F1F3D' }}>{card.value}</div>
+                <div className="stat-sub" style={{ fontSize: 11, color: '#8FA0B8', marginTop: 4 }}>{card.caption}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* ── Analytics collapsed row ── */}
+          <div id="portal-analytics" className="analytics-row" style={{
+            background: '#fff', border: '1px solid rgba(15,31,61,0.12)', borderRadius: 10,
+            padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14,
+          }}>
+            <div className="analytics-icon" style={{
+              width: 34, height: 34, borderRadius: 6, background: '#F5F7FA',
+              border: '1px solid rgba(15,31,61,0.12)', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', flexShrink: 0,
+            }}>
+              <svg viewBox="0 0 24 24" style={{ width: 16, height: 16, stroke: '#0F1F3D', fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+              </svg>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div className="analytics-label" style={{ fontSize: 13, fontWeight: 500, color: '#0F1F3D' }}>Analytics — {analyticsWindowLabel.toLowerCase()}</div>
+              <div className="analytics-sub" style={{ fontSize: 11, color: '#5A6A84', marginTop: 2 }}>
+                {analyticsSummary.pageViews} page views · {analyticsSummary.bookings} bookings · {analyticsSummary.conversionRate}% conversion · {analyticsSummary.searches ? `${analyticsSummary.searches} tracked searches` : 'no tracked searches yet'}
               </div>
             </div>
-            <div className="flex-1 space-y-7 px-5 py-6">
-              {dashboardNav.map((group) => (
-                <div key={group.title}>
-                  <div className="px-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/32">{group.title}</div>
-                  <div className="mt-3 space-y-1">
-                    {group.items.map((item) => {
-                      const iconName =
-                        item.id === 'dashboard' ? 'chart'
-                          : item.id === 'bookings' ? 'calendar'
-                            : item.id === 'analytics' ? 'trend'
-                              : item.id === 'manage-listings' ? 'home'
-                                : item.id === 'upload-studio' ? 'upload'
-                                  : item.id === 'owner-leads' ? 'users'
-                                    : item.id === 'evaluate-leads' ? 'pen'
-                                      : 'email';
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto', flexShrink: 0 }}>
+              <div style={{ display: 'flex', borderRadius: 6, border: '1px solid rgba(15,31,61,0.12)', overflow: 'hidden' }}>
+                {WINDOW_OPTIONS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => setAnalyticsWindow(option.id)}
+                    style={{
+                      padding: '5px 10px', fontSize: 11, fontWeight: 600, border: 'none', cursor: 'pointer',
+                      background: analyticsWindow === option.id ? '#0F1F3D' : 'transparent',
+                      color: analyticsWindow === option.id ? '#fff' : '#5A6A84',
+                      letterSpacing: '0.04em', textTransform: 'uppercase',
+                    }}
+                  >{option.label}</button>
+                ))}
+              </div>
+              <a href="#portal-queue" style={{ fontSize: 12, color: '#8FA0B8', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
+                View full analytics
+                <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, stroke: 'currentColor', fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </a>
+            </div>
+          </div>
 
-                      const content = (
-                        <>
-                          <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${item.active ? 'bg-white text-brand-700' : 'bg-white/6 text-white/55'}`}>
-                            <Icon name={iconName} />
-                          </span>
-                          <span className="flex-1 truncate">{item.label}</span>
-                          {item.badge ? <span className="rounded-full bg-accent-500 px-2 py-0.5 text-xs font-semibold text-brand-950">{item.badge}</span> : null}
-                        </>
-                      );
+          {/* ── Booking queue + activity sidebar ── */}
+          <div className="row-2" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.6fr) minmax(0, 1fr)', gap: 16 }}>
+            {/* ── Live booking queue ── */}
+            <div id="portal-queue" className="card" style={{
+              background: '#fff', border: '1px solid rgba(15,31,61,0.12)', borderRadius: 10, padding: 18,
+            }}>
+              <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <span className="card-title" style={{ fontSize: 13, fontWeight: 600, color: '#0F1F3D', display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <svg viewBox="0 0 24 24" style={{ width: 15, height: 15, stroke: '#5A6A84', fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                    <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                  </svg>
+                  Live booking queue
+                </span>
+                <button type="button" onClick={() => onShowPage('booking')} className="card-action" style={{
+                  fontSize: 12, color: '#0F1F3D', cursor: 'pointer', fontWeight: 500, background: 'none', border: 'none',
+                }}>View all</button>
+              </div>
 
-                      if (item.href) {
-                        return (
-                          <a
-                            key={item.id}
-                            href={item.href}
-                            className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition ${
-                              item.active ? 'bg-[#dff7ef] text-brand-950 shadow-sm' : 'text-white/70 hover:bg-white/6 hover:text-white'
-                            }`}
-                          >
-                            {content}
-                          </a>
-                        );
-                      }
+              {queuePreview.length ? queuePreview.map((booking) => {
+                const bookingStatus = formatStatusCopy(booking.bookingStatus || 'confirmed');
+                const initials = getInitials(booking.bookingSummary?.name);
+                return (
+                  <div key={booking.id} className="b-item" style={{
+                    display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid rgba(15,31,61,0.12)',
+                  }}>
+                    <div className="b-thumb" style={{
+                      width: 34, height: 34, borderRadius: 6, background: '#EEF2F7',
+                      border: '1px solid rgba(15,31,61,0.12)', display: 'flex', alignItems: 'center',
+                      justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#0F1F3D', flexShrink: 0,
+                    }}>{initials}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="b-name" style={{ fontSize: 12, fontWeight: 600, color: '#0F1F3D' }}>{booking.bookingSummary?.name || 'Staycation'}</div>
+                      <div className="b-meta" style={{ fontSize: 11, color: '#8FA0B8', marginTop: 1 }}>
+                        {booking.bookingForm?.checkin} – {booking.bookingForm?.checkout} · {booking.bookingSummary?.nights || 0} night{(booking.bookingSummary?.nights || 0) > 1 ? 's' : ''} · {booking.bookingForm?.guests || '?'} pax
+                      </div>
+                    </div>
+                    <div className="b-right" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                      <span className={`pill pill-${(booking.bookingStatus || 'confirmed') === 'confirmed' ? 'confirmed' : 'pending'}`} style={{
+                        fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 20, whiteSpace: 'nowrap',
+                        background: (booking.bookingStatus || 'confirmed') === 'confirmed' ? '#E1F5EE' : '#FAEEDA',
+                        color: (booking.bookingStatus || 'confirmed') === 'confirmed' ? '#085041' : '#633806',
+                      }}>{bookingStatus}</span>
+                      <span className="b-price" style={{ fontSize: 13, fontWeight: 600, color: '#0F1F3D' }}>{formatCurrency(booking.bookingSummary?.total || 0)}</span>
+                    </div>
+                  </div>
+                );
+              }) : (
+                <div className="b-item" style={{ padding: '10px 0', borderBottom: 'none', color: '#8FA0B8', fontSize: 12 }}>
+                  No bookings yet. Share your booking link to activate the queue and email triggers.
+                </div>
+              )}
+            </div>
 
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={item.onClick}
-                          className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-medium transition ${
-                            item.active ? 'bg-[#dff7ef] text-brand-950 shadow-sm' : 'text-white/70 hover:bg-white/6 hover:text-white'
-                          }`}
-                        >
-                          {content}
-                        </button>
-                      );
-                    })}
+            {/* ── Right column: activity + email triggers ── */}
+            <div className="col" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* Recent activity */}
+              <div className="card" style={{
+                background: '#fff', border: '1px solid rgba(15,31,61,0.12)', borderRadius: 10, padding: 18,
+              }}>
+                <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                  <span className="card-title" style={{ fontSize: 13, fontWeight: 600, color: '#0F1F3D', display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <svg viewBox="0 0 24 24" style={{ width: 15, height: 15, stroke: '#5A6A84', fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                    Recent activity
+                  </span>
+                </div>
+                {recentActivity.map((item) => (
+                  <div key={item.id} className="a-row" style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 10, padding: '9px 0', borderBottom: '1px solid rgba(15,31,61,0.12)',
+                  }}>
+                    <div className={`a-icon ${item.tone === 'accent' ? 'amber' : ''}`} style={{
+                      width: 28, height: 28, borderRadius: '50%',
+                      background: item.tone === 'accent' ? '#FAEEDA' : '#E1F5EE',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    }}>
+                      <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, stroke: item.tone === 'accent' ? '#633806' : '#085041', fill: 'none', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                        {item.icon === 'calendar-check' ? <><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></>
+                          : item.icon === 'home' ? <><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>
+                            : <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></>}
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="a-text" style={{ fontSize: 12, fontWeight: 500, color: '#0F1F3D' }}>{item.title}</div>
+                      <div className="a-sub" style={{ fontSize: 11, color: '#8FA0B8', marginTop: 1 }}>{item.detail}</div>
+                      <div style={{ fontSize: 11, color: '#5A6A84', marginTop: 1 }}>{item.meta}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Email triggers */}
+              <div className="card" style={{
+                background: '#fff', border: '1px solid rgba(15,31,61,0.12)', borderRadius: 10, padding: 18,
+              }}>
+                <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                  <span className="card-title" style={{ fontSize: 13, fontWeight: 600, color: '#0F1F3D', display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <svg viewBox="0 0 24 24" style={{ width: 15, height: 15, stroke: '#5A6A84', fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                      <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                    </svg>
+                    Email triggers
+                  </span>
+                </div>
+                {emailTriggers.map((item) => (
+                  <div key={item.id} className="a-row" style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 10, padding: '9px 0', borderBottom: '1px solid rgba(15,31,61,0.12)',
+                  }}>
+                    <div className="a-icon" style={{
+                      width: 28, height: 28, borderRadius: '50%', background: '#E1F5EE',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    }}>
+                      <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, stroke: '#085041', fill: 'none', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="a-text" style={{ fontSize: 12, fontWeight: 500, color: '#0F1F3D' }}>{item.title}</div>
+                      <div className="a-sub" style={{ fontSize: 11, color: '#8FA0B8', marginTop: 1 }}>{item.detail}</div>
+                      {item.id !== 'email-empty' ? <div className="a-active" style={{ fontSize: 11, color: '#1D9E75', fontWeight: 500, marginTop: 1 }}>Active</div> : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ── Published listings with all 7 homestays ── */}
+          <div className="card" style={{
+            background: '#fff', border: '1px solid rgba(15,31,61,0.12)', borderRadius: 10, padding: 18,
+          }}>
+            <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <span className="card-title" style={{ fontSize: 13, fontWeight: 600, color: '#0F1F3D', display: 'flex', alignItems: 'center', gap: 7 }}>
+                <svg viewBox="0 0 24 24" style={{ width: 15, height: 15, stroke: '#5A6A84', fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                Published listings
+              </span>
+              <button type="button" onClick={() => onShowPage('management-listings')} className="card-action" style={{
+                fontSize: 12, color: '#0F1F3D', cursor: 'pointer', fontWeight: 500, background: 'none', border: 'none',
+              }}>Manage all</button>
+            </div>
+            <div className="listing-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
+              {publishedListings.map((property) => {
+                const badge = getListingBadge(property);
+                return (
+                  <div key={property.id} className="l-card" style={{
+                    background: '#fff', border: '1px solid rgba(15,31,61,0.12)', borderRadius: 10, overflow: 'hidden',
+                  }}>
+                    <div className="l-img" style={{ height: 100, background: '#1E3560', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      {property.image ? (
+                        <img src={property.image} alt={property.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <svg viewBox="0 0 24 24" style={{ width: 28, height: 28, stroke: 'rgba(255,255,255,0.4)', fill: 'none', strokeWidth: 1.5, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                        </svg>
+                      )}
+                    </div>
+                    <div className="l-body" style={{ padding: '11px 13px' }}>
+                      <div className="l-name" style={{ fontSize: 12, fontWeight: 600, color: '#0F1F3D', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{property.name}</div>
+                      <div className="l-loc" style={{ fontSize: 10, color: '#8FA0B8', marginBottom: 7, marginTop: 1 }}>{property.location}</div>
+                      <div className="l-tags" style={{ display: 'flex', gap: 4, marginBottom: 9 }}>
+                        {(property.amenities || []).slice(0, 2).map((tag) => (
+                          <span key={tag} className="l-tag" style={{
+                            fontSize: 10, padding: '2px 6px', borderRadius: 4, background: '#F5F7FA',
+                            color: '#5A6A84', border: '1px solid rgba(15,31,61,0.12)', whiteSpace: 'nowrap',
+                          }}>{tag}</span>
+                        ))}
+                      </div>
+                      <div className="l-footer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span>
+                          <span className="l-price" style={{ fontSize: 13, fontWeight: 700, color: '#0F1F3D' }}>{formatCurrency(property.price)}</span>
+                          <span className="l-night" style={{ fontSize: 10, color: '#8FA0B8', fontWeight: 400 }}>/night</span>
+                        </span>
+                        <span className={`pill pill-${badge.label.toLowerCase()}`} style={{
+                          fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 20, whiteSpace: 'nowrap',
+                          background: badge.className.includes('emerald') ? '#E1F5EE' : badge.className.includes('amber') ? '#FAEEDA' : '#EEF2F7',
+                          color: badge.className.includes('emerald') ? '#085041' : badge.className.includes('amber') ? '#633806' : '#5A6A84',
+                        }}>{badge.label}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ── Bottom row: Owner & Evaluate requests + Email log ── */}
+          <div className="row-eq" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 16 }}>
+            {/* Owner & evaluate requests */}
+            <div className="card" style={{
+              background: '#fff', border: '1px solid rgba(15,31,61,0.12)', borderRadius: 10, padding: 18,
+            }}>
+              <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <span className="card-title" style={{ fontSize: 13, fontWeight: 600, color: '#0F1F3D', display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <svg viewBox="0 0 24 24" style={{ width: 15, height: 15, stroke: '#5A6A84', fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
+                  </svg>
+                  Owner & evaluate requests
+                </span>
+              </div>
+              {ownerLeads.length || evalLeads.length ? (
+                <>
+                  {ownerLeads.map((app) => (
+                    <div key={app.id} className="a-row" style={{
+                      display: 'flex', alignItems: 'flex-start', gap: 10, padding: '9px 0', borderBottom: '1px solid rgba(15,31,61,0.12)',
+                    }}>
+                      <div className="a-icon" style={{ width: 28, height: 28, borderRadius: '50%', background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, stroke: '#633806', fill: 'none', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="a-text" style={{ fontSize: 12, fontWeight: 500, color: '#0F1F3D' }}>{app.ownerName}</div>
+                        <div className="a-sub" style={{ fontSize: 11, color: '#8FA0B8', marginTop: 1 }}>{app.ownerAddress}</div>
+                        <div style={{ fontSize: 10, color: '#5A6A84', marginTop: 1 }}>{app.unitCount} unit{app.unitCount === '1' ? '' : 's'} · {app.budget}</div>
+                      </div>
+                    </div>
+                  ))}
+                  {evalLeads.map((sub) => (
+                    <div key={sub.id} className="a-row" style={{
+                      display: 'flex', alignItems: 'flex-start', gap: 10, padding: '9px 0', borderBottom: '1px solid rgba(15,31,61,0.12)',
+                    }}>
+                      <div className="a-icon" style={{ width: 28, height: 28, borderRadius: '50%', background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, stroke: '#633806', fill: 'none', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                          <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="a-text" style={{ fontSize: 12, fontWeight: 500, color: '#0F1F3D' }}>{sub.evaluatorName}</div>
+                        <div className="a-sub" style={{ fontSize: 11, color: '#8FA0B8', marginTop: 1 }}>{sub.evaluatorAddress}</div>
+                        <div style={{ fontSize: 10, color: '#5A6A84', marginTop: 1 }}>{sub.evaluatorEmail}</div>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <div className="empty-state" style={{ textAlign: 'center', padding: '24px 0', color: '#8FA0B8', fontSize: 12, lineHeight: 1.6 }}>
+                  <svg viewBox="0 0 24 24" style={{ width: 28, height: 28, stroke: '#8FA0B8', fill: 'none', strokeWidth: 1.5, strokeLinecap: 'round', strokeLinejoin: 'round', display: 'block', margin: '0 auto 10px' }}>
+                    <path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+                  </svg>
+                  No requests yet — new owner and evaluation submissions will appear here
+                </div>
+              )}
+            </div>
+
+            {/* Triggered email log */}
+            <div className="card" style={{
+              background: '#fff', border: '1px solid rgba(15,31,61,0.12)', borderRadius: 10, padding: 18,
+            }}>
+              <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <span className="card-title" style={{ fontSize: 13, fontWeight: 600, color: '#0F1F3D', display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <svg viewBox="0 0 24 24" style={{ width: 15, height: 15, stroke: '#5A6A84', fill: 'none', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                    <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                  </svg>
+                  Triggered email log
+                </span>
+              </div>
+              {emailTriggers.map((item) => (
+                <div key={item.id} className="a-row" style={{
+                  display: 'flex', alignItems: 'flex-start', gap: 10, padding: '9px 0', borderBottom: '1px solid rgba(15,31,61,0.12)',
+                }}>
+                  <div className="a-icon" style={{ width: 28, height: 28, borderRadius: '50%', background: '#E1F5EE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, stroke: '#085041', fill: 'none', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="a-text" style={{ fontSize: 12, fontWeight: 500, color: '#0F1F3D' }}>{item.title}</div>
+                    <div className="a-sub" style={{ fontSize: 11, color: '#8FA0B8', marginTop: 1 }}>{item.detail}</div>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="border-t border-white/6 px-5 py-5">
-              <div className="flex items-center gap-3 rounded-2xl border border-white/6 bg-white/[0.03] px-4 py-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#dff7ef] font-semibold text-brand-950">
-                  {String(userName).trim().charAt(0).toUpperCase() || 'H'}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-white">{authUser?.email || 'management@horastaycation.com'}</div>
-                  <div className="text-xs uppercase tracking-[0.18em] text-white/38">Admin</div>
-                </div>
-                <button type="button" onClick={onSignOut} className="rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/60 hover:border-white/20 hover:text-white">
-                  Out
-                </button>
-              </div>
-              <button type="button" onClick={() => onShowPage('landing')} className="mt-3 w-full rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm font-semibold text-white/72 transition hover:bg-white/[0.07] hover:text-white">
-                Return to site
-              </button>
-            </div>
-          </aside>
-
-          <div className="min-w-0">
-            <header className="flex flex-col gap-4 border-b border-white/6 px-6 py-5 md:flex-row md:items-center md:justify-between lg:px-8">
-              <div>
-                <div className="text-sm font-medium text-white/55">Operations dashboard</div>
-                <div className="mt-1 text-xl font-semibold text-white">Management portal</div>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-medium text-white/70">
-                  {currentMonthLabel}
-                </div>
-                <button type="button" onClick={() => onShowPage('management-listings')} className="rounded-2xl border border-white/12 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.08]">
-                  New listing
-                </button>
-              </div>
-            </header>
-
-            <div id="portal-dashboard" className="space-y-5 p-6 lg:p-8">
-              <section className="overflow-hidden rounded-[1.6rem] border border-brand-500/18 bg-gradient-to-br from-[#055c50] via-[#0b5d57] to-[#103a57] px-5 py-5 text-white shadow-[0_24px_60px_rgba(3,105,98,0.28)]">
-                <div className="grid gap-5 lg:grid-cols-[repeat(4,minmax(0,1fr))_1.2fr]">
-                  {overviewCards.map((item, index) => (
-                    <div key={item.id} className={`${index < overviewCards.length - 1 ? 'lg:border-r lg:border-white/14 lg:pr-5' : ''}`}>
-                      <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">{item.label}</div>
-                      <div className="mt-2 text-4xl font-black">{item.value}</div>
-                      <div className="mt-2 text-sm text-white/68">{item.caption}</div>
-                    </div>
-                  ))}
-                  <div className="border-t border-white/14 pt-4 lg:border-t-0 lg:pl-5 lg:pt-0">
-                    <div className="text-sm leading-relaxed text-white/84">{healthCopy}</div>
-                  </div>
-                </div>
-              </section>
-
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                {compactCards.map((card) => (
-                  <article key={card.id} className="rounded-[1.5rem] border border-white/8 bg-white/[0.04] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-                    <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/36">{card.label}</div>
-                    <div className="mt-3 text-4xl font-black text-white">{card.value}</div>
-                    <div className="mt-2 text-sm text-white/52">{card.caption}</div>
-                  </article>
-                ))}
-              </div>
-
-              <section id="portal-analytics" className="rounded-[1.5rem] border border-white/8 bg-white/[0.04] px-5 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-                <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#dff7ef] text-brand-900 shadow-lg shadow-brand-950/20">
-                      <Icon name="chart" />
-                    </div>
-                    <div>
-                      <div className="text-lg font-semibold text-white">Analytics — {analyticsWindowLabel.toLowerCase()}</div>
-                      <div className="mt-1 text-sm text-white/58">
-                        {analyticsSummary.pageViews} page views · {analyticsSummary.bookings} bookings · {analyticsSummary.conversionRate}% conversion · {analyticsSummary.searches ? `${analyticsSummary.searches} tracked searches` : 'no tracked searches yet'}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div className="inline-flex rounded-2xl border border-white/10 bg-black/10 p-1">
-                      {WINDOW_OPTIONS.map((option) => (
-                        <button
-                          key={option.id}
-                          type="button"
-                          onClick={() => setAnalyticsWindow(option.id)}
-                          className={`rounded-xl px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition ${
-                            analyticsWindow === option.id ? 'bg-[#dff7ef] text-brand-950' : 'text-white/55 hover:text-white'
-                          }`}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
-                    <a href="#portal-queue" className="rounded-2xl border border-white/10 px-4 py-3 text-sm font-semibold text-white/72 transition hover:bg-white/[0.06] hover:text-white">
-                      Expand
-                    </a>
-                  </div>
-                </div>
-              </section>
-
-              <div className="grid gap-5 xl:grid-cols-[1.45fr_0.85fr]">
-                <section id="portal-queue" className="rounded-[1.5rem] border border-white/8 bg-white/[0.04] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-                  <div className="mb-5 flex items-center justify-between gap-4">
-                    <div className="text-xl font-semibold text-white">Live booking queue</div>
-                    <button type="button" onClick={() => onShowPage('booking')} className="text-sm font-semibold text-accent-400 transition hover:text-accent-300">
-                      View all
-                    </button>
-                  </div>
-                  <div className="space-y-4">
-                    {queuePreview.length ? (
-                      queuePreview.map((booking) => {
-                        const bookingStatus = formatStatusCopy(booking.bookingStatus || 'confirmed');
-                        const initials = booking.bookingSummary.name
-                          .split(' ')
-                          .slice(0, 2)
-                          .map((part) => part.charAt(0))
-                          .join('')
-                          .toUpperCase();
-
-                        return (
-                          <div key={booking.id} className="flex flex-col gap-4 rounded-[1.25rem] border border-white/8 bg-black/10 px-4 py-4 md:flex-row md:items-center md:justify-between">
-                            <div className="flex min-w-0 items-start gap-4">
-                              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#dff7ef] text-sm font-bold text-brand-950">
-                                {initials}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="truncate text-lg font-semibold text-white">{booking.bookingSummary.name}</div>
-                                <div className="mt-1 text-sm text-white/62">
-                                  {booking.bookingForm.checkin} – {booking.bookingForm.checkout} · {booking.bookingSummary.nights} night{booking.bookingSummary.nights > 1 ? 's' : ''} · {booking.bookingForm.guests} pax
-                                </div>
-                                <div className="mt-1 text-xs uppercase tracking-[0.16em] text-white/34">{booking.bookingForm.guestName || 'Guest booking'}</div>
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-between gap-4 md:block md:text-right">
-                              <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClasses(booking.paymentStatus)}`}>
-                                {bookingStatus}
-                              </span>
-                              <div className="mt-2 text-2xl font-bold text-white">{formatCurrency(booking.bookingSummary.total)}</div>
-                              <select
-                                value={booking.bookingStatus || 'confirmed'}
-                                onChange={(event) => onUpdateBookingStatus(booking.id, event.target.value)}
-                                className="mt-3 w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-semibold text-white outline-none md:w-auto"
-                              >
-                                <option value="confirmed" className="text-slate-900">Confirmed</option>
-                                <option value="pending" className="text-slate-900">Pending</option>
-                                <option value="checked-in" className="text-slate-900">Checked In</option>
-                                <option value="completed" className="text-slate-900">Completed</option>
-                                <option value="cancelled" className="text-slate-900">Cancelled</option>
-                                <option value="payment_issue" className="text-slate-900">Payment Issue</option>
-                                <option value="refunded" className="text-slate-900">Refunded</option>
-                              </select>
-                              <div className="mt-3 flex flex-wrap gap-2 md:justify-end">
-                                <button
-                                  type="button"
-                                  onClick={() => onCancelBooking?.(booking)}
-                                  className="rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-white/70 transition hover:bg-white/[0.06] hover:text-white"
-                                >
-                                  Cancel
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => onRefundBooking?.(booking)}
-                                  disabled={!booking.stripeSessionId || booking.paymentStatus === 'refunded'}
-                                  className="rounded-xl border border-rose-400/20 bg-rose-400/10 px-3 py-2 text-xs font-semibold text-rose-200 transition disabled:cursor-not-allowed disabled:opacity-40"
-                                >
-                                  Refund
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div className="rounded-[1.25rem] border border-dashed border-white/10 bg-black/10 px-5 py-6 text-sm text-white/55">
-                        No bookings yet. Share your booking link to activate the queue and email triggers.
-                      </div>
-                    )}
-                  </div>
-                </section>
-
-                <div className="space-y-5">
-                  <section className="rounded-[1.5rem] border border-white/8 bg-white/[0.04] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-                    <div className="mb-5 text-xl font-semibold text-white">Recent activity</div>
-                    <div className="space-y-4">
-                      {recentActivity.map((item) => (
-                        <div key={item.id} className="flex items-start gap-4 rounded-[1.2rem] border border-white/8 bg-black/10 px-4 py-4">
-                          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
-                            item.tone === 'brand' ? 'bg-[#dff7ef] text-brand-950'
-                              : item.tone === 'accent' ? 'bg-accent-500/20 text-accent-300'
-                                : 'bg-white/10 text-white/70'
-                          }`}>
-                            <Icon name={item.icon} />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="text-lg font-semibold leading-tight text-white">{item.title}</div>
-                            <div className="mt-2 text-sm text-white/76">{item.detail}</div>
-                            <div className="mt-1 text-sm text-white/44">{item.meta}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-
-                  <section id="portal-email-triggers" className="rounded-[1.5rem] border border-white/8 bg-white/[0.04] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-                    <div className="mb-5 text-xl font-semibold text-white">Email triggers</div>
-                    <div className="space-y-4">
-                      {emailTriggers.map((item) => (
-                        <div key={item.id} className="flex items-start gap-4 rounded-[1.2rem] border border-white/8 bg-black/10 px-4 py-4">
-                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#dff7ef] text-brand-950">
-                            <Icon name="email" />
-                          </div>
-                          <div>
-                            <div className="text-lg font-semibold leading-tight text-white">{item.title}</div>
-                            <div className="mt-2 text-sm text-white/58">{item.detail}</div>
-                            {item.id !== 'email-empty' ? <div className="mt-2 text-sm font-semibold text-emerald-300">Active</div> : null}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                </div>
-              </div>
-
-              <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-                <section id="portal-owner-leads" className="rounded-[1.5rem] border border-white/8 bg-white/[0.04] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-                  <div className="mb-5 flex items-center justify-between gap-3">
-                    <div className="text-xl font-semibold text-white">Owner leads</div>
-                    <button type="button" onClick={() => onShowPage('owner-signup')} className="text-sm font-semibold text-accent-400 transition hover:text-accent-300">
-                      View form
-                    </button>
-                  </div>
-                  <div className="space-y-3">
-                    {ownerApplications.length ? (
-                      ownerApplications.slice(0, 3).map((application) => (
-                        <div key={application.id} className="rounded-[1.2rem] border border-white/8 bg-black/10 px-4 py-4">
-                          <div className="font-semibold text-white">{application.ownerName}</div>
-                          <div className="mt-1 text-sm text-white/58">{application.ownerAddress}</div>
-                          <div className="mt-2 text-xs uppercase tracking-[0.16em] text-white/34">
-                            {application.unitCount} unit{application.unitCount === '1' ? '' : 's'} · {application.budget}
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="rounded-[1.2rem] border border-dashed border-white/10 bg-black/10 px-4 py-5 text-sm text-white/52">
-                        Owner enquiries will appear here once the inbound pipeline starts.
-                      </div>
-                    )}
-                  </div>
-                </section>
-
-                <section id="portal-evaluate-leads" className="rounded-[1.5rem] border border-white/8 bg-white/[0.04] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-                  <div className="mb-5 flex items-center justify-between gap-3">
-                    <div className="text-xl font-semibold text-white">Evaluate leads</div>
-                    <button type="button" onClick={() => onShowPage('evaluate')} className="text-sm font-semibold text-accent-400 transition hover:text-accent-300">
-                      Open review form
-                    </button>
-                  </div>
-                  <div className="space-y-3">
-                    {reviewSubmissions.length ? (
-                      reviewSubmissions.slice(0, 3).map((submission) => (
-                        <div key={submission.id} className="rounded-[1.2rem] border border-white/8 bg-black/10 px-4 py-4">
-                          <div className="font-semibold text-white">{submission.evaluatorName}</div>
-                          <div className="mt-1 text-sm text-white/58">{submission.evaluatorAddress}</div>
-                          <div className="mt-2 text-xs uppercase tracking-[0.16em] text-white/34">{submission.evaluatorEmail}</div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="rounded-[1.2rem] border border-dashed border-white/10 bg-black/10 px-4 py-5 text-sm text-white/52">
-                        Evaluation requests will appear here when property reviews start coming in.
-                      </div>
-                    )}
-                  </div>
-                </section>
-              </div>
-            </div>
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
 
