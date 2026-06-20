@@ -1415,374 +1415,464 @@ export function DashboardPage({
   analyticsEvents = [],
   supportRequests = [],
 }) {
-  const latestBooking = bookingTransactions[0] ?? null;
   const [analyticsWindow, setAnalyticsWindow] = useState('30d');
-
-  const stats = useMemo(
-    () => [
-      {
-        id: 'bookings',
-        label: 'Bookings',
-        value: bookings.length,
-        icon: 'calendar',
-        helper: 'Guest bookings are actively flowing through operations.',
-        emptyLabel: 'Greyed out until the first confirmed booking lands.',
-      },
-      {
-        id: 'revenue',
-        label: 'Revenue',
-        value: revenue,
-        icon: 'dollar',
-        currency: true,
-        helper: 'This reflects live non-refunded stay revenue.',
-        emptyLabel: 'Revenue stays muted until your first paid booking arrives.',
-      },
-      {
-        id: 'owners',
-        label: 'Owner Leads',
-        value: ownerApplications.length,
-        icon: 'home',
-        helper: 'Operators can review new owners from here.',
-        emptyLabel: 'Owner outreach stays quiet until new applications come in.',
-      },
-      {
-        id: 'evaluations',
-        label: 'Evaluate Leads',
-        value: reviewSubmissions.length,
-        icon: 'pen',
-        helper: 'Evaluation requests are waiting in the review lane.',
-        emptyLabel: 'Evaluation demand has not started for this workspace yet.',
-      },
-    ],
-    [bookings.length, ownerApplications.length, reviewSubmissions.length, revenue],
-  );
-
   const analyticsSummary = useMemo(
     () => summarizeWindowedAnalytics(analyticsEvents, bookingTransactions, supportRequests, analyticsWindow),
     [analyticsEvents, analyticsWindow, bookingTransactions, supportRequests],
   );
-  const sparklinePoints = useMemo(
-    () => buildSparklinePoints(analyticsEvents, bookingTransactions, supportRequests, analyticsWindow),
-    [analyticsEvents, analyticsWindow, bookingTransactions, supportRequests],
-  );
   const analyticsWindowLabel = getWindowConfig(analyticsWindow).description;
+  const currentMonthLabel = new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(new Date());
+  const liveListingsCount = listings.filter((listing) => listing.publishStatus !== 'draft' && !listing.isDeleted).length;
+  const draftListingsCount = listings.filter((listing) => listing.publishStatus === 'draft' && !listing.isDeleted).length;
+  const confirmedBookings = bookingTransactions.filter((booking) => (booking.bookingStatus || 'confirmed') === 'confirmed').length;
+  const overviewCards = [
+    { id: 'bookings', label: 'Bookings', value: bookings.length, caption: 'This month' },
+    { id: 'revenue', label: 'Revenue', value: formatCurrency(revenue), caption: 'Confirmed only' },
+    { id: 'emails', label: 'Emails Sent', value: emails.length, caption: 'All triggers active' },
+    { id: 'listings', label: 'Listings Live', value: liveListingsCount, caption: draftListingsCount ? `${draftListingsCount} draft` : 'All published' },
+  ];
+  const compactCards = [
+    { id: 'confirmed', label: 'Confirmed bookings', value: confirmedBookings, caption: confirmedBookings ? 'Ready to host' : 'No bookings yet' },
+    { id: 'compact-revenue', label: 'Revenue', value: formatCurrency(revenue), caption: 'This month' },
+    { id: 'owners', label: 'Owner leads', value: ownerApplications.length, caption: ownerApplications.length ? 'Needs review' : 'Awaiting follow-up' },
+    { id: 'evaluations', label: 'Evaluate leads', value: reviewSubmissions.length, caption: reviewSubmissions.length ? 'Needs review' : 'Pending review' },
+  ];
+  const queuePreview = bookingTransactions.slice(0, 3);
+  const recentActivity = useMemo(() => {
+    const items = [];
+
+    if (bookingTransactions[0]) {
+      items.push({
+        id: `booking-${bookingTransactions[0].id}`,
+        icon: 'calendar-check',
+        title: 'Booking confirmed',
+        detail: bookingTransactions[0].bookingSummary.name,
+        meta: `${bookingTransactions[0].bookingForm.checkin} · ${formatCurrency(bookingTransactions[0].bookingSummary.total)}`,
+        tone: 'brand',
+      });
+    }
+
+    if (ownerApplications[0]) {
+      items.push({
+        id: `owner-${ownerApplications[0].id}`,
+        icon: 'home',
+        title: 'Owner lead received',
+        detail: ownerApplications[0].ownerAddress,
+        meta: ownerApplications[0].submittedAt
+          ? new Date(ownerApplications[0].submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          : 'Awaiting review',
+        tone: 'accent',
+      });
+    }
+
+    if (analyticsSummary.recentEvents[0]) {
+      items.push({
+        id: `analytics-${analyticsSummary.recentEvents[0].id}`,
+        icon: 'chart',
+        title: formatAnalyticsEventLabel(analyticsSummary.recentEvents[0].type),
+        detail: analyticsSummary.recentEvents[0].path || analyticsSummary.recentEvents[0].page || 'HoraStaycation',
+        meta: analyticsSummary.searches ? `${analyticsSummary.searches} tracked searches` : 'No tracked searches yet',
+        tone: 'ice',
+      });
+    }
+
+    if (!items.length) {
+      items.push({
+        id: 'activity-empty',
+        icon: 'chart',
+        title: 'Workspace ready',
+        detail: 'No recent activity yet',
+        meta: 'Bookings, owner leads, and analytics will populate this feed',
+        tone: 'ice',
+      });
+    }
+
+    return items.slice(0, 3);
+  }, [analyticsSummary, bookingTransactions, formatCurrency, ownerApplications]);
+  const emailTriggers = useMemo(() => {
+    if (emails.length) {
+      return emails.slice(0, 3).map((email, index) => ({
+        id: `${email.title}-${index}`,
+        title: email.title,
+        detail: email.detail,
+      }));
+    }
+
+    return [
+      { id: 'email-empty', title: 'Triggers standing by', detail: 'Guest, owner, and management emails will appear here once activity begins.' },
+    ];
+  }, [emails]);
+  const dashboardNav = [
+    {
+      title: 'Overview',
+      items: [
+        { id: 'dashboard', label: 'Dashboard', href: '#portal-dashboard', active: true },
+        { id: 'bookings', label: 'Bookings', href: '#portal-queue', badge: bookingTransactions.length || null },
+        { id: 'analytics', label: 'Analytics', href: '#portal-analytics' },
+      ],
+    },
+    {
+      title: 'Listings',
+      items: [
+        { id: 'manage-listings', label: 'Manage listings', onClick: () => onShowPage('management-listings') },
+        { id: 'upload-studio', label: 'Upload studio', onClick: () => onShowPage('management-listings') },
+      ],
+    },
+    {
+      title: 'Clients',
+      items: [
+        { id: 'owner-leads', label: 'Owner leads', href: '#portal-owner-leads' },
+        { id: 'evaluate-leads', label: 'Evaluate leads', href: '#portal-evaluate-leads' },
+        { id: 'email-activity', label: 'Email activity', href: '#portal-email-triggers' },
+      ],
+    },
+  ];
+  const userName = authUser?.user_metadata?.full_name || authUser?.email || 'Hora Admin';
+  const healthCopy = liveListingsCount
+    ? 'System is healthy. Queue, email triggers, and live listings are running normally.'
+    : 'System is ready. Publish your first listing to activate the operator workflow.';
 
   return (
-    <section className="min-h-screen bg-ice-50 px-4 pb-16 pt-28 md:px-8">
-      <div className="mx-auto max-w-7xl space-y-8">
-        <ManagementPortalHeader
-          eyebrow="Operations Dashboard"
-          title="Management Portal"
-          description="The dashboard is now organized around faster scanning: snapshot first, quick-jump navigation on the side, and a separate listings studio route for content-heavy editing."
-          authUser={authUser}
-          onSignOut={onSignOut}
-          onShowPage={onShowPage}
-          primaryAction={{ label: '+ New Listing', onClick: () => onShowPage('management-listings') }}
-          secondaryAction={{ label: 'Open Listings Studio', onClick: () => onShowPage('management-listings') }}
-        />
+    <section className="min-h-screen bg-[#0b0d10] px-4 pb-10 pt-24 md:px-6">
+      <div className="mx-auto max-w-[1500px] overflow-hidden rounded-[2rem] border border-white/8 bg-[#151618] shadow-[0_30px_120px_rgba(0,0,0,0.45)]">
+        <div className="grid min-h-[calc(100vh-8rem)] lg:grid-cols-[280px_minmax(0,1fr)]">
+          <aside className="flex flex-col border-b border-white/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] lg:border-b-0 lg:border-r lg:border-white/6">
+            <div className="flex items-center gap-3 border-b border-white/6 px-6 py-5">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-accent-500 text-lg font-bold text-white shadow-lg shadow-brand-950/35">
+                H
+              </div>
+              <div>
+                <div className="font-semibold text-white">Hora</div>
+                <div className="text-sm text-white/55">Staycation</div>
+              </div>
+            </div>
+            <div className="flex-1 space-y-7 px-5 py-6">
+              {dashboardNav.map((group) => (
+                <div key={group.title}>
+                  <div className="px-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/32">{group.title}</div>
+                  <div className="mt-3 space-y-1">
+                    {group.items.map((item) => {
+                      const iconName =
+                        item.id === 'dashboard' ? 'chart'
+                          : item.id === 'bookings' ? 'calendar'
+                            : item.id === 'analytics' ? 'trend'
+                              : item.id === 'manage-listings' ? 'home'
+                                : item.id === 'upload-studio' ? 'upload'
+                                  : item.id === 'owner-leads' ? 'users'
+                                    : item.id === 'evaluate-leads' ? 'pen'
+                                      : 'email';
 
-        <OperationsSnapshot
-          bookings={bookings}
-          revenue={revenue}
-          ownerApplications={ownerApplications}
-          reviewSubmissions={reviewSubmissions}
-          formatCurrency={formatCurrency}
-        />
+                      const content = (
+                        <>
+                          <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${item.active ? 'bg-white text-brand-700' : 'bg-white/6 text-white/55'}`}>
+                            <Icon name={iconName} />
+                          </span>
+                          <span className="flex-1 truncate">{item.label}</span>
+                          {item.badge ? <span className="rounded-full bg-accent-500 px-2 py-0.5 text-xs font-semibold text-brand-950">{item.badge}</span> : null}
+                        </>
+                      );
 
-        <div className="grid gap-8 xl:grid-cols-[260px_minmax(0,1fr)]">
-          <QuickJumpNav onShowPage={onShowPage} />
+                      if (item.href) {
+                        return (
+                          <a
+                            key={item.id}
+                            href={item.href}
+                            className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition ${
+                              item.active ? 'bg-[#dff7ef] text-brand-950 shadow-sm' : 'text-white/70 hover:bg-white/6 hover:text-white'
+                            }`}
+                          >
+                            {content}
+                          </a>
+                        );
+                      }
 
-          <div className="space-y-8">
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {stats.map((stat) => (
-                <DashboardStat key={stat.id} stat={stat} formatCurrency={formatCurrency} />
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={item.onClick}
+                          className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-medium transition ${
+                            item.active ? 'bg-[#dff7ef] text-brand-950 shadow-sm' : 'text-white/70 hover:bg-white/6 hover:text-white'
+                          }`}
+                        >
+                          {content}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               ))}
             </div>
+            <div className="border-t border-white/6 px-5 py-5">
+              <div className="flex items-center gap-3 rounded-2xl border border-white/6 bg-white/[0.03] px-4 py-4">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#dff7ef] font-semibold text-brand-950">
+                  {String(userName).trim().charAt(0).toUpperCase() || 'H'}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium text-white">{authUser?.email || 'management@horastaycation.com'}</div>
+                  <div className="text-xs uppercase tracking-[0.18em] text-white/38">Admin</div>
+                </div>
+                <button type="button" onClick={onSignOut} className="rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/60 hover:border-white/20 hover:text-white">
+                  Out
+                </button>
+              </div>
+              <button type="button" onClick={() => onShowPage('landing')} className="mt-3 w-full rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm font-semibold text-white/72 transition hover:bg-white/[0.07] hover:text-white">
+                Return to site
+              </button>
+            </div>
+          </aside>
 
-            <section id="portal-analytics" className="rounded-[2rem] border border-brand-100 bg-white p-6 shadow-sm">
-              <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-                <div className="max-w-3xl">
-                  <div className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-500">Analytics Dashboard</div>
-                  <h2 className="mt-2 font-display text-3xl font-bold text-brand-950">Discovery and conversion insights</h2>
-                  <p className="mt-2 text-sm leading-relaxed text-slate-500">
-                    The analytics cards now show a clear time window so zeros read as “no activity in this range yet,” not “the system is broken forever.”
-                  </p>
+          <div className="min-w-0">
+            <header className="flex flex-col gap-4 border-b border-white/6 px-6 py-5 md:flex-row md:items-center md:justify-between lg:px-8">
+              <div>
+                <div className="text-sm font-medium text-white/55">Operations dashboard</div>
+                <div className="mt-1 text-xl font-semibold text-white">Management portal</div>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-medium text-white/70">
+                  {currentMonthLabel}
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="inline-flex rounded-full border border-ice-200 bg-ice-50 p-1">
-                    {WINDOW_OPTIONS.map((option) => (
-                      <button
-                        key={option.id}
-                        type="button"
-                        onClick={() => setAnalyticsWindow(option.id)}
-                        className={`rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition ${
-                          analyticsWindow === option.id ? 'bg-brand-950 text-white' : 'text-slate-500 hover:text-brand-700'
-                        }`}
-                        title={option.description}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="rounded-full bg-ice-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-700">
-                    Window: {analyticsWindowLabel}
-                  </div>
-                  <div
-                    className="rounded-full bg-brand-950 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white"
-                    title="Conversion-aware tracking compares bookings against tracked searches in the selected date range."
-                  >
-                    Conversion-aware tracking
+                <button type="button" onClick={() => onShowPage('management-listings')} className="rounded-2xl border border-white/12 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.08]">
+                  New listing
+                </button>
+              </div>
+            </header>
+
+            <div id="portal-dashboard" className="space-y-5 p-6 lg:p-8">
+              <section className="overflow-hidden rounded-[1.6rem] border border-brand-500/18 bg-gradient-to-br from-[#055c50] via-[#0b5d57] to-[#103a57] px-5 py-5 text-white shadow-[0_24px_60px_rgba(3,105,98,0.28)]">
+                <div className="grid gap-5 lg:grid-cols-[repeat(4,minmax(0,1fr))_1.2fr]">
+                  {overviewCards.map((item, index) => (
+                    <div key={item.id} className={`${index < overviewCards.length - 1 ? 'lg:border-r lg:border-white/14 lg:pr-5' : ''}`}>
+                      <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">{item.label}</div>
+                      <div className="mt-2 text-4xl font-black">{item.value}</div>
+                      <div className="mt-2 text-sm text-white/68">{item.caption}</div>
+                    </div>
+                  ))}
+                  <div className="border-t border-white/14 pt-4 lg:border-t-0 lg:pl-5 lg:pt-0">
+                    <div className="text-sm leading-relaxed text-white/84">{healthCopy}</div>
                   </div>
                 </div>
+              </section>
+
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                {compactCards.map((card) => (
+                  <article key={card.id} className="rounded-[1.5rem] border border-white/8 bg-white/[0.04] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                    <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/36">{card.label}</div>
+                    <div className="mt-3 text-4xl font-black text-white">{card.value}</div>
+                    <div className="mt-2 text-sm text-white/52">{card.caption}</div>
+                  </article>
+                ))}
               </div>
 
-              <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-                <div className="rounded-2xl bg-ice-50 p-4">
-                  <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Searches</div>
-                  <div className="mt-2 text-3xl font-bold text-brand-950">{analyticsSummary.searches}</div>
-                </div>
-                <div className="rounded-2xl bg-ice-50 p-4">
-                  <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Wishlist Saves</div>
-                  <div className="mt-2 text-3xl font-bold text-brand-950">{analyticsSummary.wishlistAdds}</div>
-                </div>
-                <div className="rounded-2xl bg-ice-50 p-4">
-                  <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Support Messages</div>
-                  <div className="mt-2 text-3xl font-bold text-brand-950">{analyticsSummary.supportMessages}</div>
-                </div>
-                <div className="rounded-2xl bg-ice-50 p-4">
-                  <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Install Prompts</div>
-                  <div className="mt-2 text-3xl font-bold text-brand-950">{analyticsSummary.installPrompts}</div>
-                </div>
-                <div
-                  className="rounded-2xl bg-brand-950 p-4 text-white"
-                  title="This rate only compares bookings against tracked searches captured in the selected window."
-                >
-                  <div className="text-xs uppercase tracking-[0.2em] text-white/55">Search to Book</div>
-                  <div className="mt-2 text-3xl font-bold">{analyticsSummary.conversionRate}%</div>
-                </div>
-              </div>
-
-              <div className="mt-6 grid gap-4 xl:grid-cols-[0.92fr_1.08fr]">
-                <div className="space-y-4">
-                  <AnalyticsSparkline points={sparklinePoints} />
-                  <div className="rounded-3xl border border-ice-200 p-4">
-                    <div className="text-sm font-semibold text-brand-950">At-a-glance insight</div>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-500">
-                      {analyticsSummary.searches
-                        ? `${analyticsSummary.conversionRate}% of tracked searches in the ${analyticsWindowLabel.toLowerCase()} are converting into bookings.`
-                        : `No tracked searches landed in the ${analyticsWindowLabel.toLowerCase()} yet, so this panel stays calm instead of alarming.`}
-                    </p>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      <div className="rounded-2xl bg-ice-50 p-4">
-                        <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Page Views</div>
-                        <div className="mt-2 text-2xl font-bold text-brand-950">{analyticsSummary.pageViews}</div>
-                      </div>
-                      <div className="rounded-2xl bg-ice-50 p-4">
-                        <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Wishlisted Stays</div>
-                        <div className="mt-2 text-2xl font-bold text-brand-950">{analyticsSummary.uniqueWishlistedProperties}</div>
+              <section id="portal-analytics" className="rounded-[1.5rem] border border-white/8 bg-white/[0.04] px-5 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#dff7ef] text-brand-900 shadow-lg shadow-brand-950/20">
+                      <Icon name="chart" />
+                    </div>
+                    <div>
+                      <div className="text-lg font-semibold text-white">Analytics — {analyticsWindowLabel.toLowerCase()}</div>
+                      <div className="mt-1 text-sm text-white/58">
+                        {analyticsSummary.pageViews} page views · {analyticsSummary.bookings} bookings · {analyticsSummary.conversionRate}% conversion · {analyticsSummary.searches ? `${analyticsSummary.searches} tracked searches` : 'no tracked searches yet'}
                       </div>
                     </div>
                   </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="inline-flex rounded-2xl border border-white/10 bg-black/10 p-1">
+                      {WINDOW_OPTIONS.map((option) => (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() => setAnalyticsWindow(option.id)}
+                          className={`rounded-xl px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition ${
+                            analyticsWindow === option.id ? 'bg-[#dff7ef] text-brand-950' : 'text-white/55 hover:text-white'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                    <a href="#portal-queue" className="rounded-2xl border border-white/10 px-4 py-3 text-sm font-semibold text-white/72 transition hover:bg-white/[0.06] hover:text-white">
+                      Expand
+                    </a>
+                  </div>
                 </div>
+              </section>
 
-                <div className="rounded-3xl border border-ice-200 p-4">
-                  <div className="mb-4 flex items-center justify-between">
-                    <div className="text-sm font-semibold text-brand-950">Recent analytics events</div>
-                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Selected window</span>
+              <div className="grid gap-5 xl:grid-cols-[1.45fr_0.85fr]">
+                <section id="portal-queue" className="rounded-[1.5rem] border border-white/8 bg-white/[0.04] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                  <div className="mb-5 flex items-center justify-between gap-4">
+                    <div className="text-xl font-semibold text-white">Live booking queue</div>
+                    <button type="button" onClick={() => onShowPage('booking')} className="text-sm font-semibold text-accent-400 transition hover:text-accent-300">
+                      View all
+                    </button>
+                  </div>
+                  <div className="space-y-4">
+                    {queuePreview.length ? (
+                      queuePreview.map((booking) => {
+                        const bookingStatus = formatStatusCopy(booking.bookingStatus || 'confirmed');
+                        const initials = booking.bookingSummary.name
+                          .split(' ')
+                          .slice(0, 2)
+                          .map((part) => part.charAt(0))
+                          .join('')
+                          .toUpperCase();
+
+                        return (
+                          <div key={booking.id} className="flex flex-col gap-4 rounded-[1.25rem] border border-white/8 bg-black/10 px-4 py-4 md:flex-row md:items-center md:justify-between">
+                            <div className="flex min-w-0 items-start gap-4">
+                              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#dff7ef] text-sm font-bold text-brand-950">
+                                {initials}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="truncate text-lg font-semibold text-white">{booking.bookingSummary.name}</div>
+                                <div className="mt-1 text-sm text-white/62">
+                                  {booking.bookingForm.checkin} – {booking.bookingForm.checkout} · {booking.bookingSummary.nights} night{booking.bookingSummary.nights > 1 ? 's' : ''} · {booking.bookingForm.guests} pax
+                                </div>
+                                <div className="mt-1 text-xs uppercase tracking-[0.16em] text-white/34">{booking.bookingForm.guestName || 'Guest booking'}</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between gap-4 md:block md:text-right">
+                              <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClasses(booking.paymentStatus)}`}>
+                                {bookingStatus}
+                              </span>
+                              <div className="mt-2 text-2xl font-bold text-white">{formatCurrency(booking.bookingSummary.total)}</div>
+                              <select
+                                value={booking.bookingStatus || 'confirmed'}
+                                onChange={(event) => onUpdateBookingStatus(booking.id, event.target.value)}
+                                className="mt-3 w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-semibold text-white outline-none md:w-auto"
+                              >
+                                <option value="confirmed" className="text-slate-900">Confirmed</option>
+                                <option value="pending" className="text-slate-900">Pending</option>
+                                <option value="checked-in" className="text-slate-900">Checked In</option>
+                                <option value="completed" className="text-slate-900">Completed</option>
+                                <option value="cancelled" className="text-slate-900">Cancelled</option>
+                                <option value="payment_issue" className="text-slate-900">Payment Issue</option>
+                                <option value="refunded" className="text-slate-900">Refunded</option>
+                              </select>
+                              <div className="mt-3 flex flex-wrap gap-2 md:justify-end">
+                                <button
+                                  type="button"
+                                  onClick={() => onCancelBooking?.(booking)}
+                                  className="rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-white/70 transition hover:bg-white/[0.06] hover:text-white"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => onRefundBooking?.(booking)}
+                                  disabled={!booking.stripeSessionId || booking.paymentStatus === 'refunded'}
+                                  className="rounded-xl border border-rose-400/20 bg-rose-400/10 px-3 py-2 text-xs font-semibold text-rose-200 transition disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                  Refund
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="rounded-[1.25rem] border border-dashed border-white/10 bg-black/10 px-5 py-6 text-sm text-white/55">
+                        No bookings yet. Share your booking link to activate the queue and email triggers.
+                      </div>
+                    )}
+                  </div>
+                </section>
+
+                <div className="space-y-5">
+                  <section className="rounded-[1.5rem] border border-white/8 bg-white/[0.04] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                    <div className="mb-5 text-xl font-semibold text-white">Recent activity</div>
+                    <div className="space-y-4">
+                      {recentActivity.map((item) => (
+                        <div key={item.id} className="flex items-start gap-4 rounded-[1.2rem] border border-white/8 bg-black/10 px-4 py-4">
+                          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
+                            item.tone === 'brand' ? 'bg-[#dff7ef] text-brand-950'
+                              : item.tone === 'accent' ? 'bg-accent-500/20 text-accent-300'
+                                : 'bg-white/10 text-white/70'
+                          }`}>
+                            <Icon name={item.icon} />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-lg font-semibold leading-tight text-white">{item.title}</div>
+                            <div className="mt-2 text-sm text-white/76">{item.detail}</div>
+                            <div className="mt-1 text-sm text-white/44">{item.meta}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section id="portal-email-triggers" className="rounded-[1.5rem] border border-white/8 bg-white/[0.04] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                    <div className="mb-5 text-xl font-semibold text-white">Email triggers</div>
+                    <div className="space-y-4">
+                      {emailTriggers.map((item) => (
+                        <div key={item.id} className="flex items-start gap-4 rounded-[1.2rem] border border-white/8 bg-black/10 px-4 py-4">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#dff7ef] text-brand-950">
+                            <Icon name="email" />
+                          </div>
+                          <div>
+                            <div className="text-lg font-semibold leading-tight text-white">{item.title}</div>
+                            <div className="mt-2 text-sm text-white/58">{item.detail}</div>
+                            {item.id !== 'email-empty' ? <div className="mt-2 text-sm font-semibold text-emerald-300">Active</div> : null}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </div>
+              </div>
+
+              <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+                <section id="portal-owner-leads" className="rounded-[1.5rem] border border-white/8 bg-white/[0.04] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                  <div className="mb-5 flex items-center justify-between gap-3">
+                    <div className="text-xl font-semibold text-white">Owner leads</div>
+                    <button type="button" onClick={() => onShowPage('owner-signup')} className="text-sm font-semibold text-accent-400 transition hover:text-accent-300">
+                      View form
+                    </button>
                   </div>
                   <div className="space-y-3">
-                    {analyticsSummary.recentEvents.length ? (
-                      analyticsSummary.recentEvents.map((event) => (
-                        <div key={event.id} className="flex items-center justify-between gap-4 rounded-2xl bg-ice-50 px-4 py-3">
-                          <div>
-                            <div className="font-semibold text-brand-900">{formatAnalyticsEventLabel(event.type)}</div>
-                            <div className="text-xs text-slate-500">{event.path || event.page || 'HoraStaycation'}</div>
-                          </div>
-                          <div className="text-xs font-medium text-slate-400">
-                            {new Date(event.createdAt).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                            })}
+                    {ownerApplications.length ? (
+                      ownerApplications.slice(0, 3).map((application) => (
+                        <div key={application.id} className="rounded-[1.2rem] border border-white/8 bg-black/10 px-4 py-4">
+                          <div className="font-semibold text-white">{application.ownerName}</div>
+                          <div className="mt-1 text-sm text-white/58">{application.ownerAddress}</div>
+                          <div className="mt-2 text-xs uppercase tracking-[0.16em] text-white/34">
+                            {application.unitCount} unit{application.unitCount === '1' ? '' : 's'} · {application.budget}
                           </div>
                         </div>
                       ))
                     ) : (
-                      <div className="rounded-2xl border border-dashed border-ice-200 p-4 text-sm text-slate-500">
-                        No searches, wishlist actions, support opens, or install prompts were captured in this date range yet.
+                      <div className="rounded-[1.2rem] border border-dashed border-white/10 bg-black/10 px-4 py-5 text-sm text-white/52">
+                        Owner enquiries will appear here once the inbound pipeline starts.
                       </div>
                     )}
                   </div>
-                </div>
-              </div>
-            </section>
+                </section>
 
-            <section id="portal-queue" className="space-y-6">
-              {latestBooking ? (
-                <div className="rounded-[2rem] border border-accent-300/40 bg-gradient-to-r from-brand-950 via-brand-900 to-accent-500 p-6 text-white shadow-xl">
-                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div>
-                      <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white/75">
-                        <Icon name="email" />
-                        New booking request
-                      </div>
-                      <h2 className="mt-3 font-display text-2xl font-bold">{latestBooking.bookingSummary.name}</h2>
-                      <p className="mt-2 text-sm text-white/75">
-                        {latestBooking.bookingForm.guestName} for {latestBooking.bookingForm.guests} guest(s) · {latestBooking.bookingForm.checkin} to {latestBooking.bookingForm.checkout}
-                      </p>
-                    </div>
-                    <div className="rounded-2xl bg-white/10 px-5 py-4 text-left md:text-right">
-                      <div className="text-xs uppercase tracking-[0.2em] text-white/55">Booking total</div>
-                      <div className="mt-1 text-2xl font-bold">{formatCurrency(latestBooking.bookingSummary.total)}</div>
-                    </div>
+                <section id="portal-evaluate-leads" className="rounded-[1.5rem] border border-white/8 bg-white/[0.04] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                  <div className="mb-5 flex items-center justify-between gap-3">
+                    <div className="text-xl font-semibold text-white">Evaluate leads</div>
+                    <button type="button" onClick={() => onShowPage('evaluate')} className="text-sm font-semibold text-accent-400 transition hover:text-accent-300">
+                      Open review form
+                    </button>
                   </div>
-                </div>
-              ) : null}
-
-              <div className="rounded-[2rem] border border-ice-200 bg-white p-6 shadow-sm">
-                <div className="mb-6 flex items-center justify-between">
-                  <h2 className="font-display text-2xl font-bold text-brand-950">Live Booking Queue</h2>
-                  <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-600">Operations</span>
-                </div>
-                <div className="space-y-4">
-                  {bookingTransactions.length ? (
-                    bookingTransactions.map((booking) => (
-                      <div key={booking.id} className="rounded-2xl border border-ice-200 p-5">
-                        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                          <div>
-                            <div className="font-semibold text-brand-900">{booking.bookingSummary.name}</div>
-                            <div className="mt-1 text-sm text-slate-500">{booking.bookingForm.guestName} · {booking.bookingForm.guestEmail}</div>
-                            <div className="mt-2 text-sm text-slate-500">
-                              {booking.bookingForm.checkin} to {booking.bookingForm.checkout} · {booking.bookingSummary.nights} night(s) · {booking.bookingForm.guests} guest(s)
-                            </div>
-                            <div className="mt-3 flex flex-wrap gap-2">
-                              <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClasses(booking.paymentStatus)}`}>
-                                Payment {formatStatusCopy(booking.paymentStatus || 'paid')}
-                              </span>
-                              <span className="rounded-full bg-ice-50 px-3 py-1 text-xs font-semibold text-brand-700">
-                                {String(booking.paymentProvider || 'manual').toUpperCase()}
-                              </span>
-                              {booking.refundStatus ? (
-                                <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-                                  Refund {formatStatusCopy(booking.refundStatus)}
-                                </span>
-                              ) : null}
-                            </div>
-                            <div className="mt-3 space-y-1 text-xs text-slate-400">
-                              {booking.stripeSessionId ? <div>Stripe session: {booking.stripeSessionId}</div> : null}
-                              {booking.stripePaymentIntentId ? <div>Payment intent: {booking.stripePaymentIntentId}</div> : null}
-                              {booking.customerReceiptEmail ? <div>Receipt email: {booking.customerReceiptEmail}</div> : null}
-                              {booking.statusNote ? <div>Status note: {booking.statusNote}</div> : null}
-                            </div>
-                          </div>
-                          <div className="space-y-2 text-right">
-                            <div className="font-bold text-brand-700">{formatCurrency(booking.bookingSummary.total)}</div>
-                            <select
-                              value={booking.bookingStatus || 'confirmed'}
-                              onChange={(event) => onUpdateBookingStatus(booking.id, event.target.value)}
-                              className="rounded-xl border border-ice-200 px-3 py-2 text-xs font-semibold text-brand-700"
-                            >
-                              <option value="confirmed">Confirmed</option>
-                              <option value="pending">Pending</option>
-                              <option value="checked-in">Checked In</option>
-                              <option value="completed">Completed</option>
-                              <option value="cancelled">Cancelled</option>
-                              <option value="payment_issue">Payment Issue</option>
-                              <option value="refunded">Refunded</option>
-                            </select>
-                            <div className="flex flex-wrap justify-end gap-2 pt-2">
-                              <button
-                                type="button"
-                                onClick={() => onCancelBooking?.(booking)}
-                                className="rounded-xl border border-ice-200 px-3 py-2 text-xs font-semibold text-slate-600"
-                              >
-                                Cancel Booking
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => onRefundBooking?.(booking)}
-                                disabled={!booking.stripeSessionId || booking.paymentStatus === 'refunded'}
-                                className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
-                              >
-                                Refund Payment
-                              </button>
-                            </div>
-                          </div>
+                  <div className="space-y-3">
+                    {reviewSubmissions.length ? (
+                      reviewSubmissions.slice(0, 3).map((submission) => (
+                        <div key={submission.id} className="rounded-[1.2rem] border border-white/8 bg-black/10 px-4 py-4">
+                          <div className="font-semibold text-white">{submission.evaluatorName}</div>
+                          <div className="mt-1 text-sm text-white/58">{submission.evaluatorAddress}</div>
+                          <div className="mt-2 text-xs uppercase tracking-[0.16em] text-white/34">{submission.evaluatorEmail}</div>
                         </div>
+                      ))
+                    ) : (
+                      <div className="rounded-[1.2rem] border border-dashed border-white/10 bg-black/10 px-4 py-5 text-sm text-white/52">
+                        Evaluation requests will appear here when property reviews start coming in.
                       </div>
-                    ))
-                  ) : (
-                    <EmptyBookingState onShowPage={onShowPage} />
-                  )}
-                </div>
+                    )}
+                  </div>
+                </section>
               </div>
-            </section>
-
-            <section id="portal-published" className="rounded-[2rem] border border-ice-200 bg-white p-6 shadow-sm">
-              <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-                <div>
-                  <div className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-500">Published Staycation Choices</div>
-                  <h2 className="mt-2 font-display text-3xl font-bold text-brand-950">Cleaner catalog scan with clearer status badges</h2>
-                  <p className="mt-2 text-sm leading-relaxed text-slate-500">
-                    The public listings now read as a visual grid instead of a long dense stack, with clearer status cues for published, draft, and blocked inventory.
-                  </p>
-                </div>
-                <button type="button" onClick={() => onShowPage('management-listings')} className="btn-outline px-5 py-3 text-sm">
-                  Manage Listings
-                </button>
-              </div>
-              <PublishedListingsGrid listings={listings} formatCurrency={formatCurrency} />
-            </section>
-
-            <div className="grid gap-8 xl:grid-cols-2">
-              <section id="portal-requests" className="rounded-[2rem] border border-ice-200 bg-white p-6 shadow-sm">
-                <h2 className="mb-6 font-display text-2xl font-bold text-brand-950">Recent Owner & Evaluate Requests</h2>
-                <div className="space-y-4">
-                  {ownerApplications.slice(0, 3).map((application) => (
-                    <div key={application.id} className="rounded-2xl border border-ice-200 p-4">
-                      <div className="font-semibold text-brand-900">{application.ownerName}</div>
-                      <div className="text-sm text-slate-500">{application.ownerAddress}</div>
-                      <div className="mt-1 text-xs text-brand-600">Owner lead · {application.unitCount} unit(s) · {application.budget}</div>
-                    </div>
-                  ))}
-                  {reviewSubmissions.slice(0, 3).map((submission) => (
-                    <div key={submission.id} className="rounded-2xl border border-ice-200 p-4">
-                      <div className="font-semibold text-brand-900">{submission.evaluatorName}</div>
-                      <div className="text-sm text-slate-500">{submission.evaluatorAddress}</div>
-                      <div className="mt-1 text-xs text-brand-600">Evaluate request · {submission.unitCount} unit(s) · {submission.evaluatorEmail}</div>
-                    </div>
-                  ))}
-                  {!ownerApplications.length && !reviewSubmissions.length ? (
-                    <div className="rounded-2xl border border-dashed border-ice-200 p-4 text-sm text-slate-500">
-                      New owner and evaluation requests will appear here after submissions.
-                    </div>
-                  ) : null}
-                </div>
-              </section>
-
-              <section id="portal-emails" className="rounded-[2rem] border border-ice-200 bg-white p-6 shadow-sm">
-                <h2 className="mb-6 font-display text-2xl font-bold text-brand-950">Triggered Email Activity</h2>
-                <div className="space-y-4">
-                  {emails.length ? (
-                    emails.map((email) => (
-                      <div key={`${email.title}-${email.detail}`} className="rounded-2xl border border-ice-200 p-4">
-                        <div className="flex items-center gap-3">
-                          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-                            <Icon name="email" />
-                          </span>
-                          <div>
-                            <div className="font-semibold text-brand-900">{email.title}</div>
-                            <div className="text-sm text-slate-500">{email.detail}</div>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="rounded-2xl border border-dashed border-ice-200 p-4 text-sm text-slate-500">
-                      Email activity will appear here when bookings and requests trigger notifications.
-                    </div>
-                  )}
-                </div>
-              </section>
             </div>
           </div>
         </div>
@@ -1804,48 +1894,175 @@ export function ManagementListingsPage({
   authUser,
   formatCurrency,
 }) {
+  const currentMonthLabel = new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(new Date());
+  const liveListingsCount = listings.filter((listing) => listing.publishStatus !== 'draft' && !listing.isDeleted).length;
+  const draftListingsCount = listings.filter((listing) => listing.publishStatus === 'draft' && !listing.isDeleted).length;
+  const averageNightly = listings.length
+    ? formatCurrency(Math.round(listings.reduce((sum, listing) => sum + Number(listing.price || 0), 0) / listings.length))
+    : formatCurrency(0);
+  const userName = authUser?.user_metadata?.full_name || authUser?.email || 'Hora Admin';
+  const listingsNav = [
+    {
+      title: 'Overview',
+      items: [
+        { id: 'dashboard', label: 'Dashboard', onClick: () => onShowPage('dashboard') },
+        { id: 'bookings', label: 'Bookings', onClick: () => onShowPage('dashboard') },
+        { id: 'analytics', label: 'Analytics', onClick: () => onShowPage('dashboard') },
+      ],
+    },
+    {
+      title: 'Listings',
+      items: [
+        { id: 'manage-listings', label: 'Manage listings', active: true },
+        { id: 'upload-studio', label: 'Upload studio', active: true },
+      ],
+    },
+    {
+      title: 'Clients',
+      items: [
+        { id: 'owner-leads', label: 'Owner leads', onClick: () => onShowPage('dashboard') },
+        { id: 'evaluate-leads', label: 'Evaluate leads', onClick: () => onShowPage('dashboard') },
+        { id: 'email-activity', label: 'Email activity', onClick: () => onShowPage('dashboard') },
+      ],
+    },
+  ];
+
   return (
-    <section className="min-h-screen bg-ice-50 px-4 pb-16 pt-28 md:px-8">
-      <div className="mx-auto max-w-7xl space-y-8">
-        <ManagementPortalHeader
-          eyebrow="Listings Workspace"
-          title="Management Listings Studio"
-          description="This dedicated route isolates the content-heavy listing workflow into grouped, collapsible sections with a cleaner bulk upload experience."
-          authUser={authUser}
-          onSignOut={onSignOut}
-          onShowPage={onShowPage}
-          primaryAction={{ label: 'Return to Dashboard', onClick: () => onShowPage('dashboard') }}
-          secondaryAction={{ label: 'View Published Grid', onClick: () => document.getElementById('catalog-preview')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
-        />
-
-        <OperationsSnapshot
-          bookings={bookings}
-          revenue={revenue}
-          ownerApplications={ownerApplications}
-          reviewSubmissions={reviewSubmissions}
-          formatCurrency={formatCurrency}
-        />
-
-        <ListingsStudio
-          listings={listings}
-          onSaveListing={onSaveListing}
-          onDeleteListing={onDeleteListing}
-          onShowPage={onShowPage}
-          formatCurrency={formatCurrency}
-        />
-
-        <section id="catalog-preview" className="rounded-[2rem] border border-ice-200 bg-white p-6 shadow-sm">
-          <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-500">Published Staycation Choices</div>
-              <h2 className="mt-2 font-display text-3xl font-bold text-brand-950">Grid preview of the live catalog</h2>
+    <section className="min-h-screen bg-[#0b0d10] px-4 pb-10 pt-24 md:px-6">
+      <div className="mx-auto max-w-[1500px] overflow-hidden rounded-[2rem] border border-white/8 bg-[#151618] shadow-[0_30px_120px_rgba(0,0,0,0.45)]">
+        <div className="grid min-h-[calc(100vh-8rem)] lg:grid-cols-[280px_minmax(0,1fr)]">
+          <aside className="flex flex-col border-b border-white/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] lg:border-b-0 lg:border-r lg:border-white/6">
+            <div className="flex items-center gap-3 border-b border-white/6 px-6 py-5">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-accent-500 text-lg font-bold text-white shadow-lg shadow-brand-950/35">
+                H
+              </div>
+              <div>
+                <div className="font-semibold text-white">Hora</div>
+                <div className="text-sm text-white/55">Staycation</div>
+              </div>
             </div>
-            <button type="button" onClick={() => onShowPage('dashboard')} className="btn-outline px-5 py-3 text-sm">
-              Back to Dashboard
-            </button>
+            <div className="flex-1 space-y-7 px-5 py-6">
+              {listingsNav.map((group) => (
+                <div key={group.title}>
+                  <div className="px-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/32">{group.title}</div>
+                  <div className="mt-3 space-y-1">
+                    {group.items.map((item) => {
+                      const iconName =
+                        item.id === 'dashboard' ? 'chart'
+                          : item.id === 'bookings' ? 'calendar'
+                            : item.id === 'analytics' ? 'trend'
+                              : item.id === 'manage-listings' ? 'home'
+                                : item.id === 'upload-studio' ? 'upload'
+                                  : item.id === 'owner-leads' ? 'users'
+                                    : item.id === 'evaluate-leads' ? 'pen'
+                                      : 'email';
+
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={item.onClick}
+                          className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-medium transition ${
+                            item.active ? 'bg-[#dff7ef] text-brand-950 shadow-sm' : 'text-white/70 hover:bg-white/6 hover:text-white'
+                          }`}
+                        >
+                          <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${item.active ? 'bg-white text-brand-700' : 'bg-white/6 text-white/55'}`}>
+                            <Icon name={iconName} />
+                          </span>
+                          <span className="truncate">{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-white/6 px-5 py-5">
+              <div className="flex items-center gap-3 rounded-2xl border border-white/6 bg-white/[0.03] px-4 py-4">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#dff7ef] font-semibold text-brand-950">
+                  {String(userName).trim().charAt(0).toUpperCase() || 'H'}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium text-white">{authUser?.email || 'management@horastaycation.com'}</div>
+                  <div className="text-xs uppercase tracking-[0.18em] text-white/38">Admin</div>
+                </div>
+                <button type="button" onClick={onSignOut} className="rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/60 hover:border-white/20 hover:text-white">
+                  Out
+                </button>
+              </div>
+              <button type="button" onClick={() => onShowPage('landing')} className="mt-3 w-full rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm font-semibold text-white/72 transition hover:bg-white/[0.07] hover:text-white">
+                Return to site
+              </button>
+            </div>
+          </aside>
+
+          <div className="min-w-0">
+            <header className="flex flex-col gap-4 border-b border-white/6 px-6 py-5 md:flex-row md:items-center md:justify-between lg:px-8">
+              <div>
+                <div className="text-sm font-medium text-white/55">Listings workspace</div>
+                <div className="mt-1 text-xl font-semibold text-white">Management upload studio</div>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-medium text-white/70">
+                  {currentMonthLabel}
+                </div>
+                <button type="button" onClick={() => onShowPage('dashboard')} className="rounded-2xl border border-white/12 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.08]">
+                  Back to dashboard
+                </button>
+              </div>
+            </header>
+
+            <div className="space-y-6 p-6 lg:p-8">
+              <section className="overflow-hidden rounded-[1.6rem] border border-brand-500/18 bg-gradient-to-br from-[#055c50] via-[#0b5d57] to-[#103a57] px-5 py-5 text-white shadow-[0_24px_60px_rgba(3,105,98,0.28)]">
+                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">Listings live</div>
+                    <div className="mt-2 text-4xl font-black">{liveListingsCount}</div>
+                    <div className="mt-2 text-sm text-white/68">{draftListingsCount ? `${draftListingsCount} draft in progress` : 'All active listings are published'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">Average nightly</div>
+                    <div className="mt-2 text-4xl font-black">{averageNightly}</div>
+                    <div className="mt-2 text-sm text-white/68">Calculated across current management listings</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">Bookings connected</div>
+                    <div className="mt-2 text-4xl font-black">{bookings.length}</div>
+                    <div className="mt-2 text-sm text-white/68">The studio updates what guests actually book</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">Lead pipeline</div>
+                    <div className="mt-2 text-4xl font-black">{ownerApplications.length + reviewSubmissions.length}</div>
+                    <div className="mt-2 text-sm text-white/68">Owner and evaluation demand connected to this workspace</div>
+                  </div>
+                </div>
+              </section>
+
+              <div className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-1">
+                <ListingsStudio
+                  listings={listings}
+                  onSaveListing={onSaveListing}
+                  onDeleteListing={onDeleteListing}
+                  onShowPage={onShowPage}
+                  formatCurrency={formatCurrency}
+                />
+              </div>
+
+              <section id="catalog-preview" className="rounded-[1.5rem] border border-white/8 bg-white/[0.04] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">Published staycation choices</div>
+                    <h2 className="mt-2 font-display text-3xl font-bold text-white">Live catalog preview</h2>
+                  </div>
+                  <button type="button" onClick={() => onShowPage('dashboard')} className="rounded-2xl border border-white/12 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.08]">
+                    Back to dashboard
+                  </button>
+                </div>
+                <PublishedListingsGrid listings={listings} formatCurrency={formatCurrency} />
+              </section>
+            </div>
           </div>
-          <PublishedListingsGrid listings={listings} formatCurrency={formatCurrency} />
-        </section>
+        </div>
       </div>
     </section>
   );
