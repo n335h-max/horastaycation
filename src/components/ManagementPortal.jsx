@@ -585,6 +585,9 @@ function useManagementStudio(listings, onSaveListing, onDeleteListing) {
   const [bulkUploadField, setBulkUploadField] = useState('image');
   const [bulkListingIds, setBulkListingIds] = useState([]);
   const [isBulkUploading, setIsBulkUploading] = useState(false);
+  const [listingSearch, setListingSearch] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [originalFormSnapshot, setOriginalFormSnapshot] = useState(null);
 
   const availableListings = draftListing ? [draftListing, ...listings] : listings;
   const selectedListing = useMemo(
@@ -923,6 +926,55 @@ function useManagementStudio(listings, onSaveListing, onDeleteListing) {
     setStudioMessage('Listing removed from the management portal.');
   }
 
+  // ── Derived state ──
+  const hasUnsavedChanges = useMemo(() => {
+    if (!originalFormSnapshot || !selectedListing) return false;
+    const current = listingForm;
+    return (
+      current.name !== originalFormSnapshot.name ||
+      current.location !== originalFormSnapshot.location ||
+      current.price !== originalFormSnapshot.price ||
+      current.statusNote !== originalFormSnapshot.statusNote ||
+      current.publishStatus !== originalFormSnapshot.publishStatus ||
+      current.schedule !== originalFormSnapshot.schedule ||
+      current.mood !== originalFormSnapshot.mood ||
+      current.bestFor !== originalFormSnapshot.bestFor ||
+      current.facilitiesText !== originalFormSnapshot.facilitiesText
+    );
+  }, [listingForm, originalFormSnapshot, selectedListing]);
+
+  const filteredListings = useMemo(() => {
+    if (!listingSearch.trim()) return availableListings;
+    const query = listingSearch.toLowerCase();
+    return availableListings.filter(
+      (l) =>
+        l.name.toLowerCase().includes(query) ||
+        (l.location || '').toLowerCase().includes(query),
+    );
+  }, [availableListings, listingSearch]);
+
+  // Track snapshot when listing changes
+  useEffect(() => {
+    setOriginalFormSnapshot({ ...listingForm });
+  }, [selectedListingId, draftListing]);
+
+  function handleDeleteRequest() {
+    if (draftListing?.id === selectedListing.id) {
+      setShowDeleteConfirm(true);
+      return;
+    }
+    setShowDeleteConfirm(true);
+  }
+
+  function confirmDelete() {
+    setShowDeleteConfirm(false);
+    handleDeleteListing();
+  }
+
+  function cancelDelete() {
+    setShowDeleteConfirm(false);
+  }
+
   return {
     availableListings,
     selectedListing,
@@ -939,8 +991,13 @@ function useManagementStudio(listings, onSaveListing, onDeleteListing) {
     selectedBulkListings,
     isBulkUploading,
     pendingMediaFiles,
+    listingSearch,
+    showDeleteConfirm,
+    hasUnsavedChanges,
+    filteredListings,
     setSelectedListingId,
     setBulkUploadField,
+    setListingSearch,
     handleListingFieldChange,
     handleMediaUpload,
     handleCreateListing,
@@ -952,7 +1009,9 @@ function useManagementStudio(listings, onSaveListing, onDeleteListing) {
     toggleAllBulkListings,
     handleBulkUpload,
     handleListingSubmit,
-    handleDeleteListing,
+    handleDeleteListing: handleDeleteRequest,
+    confirmDelete,
+    cancelDelete,
   };
 }
 
@@ -1109,28 +1168,71 @@ function ListingsStudio({
             <div className="grid gap-4 md:grid-cols-[1.1fr_0.9fr]">
               <div>
                 <label className="form-label" htmlFor="listingSelect">Listing to Manage</label>
+                <input
+                  id="listingSearch"
+                  type="text"
+                  placeholder="Search listings..."
+                  value={studio.listingSearch}
+                  onChange={(e) => studio.setListingSearch(e.target.value)}
+                  style={{
+                    width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(15,31,61,0.15)',
+                    fontSize: 13, marginBottom: 6, outline: 'none', boxSizing: 'border-box',
+                  }}
+                />
                 <select
                   id="listingSelect"
                   value={studio.selectedListingId}
-                  onChange={(event) => studio.setSelectedListingId(event.target.value)}
+                  onChange={(event) => {
+                    studio.setSelectedListingId(event.target.value);
+                    studio.setListingSearch('');
+                  }}
                   className="form-input"
                 >
-                  {studio.availableListings.map((listing) => (
+                  {studio.filteredListings.map((listing) => (
                     <option key={listing.id} value={listing.id}>
-                      {listing.name}
+                      {listing.name}{listing.location ? ` — ${listing.location}` : ''}
                     </option>
                   ))}
+                  {studio.filteredListings.length === 0 ? (
+                    <option disabled>No matching listings</option>
+                  ) : null}
                 </select>
+                {studio.listingSearch ? (
+                  <div style={{ fontSize: 11, color: '#5A6A84', marginTop: 4 }}>
+                    {studio.filteredListings.length} of {studio.availableListings.length} shown
+                  </div>
+                ) : null}
               </div>
               <div className="flex flex-wrap gap-3">
                 <button type="button" onClick={studio.handleCreateListing} className="btn-primary flex-1 px-5 py-3 text-sm">
                   <span>+ Add New Listing</span>
                 </button>
                 <button type="button" onClick={studio.handleDeleteListing} className="flex-1 rounded-2xl border border-rose-200 px-5 py-3 text-sm font-semibold text-rose-600">
-                  Delete Listing
+                  {studio.showDeleteConfirm ? 'Confirm?' : 'Delete Listing'}
                 </button>
               </div>
             </div>
+            {/* ── Delete confirmation overlay ── */}
+            {studio.showDeleteConfirm ? (
+              <div style={{
+                marginTop: 12, padding: 12, borderRadius: 10, background: '#FEF2F2',
+                border: '1px solid #FECACA', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+              }}>
+                <span style={{ fontSize: 13, color: '#991B1B', fontWeight: 500, flex: 1, minWidth: 0 }}>
+                  Are you sure you want to delete <strong>{studio.selectedListing?.name}</strong>? This cannot be undone.
+                </span>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button type="button" onClick={studio.confirmDelete} style={{
+                    borderRadius: 8, background: '#DC2626', color: '#fff', border: 'none',
+                    padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  }}>Yes, Delete</button>
+                  <button type="button" onClick={studio.cancelDelete} style={{
+                    borderRadius: 8, background: '#fff', color: '#374151', border: '1px solid #D1D5DB',
+                    padding: '6px 14px', fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                  }}>Cancel</button>
+                </div>
+              </div>
+            ) : null}
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               <div>
                 <label className="form-label" htmlFor="name">Listing Name</label>
@@ -1352,9 +1454,23 @@ function ListingsStudio({
       </div>
 
       <aside className="space-y-6 xl:sticky xl:top-28 xl:self-start">
+        {/* ── Selected listing card with thumbnail ── */}
         <section className="rounded-[1.8rem] border border-ice-200 bg-white p-5 shadow-sm">
           <div className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-500">Selected Listing</div>
-          <div className="mt-3 text-2xl font-bold text-brand-950">{studio.selectedListing?.name}</div>
+          {/* Thumbnail preview */}
+          <div style={{
+            marginTop: 10, borderRadius: 10, overflow: 'hidden', height: 100,
+            background: '#1E3560', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            {studio.selectedListing?.image ? (
+              <img src={studio.selectedListing.image} alt={studio.selectedListing.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <div style={{ fontSize: 28, fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>
+                {studio.selectedListing?.name?.charAt(0)?.toUpperCase() || '?'}
+              </div>
+            )}
+          </div>
+          <div className="mt-3 text-xl font-bold text-brand-950">{studio.selectedListing?.name}</div>
           <div className="mt-1 text-sm text-slate-500">{studio.selectedListing?.location || 'Location still needed'}</div>
           <div className="mt-4 flex items-center justify-between rounded-2xl bg-ice-50 px-4 py-3">
             <span className="text-sm font-semibold text-slate-500">Current rate</span>
@@ -1372,6 +1488,40 @@ function ListingsStudio({
                 <Icon name="arrow-right" className="text-xs text-slate-400" />
               </button>
             ))}
+          </div>
+        </section>
+
+        {/* ── Listing status at a glance ── */}
+        <section className="rounded-[1.8rem] border border-ice-200 bg-white p-5 shadow-sm">
+          <h2 className="font-display text-lg font-bold text-brand-950">Status at a Glance</h2>
+          <div className="mt-4 space-y-3">
+            <div className="flex items-center justify-between rounded-xl bg-ice-50 px-3 py-2.5">
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Status</span>
+              <span style={{
+                fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20,
+                background: studio.listingForm.publishStatus === 'published' ? '#E1F5EE' : '#EEF2F7',
+                color: studio.listingForm.publishStatus === 'published' ? '#085041' : '#5A6A84',
+              }}>
+                {studio.listingForm.publishStatus === 'published' ? 'Published' : 'Draft'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between rounded-xl bg-ice-50 px-3 py-2.5">
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Amenities</span>
+              <span className="text-sm font-semibold text-slate-700">
+                {studio.selectedListing?.amenities?.length || 0}
+              </span>
+            </div>
+            {studio.hasUnsavedChanges ? (
+              <div style={{
+                marginTop: 8, padding: '8px 10px', borderRadius: 8,
+                background: '#FEF3C7', border: '1px solid #FCD34D',
+                fontSize: 11, fontWeight: 600, color: '#92400E',
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#F59E0B', flexShrink: 0 }} />
+                Unsaved changes
+              </div>
+            ) : null}
           </div>
         </section>
 
