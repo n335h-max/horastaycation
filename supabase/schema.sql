@@ -30,6 +30,13 @@ create table if not exists public.review_submissions (
   submitted_at timestamptz not null default now()
 );
 
+create table if not exists public.stripe_events (
+  id bigint primary key generated always as identity,
+  event_id text not null unique,
+  event_type text not null default '',
+  processed_at timestamptz not null default now()
+);
+
 create table if not exists public.booking_transactions (
   id uuid primary key default gen_random_uuid(),
   property_id text not null,
