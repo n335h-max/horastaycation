@@ -61,11 +61,11 @@ export const ROLE_DEFAULT_PATHS = {
 // Currency / Locale
 // ──────────────────────────────────────────────
 
-export const CURRENCY_LOCALE = 'en-US';
-export const CURRENCY_CODE = 'USD';
+export const CURRENCY_LOCALE = 'ms-MY';
+export const CURRENCY_CODE = 'MYR';
 export const CURRENCY_FORMAT_OPTIONS = {
   style: 'currency',
-  currency: 'USD',
+  currency: 'MYR',
   maximumFractionDigits: 0,
 };
 
