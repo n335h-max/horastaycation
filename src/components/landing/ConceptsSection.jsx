@@ -100,7 +100,7 @@ function AddOnCard({ item }) {
           {item.varieties.map((variety) => (
             <div key={variety.title} className="rounded-2xl bg-ice-50 p-4">
               {variety.image ? (
-                <div className="mb-4 overflow-hidden rounded-2xl bg-white">
+                <div className="relative mb-4 overflow-hidden rounded-2xl bg-white">
                   <img
                     src={variety.image}
                     alt={variety.title}
@@ -109,6 +109,15 @@ function AddOnCard({ item }) {
                     loading="lazy"
                     className="aspect-[4/3] h-full w-full object-cover"
                   />
+                  {variety.highlights ? (
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-wrap gap-2 bg-gradient-to-t from-black/70 via-black/20 to-transparent p-3">
+                      {variety.highlights.map((highlight) => (
+                        <span key={highlight} className="rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-800">
+                          {highlight}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
               <h4 className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-700">{variety.title}</h4>

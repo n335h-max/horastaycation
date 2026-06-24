@@ -410,6 +410,7 @@ export const ADD_ON_OPTIONS = [
       {
         title: '01. Heliconia',
         image: '/staycations/addons/heliconia.png',
+        highlights: ['Natural Beauty', 'Perfect for Staycation'],
         points: [
           'Lush greenery that adds height, texture, and a natural touch.',
           'Perfect for tropical and modern staycation spaces.',
@@ -418,28 +419,11 @@ export const ADD_ON_OPTIONS = [
       {
         title: '02. Jasminum',
         image: '/staycations/addons/jasminum.png',
+        highlights: ['Easy Maintenance', 'Relaxing Atmosphere'],
         points: [
           'Compact and beautiful with delicate white blooms.',
           'Easy to maintain and ideal for a relaxing vibe.',
         ],
-      },
-    ],
-    features: [
-      {
-        title: 'Natural Beauty',
-        description: 'Enhance the space with vibrant greenery that brings life and freshness.',
-      },
-      {
-        title: 'Easy Maintenance',
-        description: 'Low-maintenance plants that are easy to care for and sustainable.',
-      },
-      {
-        title: 'Relaxing Atmosphere',
-        description: 'Create a calm and refreshing environment for the perfect getaway.',
-      },
-      {
-        title: 'Perfect for Staycation',
-        description: 'Bring nature closer for a more enjoyable and memorable staycation.',
       },
     ],
   },
