@@ -261,6 +261,7 @@ export const PREVIOUS_PROJECTS = [
     location: 'Melaka',
     label: 'Previous Project 01',
     summary: 'Compact staycation direction with tiny-house comfort, clean pathways, and a polished first impression.',
+    image: '/staycations/ayer-keroh-melaka.png',
   },
   {
     id: 'sama-sama-tido',
@@ -268,6 +269,7 @@ export const PREVIOUS_PROJECTS = [
     location: 'Melaka',
     label: 'Previous Project 02',
     summary: 'A resort-style layout that highlights poolside leisure, outdoor social space, and broad lawn views.',
+    image: '/staycations/sama-sama-tido-melaka.png',
   },
   {
     id: 'bohejiwa',
@@ -275,6 +277,7 @@ export const PREVIOUS_PROJECTS = [
     location: 'Port Dickson',
     label: 'Previous Project 03',
     summary: 'A stronger ambience-led concept with identity-building details and memorable guest arrival moments.',
+    image: '/staycations/bohejiwa-port-dickson.png',
   },
   {
     id: 'alang-villa',
@@ -282,6 +285,7 @@ export const PREVIOUS_PROJECTS = [
     location: 'Port Dickson',
     label: 'Previous Project 04',
     summary: 'A staycation presentation shaped for private escapes, stronger branding, and destination appeal.',
+    image: '/staycations/alangs-villa-port-dickson.png',
   },
   {
     id: 'aviva',
@@ -289,6 +293,7 @@ export const PREVIOUS_PROJECTS = [
     location: 'Seremban 2',
     label: 'Previous Project 05',
     summary: 'Compact hospitality planning that supports a cozy layout with clean landscaping and approachable scale.',
+    image: '/staycations/aviva-seremban-2.png',
   },
   {
     id: 'jalan-kebun',
@@ -296,6 +301,7 @@ export const PREVIOUS_PROJECTS = [
     location: 'Bangi',
     label: 'Previous Project 06',
     summary: 'A practical staycation setup where outdoor circulation, guest flow, and maintenance remain manageable.',
+    image: '/staycations/jalan-kebun-bangi.png',
   },
   {
     id: 'amana-villa',
@@ -303,6 +309,7 @@ export const PREVIOUS_PROJECTS = [
     location: 'Port Dickson',
     label: 'Previous Project 07',
     summary: 'A proposal reference focused on comfort, ambience, and refreshed landscape-led guest experiences.',
+    image: '/staycations/amana-villa-port-dickson.png',
   },
 ];
 

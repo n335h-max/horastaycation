@@ -3,13 +3,25 @@ import { Icon } from '../Icon';
 
 function PreviousProjectCard({ project }) {
   return (
-    <article className="rounded-2xl border border-ice-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-      <div className="mb-3 inline-flex rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-brand-700">
-        {project.label}
+    <article className="rounded-2xl border border-ice-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg overflow-hidden">
+      <div className="aspect-video overflow-hidden bg-ice-100">
+        <img
+          src={project.image}
+          alt={project.name}
+          width="300"
+          height="200"
+          loading="lazy"
+          className="h-full w-full object-cover"
+        />
       </div>
-      <h3 className="font-display text-2xl font-bold text-brand-950">{project.name}</h3>
-      <p className="mt-1 text-sm font-semibold text-brand-600">{project.location}</p>
-      <p className="mt-4 text-sm leading-relaxed text-slate-500">{project.summary}</p>
+      <div className="p-6">
+        <div className="mb-3 inline-flex rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-brand-700">
+          {project.label}
+        </div>
+        <h3 className="font-display text-2xl font-bold text-brand-950">{project.name}</h3>
+        <p className="mt-1 text-sm font-semibold text-brand-600">{project.location}</p>
+        <p className="mt-4 text-sm leading-relaxed text-slate-500">{project.summary}</p>
+      </div>
     </article>
   );
 }
