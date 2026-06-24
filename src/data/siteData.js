@@ -1,4 +1,4 @@
-xport const NAV_ITEMS = [
+export const NAV_ITEMS = [
   { label: 'Introduction', sectionId: 'intro' },
   { label: 'Build with Us', page: 'owner-signup' },
   { label: 'Book a Staycation', page: 'booking' },
