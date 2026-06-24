@@ -374,7 +374,7 @@ export const STARTING_PACKAGE = {
   title: 'Starting From RM80,000',
   description:
     'The proposal frames this level as a compact, well worth the experience direction for a tiny-house staycation with curated design and landscape value.',
-  highlights: [
+  includes: [
     'Tiny house base direction',
     'Landscape and ambience planning',
     'Flexible add-on discussion',
@@ -402,13 +402,15 @@ export const OWNER_BENEFITS = [
 export const TESTIMONIALS = [
   {
     quote: 'Absolutely stunning property! The host was incredibly welcoming.',
-    author: 'Sarah M.',
+    name: 'Sarah M.',
+    role: 'Guest',
     rating: 5,
   },
   {
     quote: 'Perfect weekend getaway. We will definitely come back!',
-    author: 'James K.',
-    rating: 4.5,
+    name: 'James K.',
+    role: 'Guest',
+    rating: 4,
   },
 ];
 
