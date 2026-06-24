@@ -96,7 +96,7 @@ function AddOnCard({ item }) {
         </div>
       ) : null}
       {item.varieties ? (
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <div className={`mt-5 grid gap-6 ${item.id === 'plants' ? 'lg:grid-cols-2' : 'sm:grid-cols-2'}`}>
           {item.varieties.map((variety) => (
             <div key={variety.title} className="rounded-2xl bg-ice-50 p-4">
               {variety.image ? (
@@ -107,12 +107,12 @@ function AddOnCard({ item }) {
                     width="320"
                     height="240"
                     loading="lazy"
-                    className="aspect-[4/3] h-full w-full object-cover"
+                    className={`h-full w-full object-cover ${item.id === 'plants' ? 'aspect-[4/5] sm:aspect-[3/4]' : 'aspect-[4/3]'}`}
                   />
                   {variety.highlights ? (
                     <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-wrap gap-2 bg-gradient-to-t from-black/70 via-black/20 to-transparent p-3">
                       {variety.highlights.map((highlight) => (
-                        <span key={highlight} className="rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-800">
+                        <span key={highlight} className={`rounded-full px-3 py-1.5 font-semibold uppercase tracking-[0.16em] ${item.id === 'plants' ? 'bg-brand-900/95 text-white text-xs' : 'bg-white/90 text-brand-800 text-[10px]'}`}>
                           {highlight}
                         </span>
                       ))}
