@@ -109,15 +109,6 @@ function AddOnCard({ item }) {
                     loading="lazy"
                     className={`h-full w-full object-cover ${item.id === 'plants' ? 'aspect-[4/5] sm:aspect-[3/4]' : 'aspect-[4/3]'}`}
                   />
-                  {variety.highlights ? (
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-wrap gap-2 bg-gradient-to-t from-black/70 via-black/20 to-transparent p-3">
-                      {variety.highlights.map((highlight) => (
-                        <span key={highlight} className={`rounded-full px-3 py-1.5 font-semibold uppercase tracking-[0.16em] ${item.id === 'plants' ? 'bg-brand-900/95 text-white text-xs' : 'bg-white/90 text-brand-800 text-[10px]'}`}>
-                          {highlight}
-                        </span>
-                      ))}
-                    </div>
-                  ) : null}
                 </div>
               ) : null}
               <h4 className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-700">{variety.title}</h4>
