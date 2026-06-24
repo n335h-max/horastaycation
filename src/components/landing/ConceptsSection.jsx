@@ -28,18 +28,30 @@ function PreviousProjectCard({ project }) {
 
 function ConceptCard({ concept }) {
   return (
-    <article className="rounded-3xl border border-brand-100 bg-white p-8 shadow-sm">
-      <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
-        <Icon name={concept.icon} className="text-2xl" />
+    <article className="overflow-hidden rounded-3xl border border-brand-100 bg-white shadow-sm">
+      <div className="aspect-[4/3] overflow-hidden bg-ice-100">
+        <img
+          src={concept.image}
+          alt={concept.title}
+          width="420"
+          height="320"
+          loading="lazy"
+          className="h-full w-full object-cover"
+        />
       </div>
-      <h3 className="font-display text-2xl font-bold text-brand-950">{concept.title}</h3>
-      <p className="mt-3 text-sm leading-relaxed text-slate-500">{concept.summary}</p>
-      <div className="mt-5 flex flex-wrap gap-2">
-        {concept.points.map((point) => (
-          <span key={point} className="rounded-full bg-ice-50 px-3 py-1 text-xs font-semibold text-brand-700">
-            {point}
-          </span>
-        ))}
+      <div className="p-8">
+        <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
+          <Icon name={concept.icon} className="text-2xl" />
+        </div>
+        <h3 className="font-display text-2xl font-bold text-brand-950">{concept.title}</h3>
+        <p className="mt-3 text-sm leading-relaxed text-slate-500">{concept.summary}</p>
+        <div className="mt-5 flex flex-wrap gap-2">
+          {concept.points.map((point) => (
+            <span key={point} className="rounded-full bg-ice-50 px-3 py-1 text-xs font-semibold text-brand-700">
+              {point}
+            </span>
+          ))}
+        </div>
       </div>
     </article>
   );
