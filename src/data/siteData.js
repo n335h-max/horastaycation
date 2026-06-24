@@ -318,7 +318,7 @@ export const CONCEPT_OPTIONS = [
     id: 'modern',
     title: 'Modern Concept',
     icon: 'home',
-    image: '/staycations/ayer-keroh-melaka.png',
+    image: '/staycations/concepts/modern.png',
     summary: 'A blend of clean lines, elegant forms, and natural beauty for a stylish, contemporary staycation feel.',
     points: ['Modern design', 'Natural beauty', 'Warm ambience'],
   },
@@ -326,7 +326,7 @@ export const CONCEPT_OPTIONS = [
     id: 'japanese',
     title: 'Japanese Concept',
     icon: 'leaf',
-    image: '/staycations/sama-sama-tido-melaka.png',
+    image: '/staycations/concepts/japanese.png',
     summary: 'A serene direction with minimalist design, natural materials, and calming ambience for peaceful stays.',
     points: ['Japanese design', 'Natural elements', 'Relaxing ambience'],
   },
@@ -334,7 +334,7 @@ export const CONCEPT_OPTIONS = [
     id: 'natural',
     title: 'Natural Concept',
     icon: 'tree',
-    image: '/staycations/bohejiwa-port-dickson.png',
+    image: '/staycations/concepts/natural.png',
     summary: 'A harmonious mix of greenery, stone, wood, and warm lighting to create a refreshing environment.',
     points: ['Natural design', 'Green elements', 'Warm ambience'],
   },
@@ -345,37 +345,103 @@ export const ADD_ON_OPTIONS = [
     id: 'pool',
     title: 'Pool',
     icon: 'hotub',
+    image: '/staycations/addons/pool.png',
     summary: 'Adds strong visual appeal and helps create a more relaxing resort-style guest experience.',
   },
   {
     id: 'bbq',
     title: 'BBQ Place',
     icon: 'fire',
+    image: '/staycations/addons/bbq-place.png',
     summary: 'Creates a dedicated social space for outdoor dining, gathering, and memorable shared moments.',
   },
   {
     id: 'outdoor-kitchen',
     title: 'Outdoor Kitchen',
     icon: 'kitchen',
+    image: '/staycations/addons/outdoor-kitchen.png',
     summary: 'Adds a practical cooking area outside the tiny house and supports light hosting activity.',
-  },
-  {
-    id: 'water-feature',
-    title: 'Water Feature',
-    icon: 'star',
-    summary: 'Enhances ambience with a calming effect and helps the staycation feel more curated and tranquil.',
-  },
-  {
-    id: 'plants',
-    title: 'Planting & Greenery',
-    icon: 'leaf',
-    summary: 'Brings nature closer, improves visual freshness, and supports the relaxing Hora atmosphere.',
   },
   {
     id: 'marketing',
     title: 'Marketing Support',
     icon: 'chart',
+    image: '/staycations/addons/marketing.png',
     summary: 'Supports awareness through professional visuals, posting plans, and stronger listing presentation.',
+  },
+  {
+    id: 'foc-signboard',
+    title: 'F.O.C Signboard',
+    icon: 'shield',
+    image: '/staycations/addons/foc-signboard.png',
+    summary: 'Free signboard plus an additional 5% discount, included and customizable with your homestay brand name.',
+    label: '01.',
+    highlight: 'Included',
+    bullets: [
+      'Free signboard + less 5% discount',
+      'Customizable with homestay brand name',
+    ],
+    features: [
+      {
+        title: 'Free Signboard',
+        description: 'Complimentary signboard to give your homestay a more professional look.',
+      },
+      {
+        title: 'Less 5% Discount',
+        description: 'Enjoy an additional 5% off to make your staycation project even more rewarding.',
+      },
+      {
+        title: 'Customizable',
+        description: 'Personalize the signboard with your homestay or brand name.',
+      },
+      {
+        title: 'Create Identity',
+        description: 'Stand out and leave a lasting impression on your guests.',
+      },
+    ],
+  },
+  {
+    id: 'plants',
+    title: 'Heliconia & Jasminum',
+    icon: 'leaf',
+    summary: 'Bring nature closer with low-maintenance greenery that adds freshness, texture, and a relaxing staycation vibe.',
+    label: 'Plants',
+    varieties: [
+      {
+        title: '01. Heliconia',
+        image: '/staycations/addons/heliconia.png',
+        points: [
+          'Lush greenery that adds height, texture, and a natural touch.',
+          'Perfect for tropical and modern staycation spaces.',
+        ],
+      },
+      {
+        title: '02. Jasminum',
+        image: '/staycations/addons/jasminum.png',
+        points: [
+          'Compact and beautiful with delicate white blooms.',
+          'Easy to maintain and ideal for a relaxing vibe.',
+        ],
+      },
+    ],
+    features: [
+      {
+        title: 'Natural Beauty',
+        description: 'Enhance the space with vibrant greenery that brings life and freshness.',
+      },
+      {
+        title: 'Easy Maintenance',
+        description: 'Low-maintenance plants that are easy to care for and sustainable.',
+      },
+      {
+        title: 'Relaxing Atmosphere',
+        description: 'Create a calm and refreshing environment for the perfect getaway.',
+      },
+      {
+        title: 'Perfect for Staycation',
+        description: 'Bring nature closer for a more enjoyable and memorable staycation.',
+      },
+    ],
   },
 ];
 

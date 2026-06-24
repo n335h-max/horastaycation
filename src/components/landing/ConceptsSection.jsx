@@ -60,11 +60,77 @@ function ConceptCard({ concept }) {
 function AddOnCard({ item }) {
   return (
     <article className="rounded-2xl border border-ice-200 bg-white p-6 shadow-sm">
-      <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
-        <Icon name={item.icon} className="text-xl" />
+      {item.image ? (
+        <div className="mb-5 overflow-hidden rounded-2xl bg-ice-100">
+          <img
+            src={item.image}
+            alt={item.title}
+            width="640"
+            height="420"
+            loading="lazy"
+            className="aspect-[4/3] h-full w-full object-cover"
+          />
+        </div>
+      ) : null}
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
+          <Icon name={item.icon} className="text-xl" />
+        </div>
+        {item.label ? (
+          <span className="rounded-full bg-ice-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-brand-700">
+            {item.label}
+          </span>
+        ) : null}
       </div>
       <h3 className="font-display text-xl font-bold text-brand-950">{item.title}</h3>
+      {item.highlight ? <p className="mt-2 text-xs font-semibold uppercase tracking-[0.24em] text-brand-500">{item.highlight}</p> : null}
       <p className="mt-3 text-sm leading-relaxed text-slate-500">{item.summary}</p>
+      {item.bullets ? (
+        <div className="mt-5 space-y-2">
+          {item.bullets.map((bullet) => (
+            <div key={bullet} className="flex items-start gap-2 text-sm text-slate-600">
+              <span className="mt-1 inline-flex h-2 w-2 rounded-full bg-accent-400" />
+              <span>{bullet}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {item.varieties ? (
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          {item.varieties.map((variety) => (
+            <div key={variety.title} className="rounded-2xl bg-ice-50 p-4">
+              {variety.image ? (
+                <div className="mb-4 overflow-hidden rounded-2xl bg-white">
+                  <img
+                    src={variety.image}
+                    alt={variety.title}
+                    width="320"
+                    height="240"
+                    loading="lazy"
+                    className="aspect-[4/3] h-full w-full object-cover"
+                  />
+                </div>
+              ) : null}
+              <h4 className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-700">{variety.title}</h4>
+              <div className="mt-3 space-y-2 text-sm leading-relaxed text-slate-600">
+                {variety.points.map((point) => (
+                  <p key={point}>{point}</p>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {item.features ? (
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          {item.features.map((feature) => (
+            <div key={feature.title} className="rounded-2xl border border-ice-200 bg-ice-50 p-4">
+              <h4 className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-700">{feature.title}</h4>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">{feature.description}</p>
+            </div>
+          ))}
+        </div>
+      ) : null}
     </article>
   );
 }
@@ -130,7 +196,7 @@ export function ConceptsSection({ onShowPage, onScrollToSection }) {
             <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-brand-500">Add-ons</p>
             <h2 className="font-display text-3xl font-bold text-brand-950 md:text-4xl">Optional Enhancements</h2>
           </div>
-          <div className="grid gap-6 md:grid-cols-4">
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {ADD_ON_OPTIONS.map((item) => (
               <AddOnCard key={item.title} item={item} />
             ))}

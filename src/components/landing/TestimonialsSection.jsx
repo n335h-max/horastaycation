@@ -3,28 +3,6 @@ import { Icon } from '../Icon';
 export function TestimonialsSection({ ownerBenefits, testimonials }) {
   return (
     <>
-      {/* Owner Benefits */}
-      <section className="bg-brand-950 py-20">
-        <div className="mx-auto max-w-6xl px-4 md:px-8">
-          <div className="mb-12 text-center">
-            <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-accent-400">Owner Benefits</p>
-            <h2 className="font-display text-3xl font-bold text-white md:text-4xl">Why Build with Hora</h2>
-          </div>
-          <div className="grid gap-6 md:grid-cols-3">
-            {ownerBenefits.map((benefit) => (
-              <article key={benefit.title} className="rounded-2xl border border-white/10 bg-white/5 p-6 text-white">
-                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-accent-400">
-                  <Icon name={benefit.icon} className="text-xl" />
-                </div>
-                <h3 className="font-display text-xl font-bold">{benefit.title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-white/60">{benefit.summary}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
       <section className="bg-ice-50 py-20">
         <div className="mx-auto max-w-6xl px-4 md:px-8">
           <div className="mb-12 text-center">
