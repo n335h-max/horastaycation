@@ -35,7 +35,7 @@ export default async function handler(req, res) {
         {
           quantity: 1,
           price_data: {
-            currency: process.env.STRIPE_CURRENCY || 'usd',
+            currency: process.env.STRIPE_CURRENCY || 'myr',
             unit_amount: Math.round(Number(bookingSummary.total) * 100),
             product_data: {
               name: `${bookingSummary.name} staycation booking`,

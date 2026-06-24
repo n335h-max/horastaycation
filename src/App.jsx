@@ -101,7 +101,7 @@ function ModalLoadingFallback() {
 
 function useFormatters() {
   const currencyFormatter = useMemo(
-    () => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }),
+    () => new Intl.NumberFormat('ms-MY', { style: 'currency', currency: 'MYR', maximumFractionDigits: 0 }),
     [],
   );
   const compactFormatter = useMemo(
