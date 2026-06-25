@@ -422,10 +422,11 @@ export default function App() {
 
     async function applyRequestedRole() {
       if (!authSession?.user) {
+        handledRequestedRoleRef.current = '';
         return;
       }
 
-      const requestKey = `${authSession.user.id}:${location.pathname}:${location.search}`;
+      const requestKey = `${authSession.user.id}:${authSession.access_token || ''}:${location.pathname}:${location.search}`;
 
       if (handledRequestedRoleRef.current === requestKey) {
         return;
