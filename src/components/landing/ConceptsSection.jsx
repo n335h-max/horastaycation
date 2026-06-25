@@ -234,7 +234,12 @@ export function ConceptsSection({ onShowPage, onScrollToSection }) {
           </div>
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {ADD_ON_OPTIONS.map((item) => (
-              <AddOnCard key={item.title} item={item} />
+              <div
+                key={item.title}
+                className={item.id === 'plants' ? 'md:col-span-2 xl:col-span-2' : ''}
+              >
+                <AddOnCard item={item} />
+              </div>
             ))}
           </div>
         </div>
