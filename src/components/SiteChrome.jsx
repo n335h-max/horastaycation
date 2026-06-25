@@ -136,20 +136,27 @@ function UserProfileMenu({
     : 'bg-teal-500 text-white hover:bg-teal-400';
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative z-30 shrink-0">
       <button
         type="button"
-        onClick={() => setOpen((current) => !current)}
-        className="rounded-full"
+        onClick={(event) => {
+          event.stopPropagation();
+          setOpen((current) => !current);
+        }}
+        className="relative z-10 cursor-pointer rounded-full pointer-events-auto"
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-controls="user-profile-dropdown"
         aria-label="Open profile menu"
       >
         <UserAvatarIndicator authUser={authUser} authRole={authRole} isLanding={isLanding} />
       </button>
 
       {open ? (
-        <div className={`absolute right-0 mt-3 w-64 rounded-3xl border p-4 ${dropdownClass}`}>
+        <div
+          id="user-profile-dropdown"
+          className={`pointer-events-auto absolute right-0 mt-3 w-64 rounded-3xl border p-4 ${dropdownClass}`}
+        >
           <div className="flex items-center gap-3">
             <UserAvatarIndicator authUser={authUser} authRole={authRole} isLanding={isLanding} />
             <div className="min-w-0">
