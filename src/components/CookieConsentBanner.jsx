@@ -17,9 +17,8 @@ export function CookieConsentBanner({ open, preferences, onAcceptAll, onEssentia
             Cookie Preferences
           </div>
           <p className="mt-3 text-sm leading-relaxed text-slate-600 md:text-[0.95rem]">
-            Hora Staycation uses essential cookies and local storage to keep bookings secure, remember your session,
-            and protect account access. Optional analytics and personalization stay off unless you explicitly allow
-            them.
+            Hora Staycation uses essential cookies and local storage to keep bookings secure, remember your session, and
+            protect account access. Optional analytics and personalization stay off unless you explicitly allow them.
           </p>
           <div className="mt-3 flex flex-wrap gap-2 text-xs font-medium text-slate-500">
             <span className="rounded-full bg-ice-100 px-3 py-1">Essential: always on</span>
@@ -36,7 +35,11 @@ export function CookieConsentBanner({ open, preferences, onAcceptAll, onEssentia
           <button type="button" onClick={onManagePrivacy} className="btn-outline px-5 py-3 text-sm">
             Privacy Policy
           </button>
-          <button type="button" onClick={onEssentialOnly} className="rounded-xl border border-ice-200 px-5 py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-brand-200 hover:text-brand-700">
+          <button
+            type="button"
+            onClick={onEssentialOnly}
+            className="rounded-xl border border-ice-200 px-5 py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-brand-200 hover:text-brand-700"
+          >
             Essential Only
           </button>
           <button type="button" onClick={onAcceptAll} className="btn-primary px-5 py-3 text-sm">

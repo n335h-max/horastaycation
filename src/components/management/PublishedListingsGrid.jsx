@@ -17,8 +17,15 @@ export function PublishedListingsGrid({ listings, formatCurrency, compact = fals
       {listings.map((property) => {
         const badge = getListingBadge(property);
         return (
-          <article key={property.id} className="overflow-hidden rounded-[1.8rem] border border-ice-200 bg-white shadow-sm">
-            <img src={property.thumbnail} alt={property.name} className={`w-full object-cover ${compact ? 'h-36' : 'h-40'}`} />
+          <article
+            key={property.id}
+            className="overflow-hidden rounded-[1.8rem] border border-ice-200 bg-white shadow-sm"
+          >
+            <img
+              src={property.thumbnail}
+              alt={property.name}
+              className={`w-full object-cover ${compact ? 'h-36' : 'h-40'}`}
+            />
             <div className="p-5">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">

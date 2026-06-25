@@ -29,21 +29,28 @@ function openDatabase() {
 }
 
 function runStoreOperation(mode, operation) {
-  return openDatabase().then((database) => new Promise((resolve, reject) => {
-    if (!database) {
-      resolve(null);
-      return;
-    }
+  return openDatabase().then(
+    (database) =>
+      new Promise((resolve, reject) => {
+        if (!database) {
+          resolve(null);
+          return;
+        }
 
-    const transaction = database.transaction(STORE_NAME, mode);
-    const store = transaction.objectStore(STORE_NAME);
+        const transaction = database.transaction(STORE_NAME, mode);
+        const store = transaction.objectStore(STORE_NAME);
 
-    transaction.addEventListener('complete', () => resolve(true));
-    transaction.addEventListener('error', () => reject(transaction.error ?? new Error('Media transaction failed.')));
-    transaction.addEventListener('abort', () => reject(transaction.error ?? new Error('Media transaction aborted.')));
+        transaction.addEventListener('complete', () => resolve(true));
+        transaction.addEventListener('error', () =>
+          reject(transaction.error ?? new Error('Media transaction failed.')),
+        );
+        transaction.addEventListener('abort', () =>
+          reject(transaction.error ?? new Error('Media transaction aborted.')),
+        );
 
-    operation(store, resolve, reject);
-  }));
+        operation(store, resolve, reject);
+      }),
+  );
 }
 
 export async function saveMediaFile(file, field) {
@@ -91,22 +98,25 @@ export function getMediaObjectUrl(mediaRef) {
     return Promise.resolve('');
   }
 
-  return openDatabase().then((database) => new Promise((resolve, reject) => {
-    if (!database) {
-      resolve('');
-      return;
-    }
+  return openDatabase().then(
+    (database) =>
+      new Promise((resolve, reject) => {
+        if (!database) {
+          resolve('');
+          return;
+        }
 
-    const transaction = database.transaction(STORE_NAME, 'readonly');
-    const store = transaction.objectStore(STORE_NAME);
-    const request = store.get(mediaRef.id);
+        const transaction = database.transaction(STORE_NAME, 'readonly');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.get(mediaRef.id);
 
-    request.addEventListener('success', () => {
-      const record = request.result;
-      resolve(record?.blob ? URL.createObjectURL(record.blob) : '');
-    });
-    request.addEventListener('error', () => reject(request.error ?? new Error('Failed to read media file.')));
-  }));
+        request.addEventListener('success', () => {
+          const record = request.result;
+          resolve(record?.blob ? URL.createObjectURL(record.blob) : '');
+        });
+        request.addEventListener('error', () => reject(request.error ?? new Error('Failed to read media file.')));
+      }),
+  );
 }
 
 export function revokeMediaObjectUrls(urls) {

@@ -12,8 +12,7 @@ const CONTENT = {
   owner: {
     eyebrow: 'Application Received',
     title: 'Your property application is in review.',
-    description:
-      'The Hora team has received your details and will follow up after reviewing the submission.',
+    description: 'The Hora team has received your details and will follow up after reviewing the submission.',
     primaryLabel: 'View Owner Dashboard',
     primaryPage: 'owner-dashboard',
   },

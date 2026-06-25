@@ -6,7 +6,9 @@ import { FEATURED_PROPERTIES } from '../data/siteData';
 
 export async function getAuthenticatedUser() {
   if (!isSupabaseConfigured || !supabase) return null;
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   return user || null;
 }
 
@@ -39,7 +41,12 @@ export async function deleteRemote(table, matchField, matchValue) {
 // ── Media upload ──
 
 function sanitizeStorageSegment(value) {
-  return String(value).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'upload';
+  return (
+    String(value)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'upload'
+  );
 }
 
 function getFileExtension(file) {
@@ -60,7 +67,9 @@ export async function uploadListingMediaFile(listingId, fieldName, file) {
   ].join('/');
 
   const { error } = await supabase.storage.from(bucket).upload(filePath, file, {
-    cacheControl: '3600', upsert: true, contentType: file.type || undefined,
+    cacheControl: '3600',
+    upsert: true,
+    contentType: file.type || undefined,
   });
 
   if (error) return { uploaded: false, error, url: '' };
@@ -72,10 +81,16 @@ export async function uploadListingMediaFile(listingId, fieldName, file) {
 // ── Listing sync helpers ──
 
 function normalizeListingPayload(listing) {
-  const amenities = String(listing.facilitiesText || '').split(',').map((i) => i.trim()).filter(Boolean);
+  const amenities = String(listing.facilitiesText || '')
+    .split(',')
+    .map((i) => i.trim())
+    .filter(Boolean);
   const blockedDates = Array.isArray(listing.blockedDates)
     ? listing.blockedDates
-    : String(listing.blockedDatesText || '').split(',').map((i) => i.trim()).filter(Boolean);
+    : String(listing.blockedDatesText || '')
+        .split(',')
+        .map((i) => i.trim())
+        .filter(Boolean);
   return {
     ...listing,
     price: Number(listing.price) || 0,
@@ -100,7 +115,7 @@ function normalizeListingPayload(listing) {
 function mergeManagementListings(listings = []) {
   const listingMap = new Map(listings.map((l) => [l.id, normalizeListingPayload(l)]));
   const mergedDefaults = FEATURED_PROPERTIES.map((l) =>
-    normalizeListingPayload({ ...l, ...(listingMap.get(l.id) || { }) }),
+    normalizeListingPayload({ ...l, ...(listingMap.get(l.id) || {}) }),
   ).filter((l) => !l.isDeleted);
   const extras = listings
     .filter((l) => !FEATURED_PROPERTIES.some((d) => d.id === l.id) && !l.isDeleted)
@@ -112,22 +127,31 @@ function fromRemoteManagementListing(record) {
   const defaults = FEATURED_PROPERTIES.find((l) => l.id === record.id) || FEATURED_PROPERTIES[0];
   return normalizeListingPayload({
     ...defaults,
-    id: record.id, name: record.name ?? defaults.name, location: record.location ?? defaults.location,
+    id: record.id,
+    name: record.name ?? defaults.name,
+    location: record.location ?? defaults.location,
     price: Number(record.price ?? defaults.price) || 0,
     ratingLabel: record.rating_label ?? defaults.ratingLabel,
     reviewCount: Number(record.review_count ?? defaults.reviewCount) || 0,
-    badge: record.badge ?? defaults.badge, badgeIcon: record.badge_icon ?? defaults.badgeIcon,
-    statusNote: record.status_note ?? defaults.statusNote, mood: record.mood ?? defaults.mood,
-    bestFor: record.best_for ?? defaults.bestFor, image: record.image ?? defaults.image,
+    badge: record.badge ?? defaults.badge,
+    badgeIcon: record.badge_icon ?? defaults.badgeIcon,
+    statusNote: record.status_note ?? defaults.statusNote,
+    mood: record.mood ?? defaults.mood,
+    bestFor: record.best_for ?? defaults.bestFor,
+    image: record.image ?? defaults.image,
     summaryImage: record.summary_image ?? defaults.summaryImage,
     thumbnail: record.thumbnail ?? defaults.thumbnail,
-    videoUrl: record.video_url ?? '', schedule: record.schedule ?? defaults.schedule,
+    videoUrl: record.video_url ?? '',
+    schedule: record.schedule ?? defaults.schedule,
     publishStatus: record.publish_status ?? 'published',
     availabilityNotes: record.availability_notes ?? '',
     blockedDates: Array.isArray(record.blocked_dates) ? record.blocked_dates : [],
     isDeleted: Boolean(record.is_deleted),
     amenities: Array.isArray(record.amenities) ? record.amenities : defaults.amenities,
-    imageAsset: null, summaryImageAsset: null, thumbnailAsset: null, videoAsset: null,
+    imageAsset: null,
+    summaryImageAsset: null,
+    thumbnailAsset: null,
+    videoAsset: null,
   });
 }
 
@@ -143,24 +167,36 @@ export async function fetchRemoteManagementListings() {
 
 function mapRemoteBookingTransaction(record) {
   return {
-    id: record.id, submittedAt: record.submitted_at,
+    id: record.id,
+    submittedAt: record.submitted_at,
     bookingStatus: record.booking_status || 'confirmed',
     paymentStatus: record.payment_status || 'paid',
     paymentProvider: record.payment_provider || 'manual',
     stripeSessionId: record.stripe_session_id || '',
     stripePaymentIntentId: record.stripe_payment_intent_id || '',
-    refundId: record.stripe_refund_id || '', refundStatus: record.refund_status || '',
-    refundedAt: record.refunded_at || '', cancelledAt: record.cancelled_at || '',
+    refundId: record.stripe_refund_id || '',
+    refundStatus: record.refund_status || '',
+    refundedAt: record.refunded_at || '',
+    cancelledAt: record.cancelled_at || '',
     customerReceiptEmail: record.customer_receipt_email || record.guest_email || '',
-    statusNote: record.status_note || '', paymentLast4: record.payment_last4 || '',
+    statusNote: record.status_note || '',
+    paymentLast4: record.payment_last4 || '',
     bookingForm: {
-      property: record.property_id, checkin: record.checkin_date, checkout: record.checkout_date,
-      guests: String(record.guests), guestName: record.guest_name, guestEmail: record.guest_email,
-      guestPhone: record.guest_phone || '', specialRequests: record.special_requests || '',
+      property: record.property_id,
+      checkin: record.checkin_date,
+      checkout: record.checkout_date,
+      guests: String(record.guests),
+      guestName: record.guest_name,
+      guestEmail: record.guest_email,
+      guestPhone: record.guest_phone || '',
+      specialRequests: record.special_requests || '',
     },
     bookingSummary: {
-      name: record.property_name, location: record.property_location, nights: record.nights,
-      subtotal: Number(record.subtotal) || 0, serviceFee: Number(record.service_fee) || 0,
+      name: record.property_name,
+      location: record.property_location,
+      nights: record.nights,
+      subtotal: Number(record.subtotal) || 0,
+      serviceFee: Number(record.service_fee) || 0,
       total: Number(record.total) || 0,
     },
   };
@@ -177,7 +213,8 @@ export async function fetchRemoteBookingTransactions() {
     .limit(REMOTE_BOOKING_LIMIT);
   if (error) return { saved: false, error, transactions: [] };
   return {
-    saved: true, error: null,
+    saved: true,
+    error: null,
     transactions: Array.isArray(data) ? data.map(mapRemoteBookingTransaction) : [],
   };
 }

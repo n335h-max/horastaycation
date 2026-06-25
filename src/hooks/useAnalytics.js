@@ -31,12 +31,7 @@ export function useAnalytics(cookiePreferences, activePage, locationPathname) {
 
   const analyticsSummary = useCallback(
     (store) =>
-      summarizeAnalytics(
-        store.analyticsEvents,
-        store.bookingTransactions,
-        store.supportRequests,
-        store.wishlistByUser,
-      ),
+      summarizeAnalytics(store.analyticsEvents, store.bookingTransactions, store.supportRequests, store.wishlistByUser),
     [],
   );
 

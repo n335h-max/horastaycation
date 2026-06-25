@@ -1,13 +1,6 @@
 import { Icon } from './Icon';
 
-export function PaymentModal({
-  open,
-  summary,
-  isSubmitting,
-  onClose,
-  onSubmit,
-  formatCurrency,
-}) {
+export function PaymentModal({ open, summary, isSubmitting, onClose, onSubmit, formatCurrency }) {
   if (!open || !summary) {
     return null;
   }
@@ -20,7 +13,12 @@ export function PaymentModal({
             <h2 className="font-display text-3xl font-bold text-brand-950">Secure Payment</h2>
             <p className="mt-2 text-slate-500">Complete your booking for {summary.name}.</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close payment modal" className="rounded-xl p-2 text-slate-500 hover:bg-slate-100">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close payment modal"
+            className="rounded-xl p-2 text-slate-500 hover:bg-slate-100"
+          >
             <Icon name="close" className="text-xl" />
           </button>
         </div>
@@ -32,7 +30,9 @@ export function PaymentModal({
           </div>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-slate-500">{formatCurrency(summary.price)} x {summary.nights} night(s)</span>
+              <span className="text-slate-500">
+                {formatCurrency(summary.price)} x {summary.nights} night(s)
+              </span>
               <span className="font-medium text-slate-900">{formatCurrency(summary.subtotal)}</span>
             </div>
             <div className="flex justify-between">
@@ -60,13 +60,19 @@ export function PaymentModal({
               </div>
             </div>
           </div>
-          <button type="submit" disabled={isSubmitting} className="btn-primary w-full py-4 text-lg disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="btn-primary w-full py-4 text-lg disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+          >
             <span className="inline-flex items-center gap-2">
               <Icon name="lock" />
               {isSubmitting ? 'Redirecting to Stripe…' : `Continue to Stripe · ${formatCurrency(summary.total)}`}
             </span>
           </button>
-          <p className="text-center text-xs text-slate-400">Card details are entered on Stripe, not stored in this app.</p>
+          <p className="text-center text-xs text-slate-400">
+            Card details are entered on Stripe, not stored in this app.
+          </p>
         </form>
       </div>
     </div>

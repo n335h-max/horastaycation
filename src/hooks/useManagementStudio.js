@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { startTransition, useState, useEffect, useMemo, useCallback } from 'react';
 import { FEATURED_PROPERTIES } from '../data/siteData';
 import { deleteMediaFile, saveMediaFile } from '../lib/mediaStorage';
 
@@ -10,32 +10,58 @@ const WINDOW_OPTIONS = [
 ];
 
 const MEDIA_FIELD_CONFIG = {
-  image: { assetField: 'imageAsset', accept: 'image/*', label: 'Hero Photo Upload', helper: 'Upload the main client-facing hero image.' },
-  summaryImage: { assetField: 'summaryImageAsset', accept: 'image/*', label: 'Summary Photo Upload', helper: 'Upload the image shown in booking summaries.' },
-  thumbnail: { assetField: 'thumbnailAsset', accept: 'image/*', label: 'Thumbnail Upload', helper: 'Upload the smaller card image used in the booking list.' },
-  videoUrl: { assetField: 'videoAsset', accept: 'video/*', label: 'Video Walkthrough Upload', helper: 'Upload a short walkthrough video for the listing.' },
+  image: {
+    assetField: 'imageAsset',
+    accept: 'image/*',
+    label: 'Hero Photo Upload',
+    helper: 'Upload the main client-facing hero image.',
+  },
+  summaryImage: {
+    assetField: 'summaryImageAsset',
+    accept: 'image/*',
+    label: 'Summary Photo Upload',
+    helper: 'Upload the image shown in booking summaries.',
+  },
+  thumbnail: {
+    assetField: 'thumbnailAsset',
+    accept: 'image/*',
+    label: 'Thumbnail Upload',
+    helper: 'Upload the smaller card image used in the booking list.',
+  },
+  videoUrl: {
+    assetField: 'videoAsset',
+    accept: 'video/*',
+    label: 'Video Walkthrough Upload',
+    helper: 'Upload a short walkthrough video for the listing.',
+  },
 };
 
 const LISTING_PRESETS = [
   {
-    id: 'beachfront-villa', title: 'Beachfront Villa',
+    id: 'beachfront-villa',
+    title: 'Beachfront Villa',
     facilities: ['Infinity Pool', 'Private Beach Access', 'BBQ Deck', 'WiFi', 'Outdoor Shower'],
     schedule: 'Daily check-in from 3:00 PM · Sunset concierge from 5:30 PM · Check-out before 11:00 AM',
-    statusNote: 'Beachfront highlight now live', mood: 'Ocean-facing stay with breezy social spaces, polished arrival moments, and sunset-ready lounging.',
+    statusNote: 'Beachfront highlight now live',
+    mood: 'Ocean-facing stay with breezy social spaces, polished arrival moments, and sunset-ready lounging.',
     bestFor: 'Best for family holidays, bridal parties, and premium short escapes',
   },
   {
-    id: 'forest-cabin', title: 'Forest Cabin',
+    id: 'forest-cabin',
+    title: 'Forest Cabin',
     facilities: ['Fire Pit', 'Mountain View Deck', 'Coffee Bar', 'WiFi', 'Private Parking'],
     schedule: 'Self check-in from 4:00 PM · Quiet hours from 10:00 PM · Check-out before 11:00 AM',
-    statusNote: 'Forest retreat schedule refreshed', mood: 'A calm woodland escape shaped for slower mornings, layered textures, and private evening gatherings.',
+    statusNote: 'Forest retreat schedule refreshed',
+    mood: 'A calm woodland escape shaped for slower mornings, layered textures, and private evening gatherings.',
     bestFor: 'Best for couples, creators, and restorative weekend stays',
   },
   {
-    id: 'urban-loft', title: 'Urban Loft',
+    id: 'urban-loft',
+    title: 'Urban Loft',
     facilities: ['Rooftop Access', 'Smart Lock', 'Workspace', 'Streaming TV', 'Fast WiFi'],
     schedule: 'Express check-in from 2:00 PM · Weekday priority stays · Check-out before 12:00 PM',
-    statusNote: 'Urban quick-stay preset active', mood: 'A compact city stay with efficient flow, strong visual styling, and easy work-to-rest transitions.',
+    statusNote: 'Urban quick-stay preset active',
+    mood: 'A compact city stay with efficient flow, strong visual styling, and easy work-to-rest transitions.',
     bestFor: 'Best for business trips, staycations, and content shoots',
   },
 ];
@@ -115,7 +141,8 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
   const [originalFormSnapshot, setOriginalFormSnapshot] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const selectedListing = draftListing || availableListings.find((item) => item.id === selectedListingId) || availableListings[0];
+  const selectedListing =
+    draftListing || availableListings.find((item) => item.id === selectedListingId) || availableListings[0];
 
   const [listingForm, setListingForm] = useState({
     name: selectedListing?.name || '',
@@ -131,37 +158,41 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
 
   useEffect(() => {
     if (!selectedListing) return;
-    setListingForm({
-      name: selectedListing.name || '',
-      location: selectedListing.location || '',
-      price: selectedListing.price || 0,
-      statusNote: selectedListing.statusNote || '',
-      publishStatus: selectedListing.publishStatus || 'published',
-      schedule: selectedListing.schedule || '',
-      mood: selectedListing.mood || '',
-      bestFor: selectedListing.bestFor || '',
-      facilitiesText: (selectedListing.facilities || []).join(', '),
-    });
-    setOriginalFormSnapshot({
-      name: selectedListing.name || '',
-      location: selectedListing.location || '',
-      price: selectedListing.price || 0,
-      statusNote: selectedListing.statusNote || '',
-      publishStatus: selectedListing.publishStatus || 'published',
-      schedule: selectedListing.schedule || '',
-      mood: selectedListing.mood || '',
-      bestFor: selectedListing.bestFor || '',
-      facilitiesText: (selectedListing.facilities || []).join(', '),
+    startTransition(() => {
+      setListingForm({
+        name: selectedListing.name || '',
+        location: selectedListing.location || '',
+        price: selectedListing.price || 0,
+        statusNote: selectedListing.statusNote || '',
+        publishStatus: selectedListing.publishStatus || 'published',
+        schedule: selectedListing.schedule || '',
+        mood: selectedListing.mood || '',
+        bestFor: selectedListing.bestFor || '',
+        facilitiesText: (selectedListing.facilities || []).join(', '),
+      });
+      setOriginalFormSnapshot({
+        name: selectedListing.name || '',
+        location: selectedListing.location || '',
+        price: selectedListing.price || 0,
+        statusNote: selectedListing.statusNote || '',
+        publishStatus: selectedListing.publishStatus || 'published',
+        schedule: selectedListing.schedule || '',
+        mood: selectedListing.mood || '',
+        bestFor: selectedListing.bestFor || '',
+        facilitiesText: (selectedListing.facilities || []).join(', '),
+      });
     });
   }, [selectedListingId, draftListing]);
 
-  const mediaCards = selectedListing ? MEDIA_FIELD_ORDER.map((field) => {
-    const config = MEDIA_FIELD_CONFIG[field];
-    const pendingFile = pendingMediaFiles[field];
-    const currentUrl = selectedListing[field] || '';
-    const currentAsset = selectedListing[config.assetField];
-    return { field, config, pendingFile, currentUrl, currentAsset, hasPending: !!pendingFile };
-  }) : [];
+  const mediaCards = selectedListing
+    ? MEDIA_FIELD_ORDER.map((field) => {
+        const config = MEDIA_FIELD_CONFIG[field];
+        const pendingFile = pendingMediaFiles[field];
+        const currentUrl = selectedListing[field] || '';
+        const currentAsset = selectedListing[config.assetField];
+        return { field, config, pendingFile, currentUrl, currentAsset, hasPending: !!pendingFile };
+      })
+    : [];
 
   const selectedBulkListings = availableListings.filter((l) => bulkListingIds.has(l.id));
 
@@ -208,29 +239,35 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
     }
   }, []);
 
-  const clearMediaField = useCallback((field) => {
-    if (pendingMediaFiles[field]) {
-      deleteMediaFile(pendingMediaFiles[field]);
-      setPendingMediaFiles((current) => {
-        const next = { ...current };
-        delete next[field];
-        return next;
-      });
-    }
-  }, [pendingMediaFiles]);
+  const clearMediaField = useCallback(
+    (field) => {
+      if (pendingMediaFiles[field]) {
+        deleteMediaFile(pendingMediaFiles[field]);
+        setPendingMediaFiles((current) => {
+          const next = { ...current };
+          delete next[field];
+          return next;
+        });
+      }
+    },
+    [pendingMediaFiles],
+  );
 
   const handleMediaDragOver = useCallback((event) => {
     event.preventDefault();
     event.stopPropagation();
   }, []);
 
-  const handleMediaDrop = useCallback((field, event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setDraggingField(null);
-    const file = event.dataTransfer?.files?.[0];
-    if (file) handleMediaUpload(field, file);
-  }, [handleMediaUpload]);
+  const handleMediaDrop = useCallback(
+    (field, event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setDraggingField(null);
+      const file = event.dataTransfer?.files?.[0];
+      if (file) handleMediaUpload(field, file);
+    },
+    [handleMediaUpload],
+  );
 
   const toggleBulkListing = useCallback((listingId) => {
     setBulkListingIds((current) => {
@@ -299,7 +336,9 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
     }
     await onDeleteListing(selectedListing.id);
     setDraftListing(null);
-    setSelectedListingId(availableListings.find((l) => l.id !== selectedListing.id)?.id ?? availableListings[0]?.id ?? '');
+    setSelectedListingId(
+      availableListings.find((l) => l.id !== selectedListing.id)?.id ?? availableListings[0]?.id ?? '',
+    );
     setStudioMessage('Listing removed from the management portal.');
   }, [draftListing, selectedListing, availableListings, onDeleteListing]);
 
@@ -364,9 +403,20 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
     handleBulkUpload,
     handleListingSubmit,
     handleDeleteListing,
-    confirmDelete: () => { setShowDeleteConfirm(false); handleDeleteListing(); },
+    confirmDelete: () => {
+      setShowDeleteConfirm(false);
+      handleDeleteListing();
+    },
     cancelDelete: () => setShowDeleteConfirm(false),
   };
 }
 
-export { getWindowConfig, isInWindow, MEDIA_FIELD_CONFIG, MEDIA_FIELD_ORDER, STUDIO_SECTIONS, LISTING_PRESETS, WINDOW_OPTIONS };
+export {
+  getWindowConfig,
+  isInWindow,
+  MEDIA_FIELD_CONFIG,
+  MEDIA_FIELD_ORDER,
+  STUDIO_SECTIONS,
+  LISTING_PRESETS,
+  WINDOW_OPTIONS,
+};

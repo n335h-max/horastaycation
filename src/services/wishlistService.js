@@ -9,9 +9,7 @@ export async function toggleWishlistProperty({ authUser, propertyId }) {
 
   store.wishlistByUser = {
     ...store.wishlistByUser,
-    [wishlistKey]: alreadySaved
-      ? currentWishlist.filter((id) => id !== propertyId)
-      : [...currentWishlist, propertyId],
+    [wishlistKey]: alreadySaved ? currentWishlist.filter((id) => id !== propertyId) : [...currentWishlist, propertyId],
   };
 
   saveStore(store);

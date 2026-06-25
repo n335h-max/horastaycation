@@ -39,20 +39,20 @@ export function BookingPage({
   ];
   const wishlistIdSet = useMemo(() => new Set(wishlistIds), [wishlistIds]);
   const locationOptions = useMemo(
-    () => ['Any location', ...new Set([...SEARCH_LOCATIONS.filter((item) => item !== 'Any location'), ...properties.map((property) => property.location)])],
+    () => [
+      'Any location',
+      ...new Set([
+        ...SEARCH_LOCATIONS.filter((item) => item !== 'Any location'),
+        ...properties.map((property) => property.location),
+      ]),
+    ],
     [properties],
   );
   const searchableProperties = useMemo(
     () =>
       properties.map((property) => ({
         property,
-        searchIndex: [
-          property.name,
-          property.location,
-          property.mood,
-          property.bestFor,
-          ...(property.amenities || []),
-        ]
+        searchIndex: [property.name, property.location, property.mood, property.bestFor, ...(property.amenities || [])]
           .join(' ')
           .toLowerCase(),
       })),
@@ -64,17 +64,25 @@ export function BookingPage({
     return searchableProperties
       .filter(({ property, searchIndex }) => {
         const matchesQuery = !normalizedQuery || searchIndex.includes(normalizedQuery);
-      const matchesLocation = selectedLocation === 'Any location' || property.location === selectedLocation;
+        const matchesLocation = selectedLocation === 'Any location' || property.location === selectedLocation;
         const matchesWishlist = !savedOnly || wishlistIdSet.has(property.id);
-      const matchesAvailability =
-        !bookingForm.checkin ||
-        !bookingForm.checkout ||
-        !isRangeBlocked(property, bookingForm.checkin, bookingForm.checkout);
+        const matchesAvailability =
+          !bookingForm.checkin ||
+          !bookingForm.checkout ||
+          !isRangeBlocked(property, bookingForm.checkin, bookingForm.checkout);
 
         return matchesQuery && matchesLocation && matchesWishlist && matchesAvailability;
       })
       .map(({ property }) => property);
-  }, [bookingForm.checkin, bookingForm.checkout, savedOnly, searchQuery, searchableProperties, selectedLocation, wishlistIdSet]);
+  }, [
+    bookingForm.checkin,
+    bookingForm.checkout,
+    savedOnly,
+    searchQuery,
+    searchableProperties,
+    selectedLocation,
+    wishlistIdSet,
+  ]);
 
   function handleWishlistClick(event, propertyId) {
     event.preventDefault();
@@ -108,23 +116,32 @@ export function BookingPage({
   return (
     <section className="min-h-screen bg-ice-50 px-4 pb-16 pt-28 md:px-8">
       <div className="mx-auto max-w-6xl">
-        <button type="button" onClick={() => onShowPage('landing')} className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-brand-600 hover:text-brand-800">
+        <button
+          type="button"
+          onClick={() => onShowPage('landing')}
+          className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-brand-600 hover:text-brand-800"
+        >
           <Icon name="arrow-right" className="rotate-180" />
           Back to Home
         </button>
 
         <div className="mb-8">
           <h1 className="font-display text-4xl font-bold text-brand-950 md:text-5xl">Book Your Staycation</h1>
-          <p className="mt-3 text-lg text-slate-600">Sign in once, switch to the client role, then browse staycations and complete the booking flow without juggling separate login entry points.</p>
+          <p className="mt-3 text-lg text-slate-600">
+            Sign in once, switch to the client role, then browse staycations and complete the booking flow without
+            juggling separate login entry points.
+          </p>
         </div>
 
         <div className="mb-8 rounded-3xl border border-brand-100 bg-white p-5 shadow-sm">
           <div className="grid gap-4 md:grid-cols-4">
             {steps.map((step, index) => (
               <div key={step.number} className="flex items-center gap-3">
-                <div className={`flex h-11 w-11 items-center justify-center rounded-2xl font-display text-sm font-bold ${
-                  index < 3 ? 'bg-brand-600 text-white' : 'bg-brand-50 text-brand-700'
-                }`}>
+                <div
+                  className={`flex h-11 w-11 items-center justify-center rounded-2xl font-display text-sm font-bold ${
+                    index < 3 ? 'bg-brand-600 text-white' : 'bg-brand-50 text-brand-700'
+                  }`}
+                >
                   {step.number}
                 </div>
                 <div>
@@ -149,18 +166,26 @@ export function BookingPage({
               <Icon name="calendar" />
             </div>
             <div className="font-semibold text-brand-950">Flexible Cancellation</div>
-            <p className="mt-1 text-sm text-slate-500">Most stays allow free cancellation up to 48 hours before arrival.</p>
+            <p className="mt-1 text-sm text-slate-500">
+              Most stays allow free cancellation up to 48 hours before arrival.
+            </p>
           </div>
           <div className="rounded-2xl border border-ice-200 bg-white p-4 shadow-sm">
             <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
               <Icon name="star" />
             </div>
             <div className="font-semibold text-brand-950">Guest Preview Stays</div>
-            <p className="mt-1 text-sm text-slate-500">Guests can already browse these seven staycations now, then you can swap in the real photos and final details later.</p>
+            <p className="mt-1 text-sm text-slate-500">
+              Guests can already browse these seven staycations now, then you can swap in the real photos and final
+              details later.
+            </p>
           </div>
         </div>
 
-        <form onSubmit={handleSearchSubmit} className="mb-8 rounded-[2rem] border border-brand-100 bg-white p-6 shadow-lg">
+        <form
+          onSubmit={handleSearchSubmit}
+          className="mb-8 rounded-[2rem] border border-brand-100 bg-white p-6 shadow-lg"
+        >
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-brand-600">
@@ -182,11 +207,19 @@ export function BookingPage({
               >
                 Saved only {wishlistIds.length ? `(${wishlistIds.length})` : ''}
               </button>
-              <button type="button" onClick={onOpenSupport} className="rounded-full bg-ice-50 px-4 py-2 text-sm font-semibold text-brand-700">
+              <button
+                type="button"
+                onClick={onOpenSupport}
+                className="rounded-full bg-ice-50 px-4 py-2 text-sm font-semibold text-brand-700"
+              >
                 Ask support
               </button>
               {canInstallApp ? (
-                <button type="button" onClick={onInstallApp} className="rounded-full bg-brand-950 px-4 py-2 text-sm font-semibold text-white">
+                <button
+                  type="button"
+                  onClick={onInstallApp}
+                  className="rounded-full bg-brand-950 px-4 py-2 text-sm font-semibold text-white"
+                >
                   Install app
                 </button>
               ) : (
@@ -260,7 +293,13 @@ export function BookingPage({
               <label className="form-label" htmlFor="guests-search">
                 Guests
               </label>
-              <select id="guests-search" name="guests" value={bookingForm.guests} onChange={onBookingChange} className="form-input">
+              <select
+                id="guests-search"
+                name="guests"
+                value={bookingForm.guests}
+                onChange={onBookingChange}
+                className="form-input"
+              >
                 {GUEST_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
@@ -295,7 +334,10 @@ export function BookingPage({
               Client Role
             </div>
             <h2 className="font-display text-3xl font-bold text-brand-950">Sign in as Client</h2>
-            <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-600">Use the unified login to choose the client role. Hora remembers your session and sends you straight back to listings after Google sign-in.</p>
+            <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-600">
+              Use the unified login to choose the client role. Hora remembers your session and sends you straight back
+              to listings after Google sign-in.
+            </p>
             <div className="mt-6 grid gap-4 md:grid-cols-3">
               {filteredProperties.map((property) => (
                 <div key={property.id} className="rounded-2xl border border-ice-200 bg-ice-50 p-4">
@@ -325,14 +367,15 @@ export function BookingPage({
                   <div className="mt-3 inline-flex rounded-full bg-white px-3 py-1 text-xs font-semibold text-brand-700">
                     {property.statusNote}
                   </div>
-                  <p className="mt-3 text-xs leading-relaxed text-slate-500">"{property.reviewSnippet}"</p>
+                  <p className="mt-3 text-xs leading-relaxed text-slate-500">&quot;{property.reviewSnippet}&quot;</p>
                   <div className="mt-3 text-sm font-bold text-brand-700">{formatCurrency(property.price)}/night</div>
                 </div>
               ))}
             </div>
             {!filteredProperties.length ? (
               <div className="mt-6 rounded-2xl border border-dashed border-ice-200 bg-ice-50 px-4 py-5 text-sm text-slate-500">
-                No stays match these filters yet. Adjust the search, open support, or save a different favorite on this device.
+                No stays match these filters yet. Adjust the search, open support, or save a different favorite on this
+                device.
               </div>
             ) : null}
             {authUser?.email ? (
@@ -340,7 +383,12 @@ export function BookingPage({
                 Signed in as {authUser.email}
               </div>
             ) : null}
-            <button type="button" onClick={onOpenAuth} disabled={isSubmitting || isAuthLoading} className="btn-primary mt-8 w-full py-4 text-base disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60">
+            <button
+              type="button"
+              onClick={onOpenAuth}
+              disabled={isSubmitting || isAuthLoading}
+              className="btn-primary mt-8 w-full py-4 text-base disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+            >
               <span className="inline-flex items-center gap-2">
                 {isSubmitting || isAuthLoading ? 'Opening unified sign-in...' : 'Continue to Unified Sign-In'}
                 <Icon name="arrow-right" />
@@ -357,13 +405,18 @@ export function BookingPage({
                     Active role: {authRole.charAt(0).toUpperCase() + authRole.slice(1)}
                   </div>
                   <h2 className="mb-4 font-display text-xl font-bold text-brand-900">Browse Staycation Choices</h2>
-                  <p className="mb-5 text-sm text-slate-500">These seven staycations are visible in the customer flow now, with temporary visuals ready to be replaced when your real photos arrive.</p>
+                  <p className="mb-5 text-sm text-slate-500">
+                    These seven staycations are visible in the customer flow now, with temporary visuals ready to be
+                    replaced when your real photos arrive.
+                  </p>
                   <div className="space-y-4">
                     {filteredProperties.map((property) => (
                       <label
                         key={property.id}
                         className={`property-option flex cursor-pointer flex-col gap-4 rounded-xl border-2 p-4 transition-colors sm:flex-row sm:items-center ${
-                          bookingForm.property === property.id ? 'border-brand-500 bg-brand-50/50' : 'border-ice-200 hover:border-brand-400'
+                          bookingForm.property === property.id
+                            ? 'border-brand-500 bg-brand-50/50'
+                            : 'border-ice-200 hover:border-brand-400'
                         }`}
                       >
                         <input
@@ -403,14 +456,22 @@ export function BookingPage({
                           </div>
                           <div className="mt-1 text-xs font-semibold text-brand-600">{property.statusNote}</div>
                           <div className="mt-1 text-xs text-brand-700">Up to {property.guestCapacity} guests</div>
-                          {property.schedule ? <div className="mt-1 text-xs text-slate-400">{property.schedule}</div> : null}
-                          {property.videoUrl ? <div className="mt-1 text-xs text-brand-500">Video walkthrough available</div> : null}
-                          <p className="mt-2 text-xs leading-relaxed text-slate-500">"{property.reviewSnippet}"</p>
+                          {property.schedule ? (
+                            <div className="mt-1 text-xs text-slate-400">{property.schedule}</div>
+                          ) : null}
+                          {property.videoUrl ? (
+                            <div className="mt-1 text-xs text-brand-500">Video walkthrough available</div>
+                          ) : null}
+                          <p className="mt-2 text-xs leading-relaxed text-slate-500">&quot;{property.reviewSnippet}&quot;</p>
                         </div>
                         <div className="self-start text-left sm:self-auto sm:text-right">
                           <div className="font-bold text-brand-700">{formatCurrency(property.price)}</div>
                           <div className="text-xs text-slate-400">/night</div>
-                          <button type="button" onClick={(event) => handleQuickEnquiryClick(event, property)} className="mt-3 rounded-full bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
+                          <button
+                            type="button"
+                            onClick={(event) => handleQuickEnquiryClick(event, property)}
+                            className="mt-3 rounded-full bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800"
+                          >
                             Quick Enquiry
                           </button>
                         </div>
@@ -419,10 +480,13 @@ export function BookingPage({
                   </div>
                   {!filteredProperties.length ? (
                     <div className="mt-4 rounded-2xl border border-dashed border-ice-200 bg-ice-50 px-4 py-5 text-sm text-slate-500">
-                      No published properties match this search. Try a different location, remove the saved-only filter, or ask support for help choosing a stay.
+                      No published properties match this search. Try a different location, remove the saved-only filter,
+                      or ask support for help choosing a stay.
                     </div>
                   ) : null}
-                  {bookingErrors?.property ? <p className="mt-3 text-sm text-rose-600">{bookingErrors.property[0]}</p> : null}
+                  {bookingErrors?.property ? (
+                    <p className="mt-3 text-sm text-rose-600">{bookingErrors.property[0]}</p>
+                  ) : null}
                 </div>
 
                 <div className="rounded-2xl border border-ice-200 bg-white p-6 shadow-md">
@@ -432,69 +496,138 @@ export function BookingPage({
                       <label className="form-label" htmlFor="checkin">
                         Check-in Date
                       </label>
-                      <input id="checkin" name="checkin" type="date" value={bookingForm.checkin} onChange={onBookingChange} className={`form-input ${bookingErrors?.checkin ? 'border-rose-400 ring-rose-100' : ''}`} required />
+                      <input
+                        id="checkin"
+                        name="checkin"
+                        type="date"
+                        value={bookingForm.checkin}
+                        onChange={onBookingChange}
+                        className={`form-input ${bookingErrors?.checkin ? 'border-rose-400 ring-rose-100' : ''}`}
+                        required
+                      />
                       <p className="mt-2 text-xs text-slate-400">Typical check-in starts at 3:00 PM.</p>
-                      {bookingErrors?.checkin ? <p className="mt-2 text-sm text-rose-600">{bookingErrors.checkin[0]}</p> : null}
+                      {bookingErrors?.checkin ? (
+                        <p className="mt-2 text-sm text-rose-600">{bookingErrors.checkin[0]}</p>
+                      ) : null}
                     </div>
                     <div>
                       <label className="form-label" htmlFor="checkout">
                         Check-out Date
                       </label>
-                      <input id="checkout" name="checkout" type="date" value={bookingForm.checkout} onChange={onBookingChange} className={`form-input ${bookingErrors?.checkout ? 'border-rose-400 ring-rose-100' : ''}`} required />
-                      <p className="mt-2 text-xs text-slate-400">Choose a later date to unlock the full price summary.</p>
-                      {bookingErrors?.checkout ? <p className="mt-2 text-sm text-rose-600">{bookingErrors.checkout[0]}</p> : null}
+                      <input
+                        id="checkout"
+                        name="checkout"
+                        type="date"
+                        value={bookingForm.checkout}
+                        onChange={onBookingChange}
+                        className={`form-input ${bookingErrors?.checkout ? 'border-rose-400 ring-rose-100' : ''}`}
+                        required
+                      />
+                      <p className="mt-2 text-xs text-slate-400">
+                        Choose a later date to unlock the full price summary.
+                      </p>
+                      {bookingErrors?.checkout ? (
+                        <p className="mt-2 text-sm text-rose-600">{bookingErrors.checkout[0]}</p>
+                      ) : null}
                     </div>
                     <div>
                       <label className="form-label" htmlFor="guests">
                         Guests
                       </label>
-                      <select id="guests" name="guests" value={bookingForm.guests} onChange={onBookingChange} className={`form-input ${bookingErrors?.guests ? 'border-rose-400 ring-rose-100' : ''}`} required>
+                      <select
+                        id="guests"
+                        name="guests"
+                        value={bookingForm.guests}
+                        onChange={onBookingChange}
+                        className={`form-input ${bookingErrors?.guests ? 'border-rose-400 ring-rose-100' : ''}`}
+                        required
+                      >
                         {GUEST_OPTIONS.map((option) => (
                           <option key={option.value} value={option.value}>
                             {option.label}
                           </option>
                         ))}
                       </select>
-                      {bookingErrors?.guests ? <p className="mt-2 text-sm text-rose-600">{bookingErrors.guests[0]}</p> : null}
+                      {bookingErrors?.guests ? (
+                        <p className="mt-2 text-sm text-rose-600">{bookingErrors.guests[0]}</p>
+                      ) : null}
                     </div>
                   </div>
                 </div>
 
                 <div className="rounded-2xl border border-ice-200 bg-white p-6 shadow-md">
                   <h2 className="mb-4 font-display text-xl font-bold text-brand-900">Client Details</h2>
-                  <p className="mb-4 text-sm text-slate-500">This form keeps typing light on mobile by using quick-select options wherever possible.</p>
+                  <p className="mb-4 text-sm text-slate-500">
+                    This form keeps typing light on mobile by using quick-select options wherever possible.
+                  </p>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
                       <label className="form-label" htmlFor="guestName">
                         Full Name
                       </label>
-                      <input id="guestName" name="guestName" type="text" value={bookingForm.guestName} onChange={onBookingChange} autoComplete="name" className={`form-input ${bookingErrors?.guestName ? 'border-rose-400 ring-rose-100' : ''}`} placeholder="Jane Smith" required />
-                      {bookingErrors?.guestName ? <p className="mt-2 text-sm text-rose-600">{bookingErrors.guestName[0]}</p> : null}
+                      <input
+                        id="guestName"
+                        name="guestName"
+                        type="text"
+                        value={bookingForm.guestName}
+                        onChange={onBookingChange}
+                        autoComplete="name"
+                        className={`form-input ${bookingErrors?.guestName ? 'border-rose-400 ring-rose-100' : ''}`}
+                        placeholder="Jane Smith"
+                        required
+                      />
+                      {bookingErrors?.guestName ? (
+                        <p className="mt-2 text-sm text-rose-600">{bookingErrors.guestName[0]}</p>
+                      ) : null}
                     </div>
                     <div>
                       <label className="form-label" htmlFor="guestEmail">
                         Email
                       </label>
-                      <input id="guestEmail" name="guestEmail" type="email" value={bookingForm.guestEmail} onChange={onBookingChange} autoComplete="email" className={`form-input ${bookingErrors?.guestEmail ? 'border-rose-400 ring-rose-100' : ''}`} placeholder="jane@example.com" required />
-                      {bookingErrors?.guestEmail ? <p className="mt-2 text-sm text-rose-600">{bookingErrors.guestEmail[0]}</p> : null}
+                      <input
+                        id="guestEmail"
+                        name="guestEmail"
+                        type="email"
+                        value={bookingForm.guestEmail}
+                        onChange={onBookingChange}
+                        autoComplete="email"
+                        className={`form-input ${bookingErrors?.guestEmail ? 'border-rose-400 ring-rose-100' : ''}`}
+                        placeholder="jane@example.com"
+                        required
+                      />
+                      {bookingErrors?.guestEmail ? (
+                        <p className="mt-2 text-sm text-rose-600">{bookingErrors.guestEmail[0]}</p>
+                      ) : null}
                     </div>
                     <div className="md:col-span-2">
                       <label className="form-label" htmlFor="specialRequests">
                         Special Requests
                       </label>
-                      <select id="specialRequests" name="specialRequests" value={bookingForm.specialRequests} onChange={onBookingChange} className="form-input">
+                      <select
+                        id="specialRequests"
+                        name="specialRequests"
+                        value={bookingForm.specialRequests}
+                        onChange={onBookingChange}
+                        className="form-input"
+                      >
                         {SPECIAL_REQUEST_OPTIONS.map((option) => (
                           <option key={option.label} value={option.value}>
                             {option.label}
                           </option>
                         ))}
                       </select>
-                      <p className="mt-2 text-xs text-slate-400">Choose a common request without needing to type on mobile.</p>
+                      <p className="mt-2 text-xs text-slate-400">
+                        Choose a common request without needing to type on mobile.
+                      </p>
                     </div>
                   </div>
                 </div>
 
-                <button type="submit" disabled={isSubmitting} className="btn-primary w-full py-4 text-lg disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="btn-primary w-full py-4 text-lg disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+                >
                   <span>{isSubmitting ? 'Opening secure checkout…' : 'Proceed to Payment'}</span>
                 </button>
               </form>
@@ -516,7 +649,10 @@ export function BookingPage({
                       {formatDate(bookingSummary.checkin)} — {formatDate(bookingSummary.checkout)}
                     </p>
                     <div className="mb-4 rounded-xl bg-ice-50 px-4 py-3 text-sm text-slate-600">
-                      <span className="font-semibold text-brand-900">{bookingSummary.nights} night{bookingSummary.nights > 1 ? 's' : ''}</span> selected with current preview pricing and booking details shown below.
+                      <span className="font-semibold text-brand-900">
+                        {bookingSummary.nights} night{bookingSummary.nights > 1 ? 's' : ''}
+                      </span>{' '}
+                      selected with current preview pricing and booking details shown below.
                     </div>
                     <div className="space-y-2 border-t border-ice-200 pt-4 text-sm">
                       <div className="flex justify-between">
@@ -551,9 +687,16 @@ export function BookingPage({
                   <div>
                     <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Current total</div>
                     <div className="text-lg font-bold text-brand-900">{formatCurrency(bookingSummary.total)}</div>
-                    <div className="text-sm text-slate-500">{bookingSummary.nights} night{bookingSummary.nights > 1 ? 's' : ''} · {bookingSummary.name}</div>
+                    <div className="text-sm text-slate-500">
+                      {bookingSummary.nights} night{bookingSummary.nights > 1 ? 's' : ''} · {bookingSummary.name}
+                    </div>
                   </div>
-                  <button type="button" onClick={onProceedToPayment} disabled={isSubmitting} className="btn-primary px-5 py-3 text-sm disabled:opacity-60">
+                  <button
+                    type="button"
+                    onClick={onProceedToPayment}
+                    disabled={isSubmitting}
+                    className="btn-primary px-5 py-3 text-sm disabled:opacity-60"
+                  >
                     <span>{isSubmitting ? 'Please wait…' : 'Continue'}</span>
                   </button>
                 </div>

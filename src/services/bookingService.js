@@ -4,7 +4,9 @@ import { getAuthenticatedUser, insertRemote, updateRemote } from './supabaseClie
 import { MAX_DASHBOARD_PREVIEW_ITEMS } from '../lib/constants';
 
 function formatBookingStatusLabel(status = 'confirmed') {
-  return String(status).replace(/[-_]/g, ' ').replace(/^\w/, (m) => m.toUpperCase());
+  return String(status)
+    .replace(/[-_]/g, ' ')
+    .replace(/^\w/, (m) => m.toUpperCase());
 }
 
 function refreshBookingDashboard(store) {
@@ -16,7 +18,8 @@ function refreshBookingDashboard(store) {
     image: `https://picsum.photos/seed/${encodeURIComponent(tx.bookingForm.guestName || RANDOM_GUEST_NAMES[0])}/40/40.jpg`,
   }));
   store.dashboardRevenue = store.bookingTransactions.reduce(
-    (total, tx) => total + (tx.paymentStatus === 'refunded' ? 0 : Number(tx.bookingSummary.total) || 0), 0,
+    (total, tx) => total + (tx.paymentStatus === 'refunded' ? 0 : Number(tx.bookingSummary.total) || 0),
+    0,
   );
   return store;
 }
@@ -73,22 +76,38 @@ export async function submitBooking({ bookingForm, bookingSummary, paymentForm =
     return { store, remote: { saved: true, error: null, alreadyProcessed: true } };
   }
 
-  store.bookingTransactions = [{
-    id: crypto.randomUUID(), submittedAt: new Date().toISOString(),
-    bookingStatus, paymentStatus, bookingForm, bookingSummary,
-    paymentProvider: paymentMeta.provider || 'manual',
-    stripeSessionId, stripePaymentIntentId: paymentMeta.stripePaymentIntentId || '',
-    refundId: paymentMeta.refundId || '', refundStatus: paymentMeta.refundStatus || '',
-    refundedAt: paymentMeta.refundedAt || '', cancelledAt: paymentMeta.cancelledAt || '',
-    customerReceiptEmail, statusNote,
-    paymentLast4: paymentForm.cardLast4 || paymentForm.cardNumber?.replace(/\s/g, '').slice(-4) || '',
-  }, ...store.bookingTransactions];
+  store.bookingTransactions = [
+    {
+      id: crypto.randomUUID(),
+      submittedAt: new Date().toISOString(),
+      bookingStatus,
+      paymentStatus,
+      bookingForm,
+      bookingSummary,
+      paymentProvider: paymentMeta.provider || 'manual',
+      stripeSessionId,
+      stripePaymentIntentId: paymentMeta.stripePaymentIntentId || '',
+      refundId: paymentMeta.refundId || '',
+      refundStatus: paymentMeta.refundStatus || '',
+      refundedAt: paymentMeta.refundedAt || '',
+      cancelledAt: paymentMeta.cancelledAt || '',
+      customerReceiptEmail,
+      statusNote,
+      paymentLast4: paymentForm.cardLast4 || paymentForm.cardNumber?.replace(/\s/g, '').slice(-4) || '',
+    },
+    ...store.bookingTransactions,
+  ];
 
-  store.dashboardBookings = [{
-    guest, property: `${bookingSummary.name} — ${bookingSummary.nights} night${bookingSummary.nights > 1 ? 's' : ''}`,
-    amount: bookingSummary.total, status: formatBookingStatusLabel(bookingStatus),
-    image: `https://picsum.photos/seed/${encodeURIComponent(guest)}/40/40.jpg`,
-  }, ...store.dashboardBookings].slice(0, MAX_DASHBOARD_PREVIEW_ITEMS);
+  store.dashboardBookings = [
+    {
+      guest,
+      property: `${bookingSummary.name} — ${bookingSummary.nights} night${bookingSummary.nights > 1 ? 's' : ''}`,
+      amount: bookingSummary.total,
+      status: formatBookingStatusLabel(bookingStatus),
+      image: `https://picsum.photos/seed/${encodeURIComponent(guest)}/40/40.jpg`,
+    },
+    ...store.dashboardBookings,
+  ].slice(0, MAX_DASHBOARD_PREVIEW_ITEMS);
 
   store.dashboardEmails = [
     { title: 'Booking Confirmed — Customer', detail: `Sent to ${customerReceiptEmail}`, tone: 'indigo' },
@@ -102,16 +121,28 @@ export async function submitBooking({ bookingForm, bookingSummary, paymentForm =
   if (stripeSessionId) store.completedStripeSessions = [...store.completedStripeSessions, stripeSessionId];
   saveStore(store);
 
-  let remote = await insertRemote('booking_transactions', buildExtendedRemoteBookingPayload({ currentUser, bookingForm, bookingSummary, paymentForm, paymentMeta: { ...paymentMeta, paymentStatus, bookingStatus, customerReceiptEmail, statusNote } }));
+  let remote = await insertRemote(
+    'booking_transactions',
+    buildExtendedRemoteBookingPayload({
+      currentUser,
+      bookingForm,
+      bookingSummary,
+      paymentForm,
+      paymentMeta: { ...paymentMeta, paymentStatus, bookingStatus, customerReceiptEmail, statusNote },
+    }),
+  );
   if (!remote.saved) {
-    remote = await insertRemote('booking_transactions', buildLegacyRemoteBookingPayload({ currentUser, bookingForm, bookingSummary, paymentForm }));
+    remote = await insertRemote(
+      'booking_transactions',
+      buildLegacyRemoteBookingPayload({ currentUser, bookingForm, bookingSummary, paymentForm }),
+    );
   }
   return { store, remote };
 }
 
 export async function updateBookingTransactionStatus(bookingId, bookingStatus) {
   const store = loadStore();
-  store.bookingTransactions = store.bookingTransactions.map((t) => t.id === bookingId ? { ...t, bookingStatus } : t);
+  store.bookingTransactions = store.bookingTransactions.map((t) => (t.id === bookingId ? { ...t, bookingStatus } : t));
   refreshBookingDashboard(store);
   saveStore(store);
   const remote = await updateRemote('booking_transactions', { booking_status: bookingStatus }, 'id', bookingId);
@@ -121,21 +152,34 @@ export async function updateBookingTransactionStatus(bookingId, bookingStatus) {
 export async function updateBookingTransactionDetails(bookingId, updates = {}) {
   const store = loadStore();
   const nextUpdates = { ...updates };
-  store.bookingTransactions = store.bookingTransactions.map((t) => t.id === bookingId ? { ...t, ...nextUpdates } : t);
+  store.bookingTransactions = store.bookingTransactions.map((t) => (t.id === bookingId ? { ...t, ...nextUpdates } : t));
   refreshBookingDashboard(store);
 
   if (nextUpdates.customerReceiptEmail || nextUpdates.statusNote) {
-    store.dashboardEmails = [{ title: 'Booking Payment Update', detail: nextUpdates.customerReceiptEmail || nextUpdates.statusNote || `Updated ${bookingId}`, tone: 'indigo' }, ...store.dashboardEmails].slice(0, MAX_DASHBOARD_PREVIEW_ITEMS);
+    store.dashboardEmails = [
+      {
+        title: 'Booking Payment Update',
+        detail: nextUpdates.customerReceiptEmail || nextUpdates.statusNote || `Updated ${bookingId}`,
+        tone: 'indigo',
+      },
+      ...store.dashboardEmails,
+    ].slice(0, MAX_DASHBOARD_PREVIEW_ITEMS);
   }
   saveStore(store);
 
   const extendedPayload = {
-    booking_status: nextUpdates.bookingStatus, payment_status: nextUpdates.paymentStatus,
-    stripe_session_id: nextUpdates.stripeSessionId, stripe_payment_intent_id: nextUpdates.stripePaymentIntentId,
-    stripe_refund_id: nextUpdates.refundId, refund_status: nextUpdates.refundStatus,
-    refunded_at: nextUpdates.refundedAt, cancelled_at: nextUpdates.cancelledAt,
-    customer_receipt_email: nextUpdates.customerReceiptEmail, status_note: nextUpdates.statusNote,
-    payment_provider: nextUpdates.paymentProvider, payment_last4: nextUpdates.paymentLast4,
+    booking_status: nextUpdates.bookingStatus,
+    payment_status: nextUpdates.paymentStatus,
+    stripe_session_id: nextUpdates.stripeSessionId,
+    stripe_payment_intent_id: nextUpdates.stripePaymentIntentId,
+    stripe_refund_id: nextUpdates.refundId,
+    refund_status: nextUpdates.refundStatus,
+    refunded_at: nextUpdates.refundedAt,
+    cancelled_at: nextUpdates.cancelledAt,
+    customer_receipt_email: nextUpdates.customerReceiptEmail,
+    status_note: nextUpdates.statusNote,
+    payment_provider: nextUpdates.paymentProvider,
+    payment_last4: nextUpdates.paymentLast4,
   };
   const compact = Object.fromEntries(Object.entries(extendedPayload).filter(([, v]) => typeof v !== 'undefined'));
   let remote = await updateRemote('booking_transactions', compact, 'id', bookingId);

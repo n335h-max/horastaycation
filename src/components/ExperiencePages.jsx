@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { startTransition, useEffect, useMemo, useState } from 'react';
 import { BUDGET_OPTIONS, FEATURED_PROPERTIES } from '../data/siteData';
 import { deleteMediaFile, saveMediaFile } from '../lib/mediaStorage';
 import { validateWithSchema, ownerSchema, reviewSchema } from '../lib/validation';
@@ -90,11 +90,13 @@ export function OwnerSignupPage({
       return;
     }
 
-    setForm((current) => ({
-      ...current,
-      ownerEmail: current.ownerEmail || authUser.email,
-      ownerName: current.ownerName || authUser.user_metadata?.full_name || current.ownerName,
-    }));
+    startTransition(() => {
+      setForm((current) => ({
+        ...current,
+        ownerEmail: current.ownerEmail || authUser.email,
+        ownerName: current.ownerName || authUser.user_metadata?.full_name || current.ownerName,
+      }));
+    });
   }, [authUser]);
 
   function handleChange(event) {
@@ -119,13 +121,20 @@ export function OwnerSignupPage({
   return (
     <section className="min-h-screen bg-white px-4 pb-16 pt-28 md:px-8">
       <div className="mx-auto max-w-4xl">
-        <button type="button" onClick={() => onShowPage('landing')} className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-brand-600 hover:text-brand-800">
+        <button
+          type="button"
+          onClick={() => onShowPage('landing')}
+          className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-brand-600 hover:text-brand-800"
+        >
           <Icon name="arrow-right" className="rotate-180" />
           Back to Home
         </button>
         <div className="mb-8 text-center">
           <h1 className="font-display text-4xl font-bold text-brand-950 md:text-5xl">Build / Refurbish With Us</h1>
-          <p className="mt-3 text-lg text-slate-600">Use unified sign-in to activate the owner role, then submit the refurbish details Hora needs with quick mobile-friendly dropdowns.</p>
+          <p className="mt-3 text-lg text-slate-600">
+            Use unified sign-in to activate the owner role, then submit the refurbish details Hora needs with quick
+            mobile-friendly dropdowns.
+          </p>
         </div>
         {!googleConnected ? (
           <GoogleEntryCard
@@ -138,32 +147,75 @@ export function OwnerSignupPage({
             isSubmitting={isSubmitting || isAuthLoading}
           />
         ) : (
-          <form onSubmit={handleSubmit} noValidate className="space-y-6 rounded-3xl border border-ice-200 bg-ice-50 p-8 shadow-lg">
+          <form
+            onSubmit={handleSubmit}
+            noValidate
+            className="space-y-6 rounded-3xl border border-ice-200 bg-ice-50 p-8 shadow-lg"
+          >
             <div className="inline-flex items-center gap-2 rounded-full bg-brand-900 px-4 py-2 text-sm font-semibold text-white">
               <Icon name="lock" />
               Active role: {authRole.charAt(0).toUpperCase() + authRole.slice(1)}
             </div>
             <div className="grid gap-6 md:grid-cols-2">
               <div>
-                <label className="form-label" htmlFor="ownerName">Owner Name</label>
-                <input id="ownerName" name="ownerName" value={form.ownerName} onChange={handleChange} className="form-input" autoComplete="name" placeholder="John Doe" />
+                <label className="form-label" htmlFor="ownerName">
+                  Owner Name
+                </label>
+                <input
+                  id="ownerName"
+                  name="ownerName"
+                  value={form.ownerName}
+                  onChange={handleChange}
+                  className="form-input"
+                  autoComplete="name"
+                  placeholder="John Doe"
+                />
                 <FieldError errors={errors} name="ownerName" />
               </div>
               <div>
-                <label className="form-label" htmlFor="ownerEmail">Owner Email</label>
-                <input id="ownerEmail" name="ownerEmail" type="email" value={form.ownerEmail} onChange={handleChange} className="form-input" autoComplete="email" placeholder="owner@example.com" />
+                <label className="form-label" htmlFor="ownerEmail">
+                  Owner Email
+                </label>
+                <input
+                  id="ownerEmail"
+                  name="ownerEmail"
+                  type="email"
+                  value={form.ownerEmail}
+                  onChange={handleChange}
+                  className="form-input"
+                  autoComplete="email"
+                  placeholder="owner@example.com"
+                />
                 <FieldError errors={errors} name="ownerEmail" />
               </div>
             </div>
             <div>
-              <label className="form-label" htmlFor="ownerAddress">House Address</label>
-              <textarea id="ownerAddress" name="ownerAddress" rows="4" value={form.ownerAddress} onChange={handleChange} className="form-input" placeholder="Enter the full house address for the staycation location" />
+              <label className="form-label" htmlFor="ownerAddress">
+                House Address
+              </label>
+              <textarea
+                id="ownerAddress"
+                name="ownerAddress"
+                rows="4"
+                value={form.ownerAddress}
+                onChange={handleChange}
+                className="form-input"
+                placeholder="Enter the full house address for the staycation location"
+              />
               <FieldError errors={errors} name="ownerAddress" />
             </div>
             <div className="grid gap-6 md:grid-cols-2">
               <div>
-                <label className="form-label" htmlFor="unitCount">How Many Units Are Needed?</label>
-                <select id="unitCount" name="unitCount" value={form.unitCount} onChange={handleChange} className="form-input">
+                <label className="form-label" htmlFor="unitCount">
+                  How Many Units Are Needed?
+                </label>
+                <select
+                  id="unitCount"
+                  name="unitCount"
+                  value={form.unitCount}
+                  onChange={handleChange}
+                  className="form-input"
+                >
                   <option value="1">1 Unit</option>
                   <option value="2">2 Units</option>
                   <option value="3">3 Units</option>
@@ -173,7 +225,9 @@ export function OwnerSignupPage({
                 <FieldError errors={errors} name="unitCount" />
               </div>
               <div>
-                <label className="form-label" htmlFor="budget">Budget</label>
+                <label className="form-label" htmlFor="budget">
+                  Budget
+                </label>
                 <select id="budget" name="budget" value={form.budget} onChange={handleChange} className="form-input">
                   <option value="">Select budget range</option>
                   {BUDGET_OPTIONS.map((option) => (
@@ -182,11 +236,17 @@ export function OwnerSignupPage({
                     </option>
                   ))}
                 </select>
-                <p className="mt-2 text-xs text-slate-400">Preset ranges reduce typing and keep owner requests consistent.</p>
+                <p className="mt-2 text-xs text-slate-400">
+                  Preset ranges reduce typing and keep owner requests consistent.
+                </p>
                 <FieldError errors={errors} name="budget" />
               </div>
             </div>
-            <button type="submit" disabled={isSubmitting} className="btn-primary w-full py-4 text-lg disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="btn-primary w-full py-4 text-lg disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+            >
               <span className="inline-flex items-center gap-2">
                 {isSubmitting ? 'Submitting Owner Request…' : 'Submit Owner Request'}
                 <Icon name="send" />
@@ -225,35 +285,85 @@ export function ReviewPage({ onShowPage, onSubmitReview, isSubmitting }) {
   return (
     <section className="min-h-screen bg-white px-4 pb-16 pt-28 md:px-8">
       <div className="mx-auto max-w-4xl">
-        <button type="button" onClick={() => onShowPage('landing')} className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-brand-600 hover:text-brand-800">
+        <button
+          type="button"
+          onClick={() => onShowPage('landing')}
+          className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-brand-600 hover:text-brand-800"
+        >
           <Icon name="arrow-right" className="rotate-180" />
           Back to Home
         </button>
         <div className="mb-8 text-center">
           <h1 className="font-display text-4xl font-bold text-brand-950 md:text-5xl">Evaluate With Us</h1>
-          <p className="mt-3 text-lg text-slate-600">Use this form for a first staycation that wants Hora to evaluate and register it before management takes over the listing work.</p>
+          <p className="mt-3 text-lg text-slate-600">
+            Use this form for a first staycation that wants Hora to evaluate and register it before management takes
+            over the listing work.
+          </p>
         </div>
-        <form onSubmit={handleSubmit} noValidate className="space-y-6 rounded-3xl border border-ice-200 bg-ice-50 p-8 shadow-lg">
+        <form
+          onSubmit={handleSubmit}
+          noValidate
+          className="space-y-6 rounded-3xl border border-ice-200 bg-ice-50 p-8 shadow-lg"
+        >
           <div className="grid gap-6 md:grid-cols-2">
             <div>
-              <label className="form-label" htmlFor="evaluatorName">Name</label>
-              <input id="evaluatorName" name="evaluatorName" value={form.evaluatorName} onChange={handleChange} className="form-input" autoComplete="name" placeholder="Your name" />
+              <label className="form-label" htmlFor="evaluatorName">
+                Name
+              </label>
+              <input
+                id="evaluatorName"
+                name="evaluatorName"
+                value={form.evaluatorName}
+                onChange={handleChange}
+                className="form-input"
+                autoComplete="name"
+                placeholder="Your name"
+              />
               <FieldError errors={errors} name="evaluatorName" />
             </div>
             <div>
-              <label className="form-label" htmlFor="evaluatorEmail">Email</label>
-              <input id="evaluatorEmail" name="evaluatorEmail" type="email" value={form.evaluatorEmail} onChange={handleChange} className="form-input" autoComplete="email" placeholder="partner@example.com" />
+              <label className="form-label" htmlFor="evaluatorEmail">
+                Email
+              </label>
+              <input
+                id="evaluatorEmail"
+                name="evaluatorEmail"
+                type="email"
+                value={form.evaluatorEmail}
+                onChange={handleChange}
+                className="form-input"
+                autoComplete="email"
+                placeholder="partner@example.com"
+              />
               <FieldError errors={errors} name="evaluatorEmail" />
             </div>
           </div>
           <div>
-            <label className="form-label" htmlFor="evaluatorAddress">Address</label>
-            <textarea id="evaluatorAddress" name="evaluatorAddress" rows="4" value={form.evaluatorAddress} onChange={handleChange} className="form-input" placeholder="Enter the address of the staycation you want to register" />
+            <label className="form-label" htmlFor="evaluatorAddress">
+              Address
+            </label>
+            <textarea
+              id="evaluatorAddress"
+              name="evaluatorAddress"
+              rows="4"
+              value={form.evaluatorAddress}
+              onChange={handleChange}
+              className="form-input"
+              placeholder="Enter the address of the staycation you want to register"
+            />
             <FieldError errors={errors} name="evaluatorAddress" />
           </div>
           <div>
-            <label className="form-label" htmlFor="unitCount">Units Provided for Staycation</label>
-            <select id="unitCount" name="unitCount" value={form.unitCount} onChange={handleChange} className="form-input">
+            <label className="form-label" htmlFor="unitCount">
+              Units Provided for Staycation
+            </label>
+            <select
+              id="unitCount"
+              name="unitCount"
+              value={form.unitCount}
+              onChange={handleChange}
+              className="form-input"
+            >
               <option value="1">1 Unit</option>
               <option value="2">2 Units</option>
               <option value="3">3 Units</option>
@@ -263,11 +373,23 @@ export function ReviewPage({ onShowPage, onSubmitReview, isSubmitting }) {
             <FieldError errors={errors} name="unitCount" />
           </div>
           <label className="flex items-start gap-3 rounded-2xl border border-ice-200 bg-white px-4 py-4 text-sm text-slate-600">
-            <input name="exclusivityAgreement" type="checkbox" checked={form.exclusivityAgreement} onChange={handleChange} className="mt-1 h-5 w-5 accent-brand-600" />
-            <span>I confirm this staycation is not registered with Airbnb, Booking.com, or any other partnership platform.</span>
+            <input
+              name="exclusivityAgreement"
+              type="checkbox"
+              checked={form.exclusivityAgreement}
+              onChange={handleChange}
+              className="mt-1 h-5 w-5 accent-brand-600"
+            />
+            <span>
+              I confirm this staycation is not registered with Airbnb, Booking.com, or any other partnership platform.
+            </span>
           </label>
           <FieldError errors={errors} name="exclusivityAgreement" />
-          <button type="submit" disabled={isSubmitting} className="btn-primary w-full py-4 text-lg disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="btn-primary w-full py-4 text-lg disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+          >
             <span>{isSubmitting ? 'Submitting Evaluation…' : 'Submit Evaluation Request'}</span>
           </button>
         </form>
@@ -276,17 +398,32 @@ export function ReviewPage({ onShowPage, onSubmitReview, isSubmitting }) {
   );
 }
 
-export function ManagementLoginPage({ onShowPage, isSubmitting, authUser, authRole, isAuthLoading, onGoogleSignIn, onSignOut }) {
+export function ManagementLoginPage({
+  onShowPage,
+  isSubmitting,
+  authUser,
+  authRole,
+  isAuthLoading,
+  onGoogleSignIn,
+  onSignOut,
+}) {
   return (
     <section className="hero-bg min-h-screen px-4 pt-28 md:px-8">
       <div className="mx-auto max-w-md">
-        <button type="button" onClick={() => onShowPage('landing')} className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-white/80 hover:text-white">
+        <button
+          type="button"
+          onClick={() => onShowPage('landing')}
+          className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-white/80 hover:text-white"
+        >
           <Icon name="arrow-right" className="rotate-180" />
           Back to Home
         </button>
         <div className="glass-panel rounded-3xl border border-white/15 bg-brand-950/70 p-8 text-white shadow-2xl">
           <h1 className="font-display text-4xl font-bold">Management Login</h1>
-          <p className="mt-3 text-white/70">Sign in to upload staycation photos, videos, facilities, schedules, and every listing detail the client booking flow needs.</p>
+          <p className="mt-3 text-white/70">
+            Sign in to upload staycation photos, videos, facilities, schedules, and every listing detail the client
+            booking flow needs.
+          </p>
           <div className="mt-8 space-y-5">
             <div className="rounded-2xl bg-white/10 p-4 text-sm text-white/75">
               Management access is granted only to allowed emails after Google sign-in through Supabase Auth.
@@ -298,21 +435,35 @@ export function ManagementLoginPage({ onShowPage, isSubmitting, authUser, authRo
             ) : null}
             {authUser && authRole === 'management' ? (
               <div className="space-y-3">
-                <button type="button" onClick={() => onShowPage('dashboard')} className="btn-accent w-full py-4 text-base">
+                <button
+                  type="button"
+                  onClick={() => onShowPage('dashboard')}
+                  className="btn-accent w-full py-4 text-base"
+                >
                   Open Management Dashboard
                 </button>
-                <button type="button" onClick={onSignOut} className="w-full rounded-xl border border-white/20 px-4 py-3 text-sm text-white/80">
+                <button
+                  type="button"
+                  onClick={onSignOut}
+                  className="w-full rounded-xl border border-white/20 px-4 py-3 text-sm text-white/80"
+                >
                   Sign Out
                 </button>
               </div>
             ) : (
-              <button type="button" onClick={onGoogleSignIn} disabled={isSubmitting || isAuthLoading} className="btn-accent w-full py-4 text-base disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60">
+              <button
+                type="button"
+                onClick={onGoogleSignIn}
+                disabled={isSubmitting || isAuthLoading}
+                className="btn-accent w-full py-4 text-base disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+              >
                 {isSubmitting || isAuthLoading ? 'Opening Google Sign-In…' : 'Continue With Google as Management'}
               </button>
             )}
             {authUser && authRole !== 'management' ? (
               <div className="rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
-                This signed-in email is not on the management allowlist yet. Add it to `VITE_MANAGEMENT_EMAILS` before using the dashboard.
+                This signed-in email is not on the management allowlist yet. Add it to `VITE_MANAGEMENT_EMAILS` before
+                using the dashboard.
               </div>
             ) : null}
           </div>
@@ -373,10 +524,20 @@ function getPaymentStatusClasses(status = 'paid') {
 }
 
 function formatStatusCopy(status = 'paid') {
-  return String(status || 'paid').replace(/[-_]/g, ' ').replace(/^\w/, (match) => match.toUpperCase());
+  return String(status || 'paid')
+    .replace(/[-_]/g, ' ')
+    .replace(/^\w/, (match) => match.toUpperCase());
 }
 
-export function OwnerDashboardPage({ ownerApplications, bookingTransactions, emails, onShowPage, onSignOut, authUser, formatCurrency }) {
+export function OwnerDashboardPage({
+  ownerApplications,
+  bookingTransactions,
+  emails,
+  onShowPage,
+  onSignOut,
+  authUser,
+  formatCurrency,
+}) {
   const latestOwner = ownerApplications[0] ?? null;
   const latestBooking = bookingTransactions[0] ?? null;
   const ownerStats = useMemo(
@@ -398,8 +559,16 @@ export function OwnerDashboardPage({ ownerApplications, bookingTransactions, ema
   const requestStages = latestOwner
     ? [
         { title: 'Request Received', detail: `Submitted for ${latestOwner.ownerAddress}`, status: 'done' },
-        { title: 'Management Review', detail: `${latestOwner.unitCount} unit(s) · Budget ${latestOwner.budget}`, status: 'active' },
-        { title: 'Listing Preparation', detail: 'Photos, facilities, and schedule are prepared after approval.', status: 'upcoming' },
+        {
+          title: 'Management Review',
+          detail: `${latestOwner.unitCount} unit(s) · Budget ${latestOwner.budget}`,
+          status: 'active',
+        },
+        {
+          title: 'Listing Preparation',
+          detail: 'Photos, facilities, and schedule are prepared after approval.',
+          status: 'upcoming',
+        },
       ]
     : [];
 
@@ -411,7 +580,8 @@ export function OwnerDashboardPage({ ownerApplications, bookingTransactions, ema
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-brand-500">Owner Workspace</p>
             <h1 className="font-display text-4xl font-bold text-brand-950 md:text-5xl">Owner Dashboard</h1>
             <p className="mt-3 max-w-2xl text-base text-slate-600">
-              Track your build request, review client booking alerts, and see how Hora is moving your staycation into the live listing stage.
+              Track your build request, review client booking alerts, and see how Hora is moving your staycation into
+              the live listing stage.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -450,7 +620,8 @@ export function OwnerDashboardPage({ ownerApplications, bookingTransactions, ema
                     </div>
                     <h2 className="mt-3 font-display text-2xl font-bold">{latestBooking.bookingSummary.name}</h2>
                     <p className="mt-2 text-sm text-white/75">
-                      {latestBooking.bookingForm.guestName} requested {latestBooking.bookingSummary.nights} night(s) from {latestBooking.bookingForm.checkin} to {latestBooking.bookingForm.checkout}.
+                      {latestBooking.bookingForm.guestName} requested {latestBooking.bookingSummary.nights} night(s)
+                      from {latestBooking.bookingForm.checkin} to {latestBooking.bookingForm.checkout}.
                     </p>
                   </div>
                   <div className="rounded-2xl bg-white/10 px-5 py-4 text-left md:text-right">
@@ -466,7 +637,9 @@ export function OwnerDashboardPage({ ownerApplications, bookingTransactions, ema
               {latestOwner ? (
                 <div className="space-y-4">
                   <div className="rounded-2xl bg-brand-950 p-5 text-white">
-                    <div className="text-xs font-semibold uppercase tracking-[0.25em] text-white/55">Latest Owner Request</div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.25em] text-white/55">
+                      Latest Owner Request
+                    </div>
                     <div className="mt-3 text-2xl font-bold">{latestOwner.ownerName}</div>
                     <div className="mt-2 text-sm text-white/75">{latestOwner.ownerEmail}</div>
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -476,20 +649,24 @@ export function OwnerDashboardPage({ ownerApplications, bookingTransactions, ema
                       </div>
                       <div className="rounded-2xl bg-white/10 p-4">
                         <div className="text-xs uppercase tracking-[0.2em] text-white/50">Budget & Units</div>
-                        <div className="mt-2 text-sm font-medium">{latestOwner.budget} · {latestOwner.unitCount} unit(s)</div>
+                        <div className="mt-2 text-sm font-medium">
+                          {latestOwner.budget} · {latestOwner.unitCount} unit(s)
+                        </div>
                       </div>
                     </div>
                   </div>
                   <div className="space-y-3">
                     {requestStages.map((stage) => (
                       <div key={stage.title} className="flex items-start gap-4 rounded-2xl border border-ice-200 p-4">
-                        <span className={`mt-1 flex h-10 w-10 items-center justify-center rounded-xl ${
-                          stage.status === 'done'
-                            ? 'bg-emerald-100 text-emerald-600'
-                            : stage.status === 'active'
-                              ? 'bg-brand-50 text-brand-600'
-                              : 'bg-slate-100 text-slate-400'
-                        }`}>
+                        <span
+                          className={`mt-1 flex h-10 w-10 items-center justify-center rounded-xl ${
+                            stage.status === 'done'
+                              ? 'bg-emerald-100 text-emerald-600'
+                              : stage.status === 'active'
+                                ? 'bg-brand-50 text-brand-600'
+                                : 'bg-slate-100 text-slate-400'
+                          }`}
+                        >
                           <Icon name={stage.status === 'upcoming' ? 'calendar' : 'shield'} />
                         </span>
                         <div>
@@ -502,7 +679,8 @@ export function OwnerDashboardPage({ ownerApplications, bookingTransactions, ema
                 </div>
               ) : (
                 <div className="rounded-2xl border border-dashed border-ice-200 p-6 text-sm text-slate-500">
-                  No owner request has been submitted yet. Use the owner form first, then this dashboard will show the live request status.
+                  No owner request has been submitted yet. Use the owner form first, then this dashboard will show the
+                  live request status.
                 </div>
               )}
             </div>
@@ -537,7 +715,9 @@ export function OwnerDashboardPage({ ownerApplications, bookingTransactions, ema
             <div className="rounded-3xl border border-ice-200 bg-white p-6 shadow-sm">
               <div className="mb-6 flex items-center justify-between">
                 <h2 className="font-display text-2xl font-bold text-brand-950">Client Booking Alerts</h2>
-                <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-600">Owner View</span>
+                <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-600">
+                  Owner View
+                </span>
               </div>
               <div className="space-y-4">
                 {bookingTransactions.length ? (
@@ -550,7 +730,8 @@ export function OwnerDashboardPage({ ownerApplications, bookingTransactions, ema
                             {booking.bookingForm.guestName} · {booking.bookingForm.guestEmail}
                           </div>
                           <div className="mt-2 text-sm text-slate-500">
-                            {booking.bookingForm.checkin} to {booking.bookingForm.checkout} · {booking.bookingSummary.nights} night(s)
+                            {booking.bookingForm.checkin} to {booking.bookingForm.checkout} ·{' '}
+                            {booking.bookingSummary.nights} night(s)
                           </div>
                         </div>
                         <div className="text-right">
@@ -560,7 +741,8 @@ export function OwnerDashboardPage({ ownerApplications, bookingTransactions, ema
                       </div>
                       {booking.bookingForm.specialRequests ? (
                         <div className="mt-4 rounded-xl bg-ice-50 px-4 py-3 text-sm text-slate-600">
-                          <span className="font-semibold text-brand-900">Special requests:</span> {booking.bookingForm.specialRequests}
+                          <span className="font-semibold text-brand-900">Special requests:</span>{' '}
+                          {booking.bookingForm.specialRequests}
                         </div>
                       ) : null}
                     </div>
@@ -578,15 +760,21 @@ export function OwnerDashboardPage({ ownerApplications, bookingTransactions, ema
               <div className="mt-4 grid gap-4 md:grid-cols-3">
                 <div className="rounded-2xl bg-white/8 p-4">
                   <div className="text-sm font-semibold uppercase tracking-[0.2em] text-white/50">1</div>
-                  <div className="mt-2 text-sm text-white/80">Management reviews the owner request and confirms the next build direction.</div>
+                  <div className="mt-2 text-sm text-white/80">
+                    Management reviews the owner request and confirms the next build direction.
+                  </div>
                 </div>
                 <div className="rounded-2xl bg-white/8 p-4">
                   <div className="text-sm font-semibold uppercase tracking-[0.2em] text-white/50">2</div>
-                  <div className="mt-2 text-sm text-white/80">Hora prepares the listing details, facilities, visuals, and schedule.</div>
+                  <div className="mt-2 text-sm text-white/80">
+                    Hora prepares the listing details, facilities, visuals, and schedule.
+                  </div>
                 </div>
                 <div className="rounded-2xl bg-white/8 p-4">
                   <div className="text-sm font-semibold uppercase tracking-[0.2em] text-white/50">3</div>
-                  <div className="mt-2 text-sm text-white/80">Owner sees new client booking alerts and expected revenue in one place.</div>
+                  <div className="mt-2 text-sm text-white/80">
+                    Owner sees new client booking alerts and expected revenue in one place.
+                  </div>
                 </div>
               </div>
             </div>
@@ -773,7 +961,8 @@ export function DashboardPage({
     },
     {
       title: 'Schedule',
-      description: 'Maintain the staycation schedule and availability so the booking flow follows an Airbnb-style pattern.',
+      description:
+        'Maintain the staycation schedule and availability so the booking flow follows an Airbnb-style pattern.',
     },
   ];
 
@@ -793,7 +982,10 @@ export function DashboardPage({
 
   const availableListings = draftListing ? [draftListing, ...listings] : listings;
   const selectedListing = useMemo(
-    () => availableListings.find((listing) => listing.id === selectedListingId) ?? availableListings[0] ?? FEATURED_PROPERTIES[0],
+    () =>
+      availableListings.find((listing) => listing.id === selectedListingId) ??
+      availableListings[0] ??
+      FEATURED_PROPERTIES[0],
     [availableListings, selectedListingId],
   );
   const mediaCards = useMemo(
@@ -816,21 +1008,29 @@ export function DashboardPage({
       return;
     }
 
-    setListingForm(getListingFormState(selectedListing));
-    setMediaPreviews({});
-    setPendingMediaFiles({});
-    setUploadError('');
-    setStudioMessage('');
+    startTransition(() => {
+      setListingForm(getListingFormState(selectedListing));
+      setMediaPreviews({});
+      setPendingMediaFiles({});
+      setUploadError('');
+      setStudioMessage('');
+    });
   }, [selectedListing]);
 
   useEffect(() => {
     if (!availableListings.some((listing) => listing.id === selectedListingId)) {
-      setSelectedListingId(availableListings[0]?.id ?? '');
+      startTransition(() => {
+        setSelectedListingId(availableListings[0]?.id ?? '');
+      });
     }
   }, [availableListings, selectedListingId]);
 
   useEffect(() => {
-    setBulkListingIds((current) => current.filter((listingId) => availableListings.some((listing) => listing.id === listingId)));
+    startTransition(() => {
+      setBulkListingIds((current) =>
+        current.filter((listingId) => availableListings.some((listing) => listing.id === listingId)),
+      );
+    });
   }, [availableListings]);
 
   useEffect(() => {
@@ -929,7 +1129,9 @@ export function DashboardPage({
         ...current,
         [fieldName]: file,
       }));
-      setStudioMessage(`${file.name} is staged for ${mediaConfig.label.toLowerCase()}. Save the listing to publish it.`);
+      setStudioMessage(
+        `${file.name} is staged for ${mediaConfig.label.toLowerCase()}. Save the listing to publish it.`,
+      );
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : 'Upload failed. Please try again.');
     } finally {
@@ -1019,14 +1221,14 @@ export function DashboardPage({
       bestFor: preset.bestFor,
     }));
     setUploadError('');
-    setStudioMessage(`${preset.title} preset applied. Facilities, schedule, and guest-facing copy are ready for review.`);
+    setStudioMessage(
+      `${preset.title} preset applied. Facilities, schedule, and guest-facing copy are ready for review.`,
+    );
   }
 
   function toggleBulkListing(listingId) {
     setBulkListingIds((current) =>
-      current.includes(listingId)
-        ? current.filter((item) => item !== listingId)
-        : [...current, listingId],
+      current.includes(listingId) ? current.filter((item) => item !== listingId) : [...current, listingId],
     );
   }
 
@@ -1054,7 +1256,9 @@ export function DashboardPage({
     }
 
     if (files.length !== 1 && files.length !== selectedBulkListings.length) {
-      setUploadError('Use one file to apply the same asset to every selected property, or upload one file per selected property.');
+      setUploadError(
+        'Use one file to apply the same asset to every selected property, or upload one file per selected property.',
+      );
       event.target.value = '';
       return;
     }
@@ -1152,7 +1356,8 @@ export function DashboardPage({
               <div className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-500">Analytics Dashboard</div>
               <h2 className="mt-2 font-display text-3xl font-bold text-brand-950">Discovery and conversion insights</h2>
               <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-500">
-                Custom reporting now tracks consented guest discovery, wishlist usage, support activity, installs, and search-to-book conversion.
+                Custom reporting now tracks consented guest discovery, wishlist usage, support activity, installs, and
+                search-to-book conversion.
               </p>
             </div>
             <div className="rounded-full bg-ice-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-700">
@@ -1198,7 +1403,9 @@ export function DashboardPage({
                 </div>
                 <div className="rounded-2xl bg-ice-50 p-4">
                   <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Wishlisted Stays</div>
-                  <div className="mt-2 text-2xl font-bold text-brand-950">{analyticsSummary?.uniqueWishlistedProperties ?? 0}</div>
+                  <div className="mt-2 text-2xl font-bold text-brand-950">
+                    {analyticsSummary?.uniqueWishlistedProperties ?? 0}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1211,7 +1418,10 @@ export function DashboardPage({
               <div className="space-y-3">
                 {analyticsSummary?.recentEvents?.length ? (
                   analyticsSummary.recentEvents.map((event) => (
-                    <div key={event.id} className="flex items-center justify-between gap-4 rounded-2xl bg-ice-50 px-4 py-3">
+                    <div
+                      key={event.id}
+                      className="flex items-center justify-between gap-4 rounded-2xl bg-ice-50 px-4 py-3"
+                    >
                       <div>
                         <div className="font-semibold text-brand-900">{formatAnalyticsEventLabel(event.type)}</div>
                         <div className="text-xs text-slate-500">{event.path || event.page || 'HoraStaycation'}</div>
@@ -1246,7 +1456,8 @@ export function DashboardPage({
                     </div>
                     <h2 className="mt-3 font-display text-2xl font-bold">{latestBooking.bookingSummary.name}</h2>
                     <p className="mt-2 text-sm text-white/75">
-                      {latestBooking.bookingForm.guestName} for {latestBooking.bookingForm.guests} guest(s) · {latestBooking.bookingForm.checkin} to {latestBooking.bookingForm.checkout}
+                      {latestBooking.bookingForm.guestName} for {latestBooking.bookingForm.guests} guest(s) ·{' '}
+                      {latestBooking.bookingForm.checkin} to {latestBooking.bookingForm.checkout}
                     </p>
                   </div>
                   <div className="rounded-2xl bg-white/10 px-5 py-4 text-left md:text-right">
@@ -1260,7 +1471,9 @@ export function DashboardPage({
             <div className="rounded-3xl border border-ice-200 bg-white p-6 shadow-sm">
               <div className="mb-6 flex items-center justify-between">
                 <h2 className="font-display text-2xl font-bold text-brand-950">Live Booking Queue</h2>
-                <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-600">Operations</span>
+                <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-600">
+                  Operations
+                </span>
               </div>
               <div className="space-y-4">
                 {bookingTransactions.length ? (
@@ -1269,12 +1482,17 @@ export function DashboardPage({
                       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                         <div>
                           <div className="font-semibold text-brand-900">{booking.bookingSummary.name}</div>
-                          <div className="mt-1 text-sm text-slate-500">{booking.bookingForm.guestName} · {booking.bookingForm.guestEmail}</div>
+                          <div className="mt-1 text-sm text-slate-500">
+                            {booking.bookingForm.guestName} · {booking.bookingForm.guestEmail}
+                          </div>
                           <div className="mt-2 text-sm text-slate-500">
-                            {booking.bookingForm.checkin} to {booking.bookingForm.checkout} · {booking.bookingSummary.nights} night(s) · {booking.bookingForm.guests} guest(s)
+                            {booking.bookingForm.checkin} to {booking.bookingForm.checkout} ·{' '}
+                            {booking.bookingSummary.nights} night(s) · {booking.bookingForm.guests} guest(s)
                           </div>
                           <div className="mt-3 flex flex-wrap gap-2">
-                            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClasses(booking.paymentStatus)}`}>
+                            <span
+                              className={`rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClasses(booking.paymentStatus)}`}
+                            >
                               Payment {formatStatusCopy(booking.paymentStatus || 'paid')}
                             </span>
                             <span className="rounded-full bg-ice-50 px-3 py-1 text-xs font-semibold text-brand-700">
@@ -1288,8 +1506,12 @@ export function DashboardPage({
                           </div>
                           <div className="mt-3 space-y-1 text-xs text-slate-400">
                             {booking.stripeSessionId ? <div>Stripe session: {booking.stripeSessionId}</div> : null}
-                            {booking.stripePaymentIntentId ? <div>Payment intent: {booking.stripePaymentIntentId}</div> : null}
-                            {booking.customerReceiptEmail ? <div>Receipt email: {booking.customerReceiptEmail}</div> : null}
+                            {booking.stripePaymentIntentId ? (
+                              <div>Payment intent: {booking.stripePaymentIntentId}</div>
+                            ) : null}
+                            {booking.customerReceiptEmail ? (
+                              <div>Receipt email: {booking.customerReceiptEmail}</div>
+                            ) : null}
                             {booking.statusNote ? <div>Status note: {booking.statusNote}</div> : null}
                           </div>
                         </div>
@@ -1340,16 +1562,25 @@ export function DashboardPage({
             <div className="rounded-3xl border border-ice-200 bg-white p-6 shadow-sm">
               <div className="mb-6 flex items-center justify-between">
                 <h2 className="font-display text-2xl font-bold text-brand-950">Management Upload Studio</h2>
-                <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-600">Drag-and-Drop · Bulk Upload · Presets</span>
+                <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-600">
+                  Drag-and-Drop · Bulk Upload · Presets
+                </span>
               </div>
               <form onSubmit={handleListingSubmit} className="space-y-5">
                 <div className="grid gap-5 xl:grid-cols-[1fr_1.05fr]">
                   <div className="rounded-3xl border border-brand-100 bg-gradient-to-br from-brand-50 to-white p-5">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <div className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-500">Listing Presets</div>
-                        <h3 className="mt-2 font-display text-2xl font-bold text-brand-950">Templates for fast setup</h3>
-                        <p className="mt-2 text-sm text-slate-500">Apply a ready-made facilities and schedule pack, then fine-tune the details for the selected property.</p>
+                        <div className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-500">
+                          Listing Presets
+                        </div>
+                        <h3 className="mt-2 font-display text-2xl font-bold text-brand-950">
+                          Templates for fast setup
+                        </h3>
+                        <p className="mt-2 text-sm text-slate-500">
+                          Apply a ready-made facilities and schedule pack, then fine-tune the details for the selected
+                          property.
+                        </p>
                       </div>
                       <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-brand-600 shadow-sm">
                         <Icon name="list-check" />
@@ -1365,7 +1596,9 @@ export function DashboardPage({
                         >
                           <div className="flex items-center justify-between gap-3">
                             <div className="font-semibold text-brand-900">{preset.title}</div>
-                            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-500">Apply</span>
+                            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-500">
+                              Apply
+                            </span>
                           </div>
                           <div className="mt-2 text-sm text-slate-500">{preset.schedule}</div>
                           <div className="mt-3 text-xs text-slate-400">{preset.facilities.join(' · ')}</div>
@@ -1377,9 +1610,14 @@ export function DashboardPage({
                   <div className="rounded-3xl border border-ice-200 bg-slate-950 p-5 text-white shadow-sm">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <div className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">Bulk Upload</div>
+                        <div className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">
+                          Bulk Upload
+                        </div>
                         <h3 className="mt-2 font-display text-2xl font-bold">Multiple properties in one pass</h3>
-                        <p className="mt-2 text-sm text-white/70">Choose the asset type, pick the properties, then upload one shared file or one file per selected property.</p>
+                        <p className="mt-2 text-sm text-white/70">
+                          Choose the asset type, pick the properties, then upload one shared file or one file per
+                          selected property.
+                        </p>
                       </div>
                       <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-cyan-300">
                         <Icon name="upload" />
@@ -1387,7 +1625,9 @@ export function DashboardPage({
                     </div>
                     <div className="mt-5 grid gap-4 md:grid-cols-[0.8fr_1.2fr]">
                       <div>
-                        <label className="form-label text-white" htmlFor="bulkUploadField">Asset Type</label>
+                        <label className="form-label text-white" htmlFor="bulkUploadField">
+                          Asset Type
+                        </label>
                         <select
                           id="bulkUploadField"
                           value={bulkUploadField}
@@ -1400,7 +1640,9 @@ export function DashboardPage({
                             </option>
                           ))}
                         </select>
-                        <label className="form-label mt-4 text-white" htmlFor="bulkUploadInput">Bulk Files</label>
+                        <label className="form-label mt-4 text-white" htmlFor="bulkUploadInput">
+                          Bulk Files
+                        </label>
                         <input
                           id="bulkUploadInput"
                           type="file"
@@ -1411,19 +1653,29 @@ export function DashboardPage({
                           className="form-input border-white/15 bg-white/8 text-white"
                         />
                         <p className="mt-2 text-xs text-white/55">
-                          Upload 1 file to reuse the same asset for every selected property, or upload {selectedBulkListings.length || 'matching'} files to map them in property order.
+                          Upload 1 file to reuse the same asset for every selected property, or upload{' '}
+                          {selectedBulkListings.length || 'matching'} files to map them in property order.
                         </p>
                       </div>
                       <div>
                         <div className="mb-3 flex items-center justify-between gap-3">
-                          <div className="text-sm font-semibold uppercase tracking-[0.2em] text-white/55">Target Properties</div>
-                          <button type="button" onClick={toggleAllBulkListings} className="text-xs font-semibold text-cyan-300">
+                          <div className="text-sm font-semibold uppercase tracking-[0.2em] text-white/55">
+                            Target Properties
+                          </div>
+                          <button
+                            type="button"
+                            onClick={toggleAllBulkListings}
+                            className="text-xs font-semibold text-cyan-300"
+                          >
                             {bulkListingIds.length === availableListings.length ? 'Clear all' : 'Select all'}
                           </button>
                         </div>
                         <div className="grid max-h-48 gap-2 overflow-y-auto pr-1">
                           {availableListings.map((listing) => (
-                            <label key={listing.id} className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/10 bg-white/6 px-4 py-3">
+                            <label
+                              key={listing.id}
+                              className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/10 bg-white/6 px-4 py-3"
+                            >
                               <input
                                 type="checkbox"
                                 checked={bulkListingIds.includes(listing.id)}
@@ -1445,12 +1697,18 @@ export function DashboardPage({
                   <button type="button" onClick={handleCreateListing} className="btn-primary px-5 py-3 text-sm">
                     + Add New Listing
                   </button>
-                  <button type="button" onClick={handleDeleteListing} className="rounded-xl border border-rose-200 px-5 py-3 text-sm font-semibold text-rose-600">
+                  <button
+                    type="button"
+                    onClick={handleDeleteListing}
+                    className="rounded-xl border border-rose-200 px-5 py-3 text-sm font-semibold text-rose-600"
+                  >
                     Delete Listing
                   </button>
                 </div>
                 <div>
-                  <label className="form-label" htmlFor="listingSelect">Listing to Manage</label>
+                  <label className="form-label" htmlFor="listingSelect">
+                    Listing to Manage
+                  </label>
                   <select
                     id="listingSelect"
                     value={selectedListingId}
@@ -1466,41 +1724,105 @@ export function DashboardPage({
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <label className="form-label" htmlFor="name">Listing Name</label>
-                    <input id="name" name="name" value={listingForm.name} onChange={handleListingFieldChange} className="form-input" />
+                    <label className="form-label" htmlFor="name">
+                      Listing Name
+                    </label>
+                    <input
+                      id="name"
+                      name="name"
+                      value={listingForm.name}
+                      onChange={handleListingFieldChange}
+                      className="form-input"
+                    />
                   </div>
                   <div>
-                    <label className="form-label" htmlFor="location">Location</label>
-                    <input id="location" name="location" value={listingForm.location} onChange={handleListingFieldChange} className="form-input" />
+                    <label className="form-label" htmlFor="location">
+                      Location
+                    </label>
+                    <input
+                      id="location"
+                      name="location"
+                      value={listingForm.location}
+                      onChange={handleListingFieldChange}
+                      className="form-input"
+                    />
                   </div>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <label className="form-label" htmlFor="price">Nightly Price</label>
-                    <input id="price" name="price" type="number" min="0" value={listingForm.price} onChange={handleListingFieldChange} className="form-input" />
+                    <label className="form-label" htmlFor="price">
+                      Nightly Price
+                    </label>
+                    <input
+                      id="price"
+                      name="price"
+                      type="number"
+                      min="0"
+                      value={listingForm.price}
+                      onChange={handleListingFieldChange}
+                      className="form-input"
+                    />
                   </div>
                   <div>
-                    <label className="form-label" htmlFor="statusNote">Status Note</label>
-                    <input id="statusNote" name="statusNote" value={listingForm.statusNote} onChange={handleListingFieldChange} className="form-input" placeholder="Now live for guests" />
+                    <label className="form-label" htmlFor="statusNote">
+                      Status Note
+                    </label>
+                    <input
+                      id="statusNote"
+                      name="statusNote"
+                      value={listingForm.statusNote}
+                      onChange={handleListingFieldChange}
+                      className="form-input"
+                      placeholder="Now live for guests"
+                    />
                   </div>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <label className="form-label" htmlFor="publishStatus">Publish Status</label>
-                    <select id="publishStatus" name="publishStatus" value={listingForm.publishStatus} onChange={handleListingFieldChange} className="form-input">
+                    <label className="form-label" htmlFor="publishStatus">
+                      Publish Status
+                    </label>
+                    <select
+                      id="publishStatus"
+                      name="publishStatus"
+                      value={listingForm.publishStatus}
+                      onChange={handleListingFieldChange}
+                      className="form-input"
+                    >
                       <option value="published">Published</option>
                       <option value="draft">Draft</option>
                     </select>
                   </div>
                   <div>
-                    <label className="form-label" htmlFor="availabilityNotes">Availability Notes</label>
-                    <input id="availabilityNotes" name="availabilityNotes" value={listingForm.availabilityNotes} onChange={handleListingFieldChange} className="form-input" placeholder="Closed on public holidays" />
+                    <label className="form-label" htmlFor="availabilityNotes">
+                      Availability Notes
+                    </label>
+                    <input
+                      id="availabilityNotes"
+                      name="availabilityNotes"
+                      value={listingForm.availabilityNotes}
+                      onChange={handleListingFieldChange}
+                      className="form-input"
+                      placeholder="Closed on public holidays"
+                    />
                   </div>
                 </div>
                 <div>
-                  <label className="form-label" htmlFor="blockedDatesText">Blocked Dates</label>
-                  <textarea id="blockedDatesText" name="blockedDatesText" rows="3" value={listingForm.blockedDatesText} onChange={handleListingFieldChange} className="form-input" placeholder="2026-06-20, 2026-06-21, 2026-06-22" />
-                  <p className="mt-2 text-xs text-slate-400">Add comma-separated dates to block guest booking on those days.</p>
+                  <label className="form-label" htmlFor="blockedDatesText">
+                    Blocked Dates
+                  </label>
+                  <textarea
+                    id="blockedDatesText"
+                    name="blockedDatesText"
+                    rows="3"
+                    value={listingForm.blockedDatesText}
+                    onChange={handleListingFieldChange}
+                    className="form-input"
+                    placeholder="2026-06-20, 2026-06-21, 2026-06-22"
+                  />
+                  <p className="mt-2 text-xs text-slate-400">
+                    Add comma-separated dates to block guest booking on those days.
+                  </p>
                 </div>
                 <div className="grid gap-4 xl:grid-cols-2">
                   {mediaCards.map(({ fieldName, config, preview, asset }) => {
@@ -1511,7 +1833,9 @@ export function DashboardPage({
                       <div key={fieldName} className="rounded-3xl border border-ice-200 bg-slate-50 p-4">
                         <div className="flex items-start justify-between gap-4">
                           <div>
-                            <label className="form-label" htmlFor={fieldName}>{config.label.replace(' Upload', ' URL')}</label>
+                            <label className="form-label" htmlFor={fieldName}>
+                              {config.label.replace(' Upload', ' URL')}
+                            </label>
                             <input
                               id={fieldName}
                               name={fieldName}
@@ -1521,7 +1845,11 @@ export function DashboardPage({
                               placeholder={isVideoField ? 'https://youtube.com/...' : 'https://...'}
                             />
                           </div>
-                          <button type="button" onClick={() => clearMediaField(fieldName)} className="rounded-full bg-white px-3 py-2 text-xs font-semibold text-rose-600 shadow-sm">
+                          <button
+                            type="button"
+                            onClick={() => clearMediaField(fieldName)}
+                            className="rounded-full bg-white px-3 py-2 text-xs font-semibold text-rose-600 shadow-sm"
+                          >
                             Clear
                           </button>
                         </div>
@@ -1555,7 +1883,9 @@ export function DashboardPage({
                           ) : null}
                         </label>
                         <div className="mt-4 rounded-2xl border border-ice-200 bg-white p-3">
-                          <div className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Preview</div>
+                          <div className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                            Preview
+                          </div>
                           {isVideoField ? (
                             preview ? (
                               <video src={preview} controls className="h-40 w-full rounded-2xl object-cover" />
@@ -1565,7 +1895,11 @@ export function DashboardPage({
                               </div>
                             )
                           ) : (
-                            <img src={preview || selectedListing?.image} alt={`${listingForm.name} ${config.label.toLowerCase()}`} className="h-40 w-full rounded-2xl object-cover" />
+                            <img
+                              src={preview || selectedListing?.image}
+                              alt={`${listingForm.name} ${config.label.toLowerCase()}`}
+                              className="h-40 w-full rounded-2xl object-cover"
+                            />
                           )}
                         </div>
                       </div>
@@ -1573,12 +1907,25 @@ export function DashboardPage({
                   })}
                 </div>
                 <div>
-                  <label className="form-label" htmlFor="schedule">Schedule</label>
-                  <input id="schedule" name="schedule" value={listingForm.schedule} onChange={handleListingFieldChange} className="form-input" placeholder="Daily check-in from 3:00 PM" />
-                  <p className="mt-2 text-xs text-slate-400">Use this for check-in, check-out, weekday availability, or blackout notes.</p>
+                  <label className="form-label" htmlFor="schedule">
+                    Schedule
+                  </label>
+                  <input
+                    id="schedule"
+                    name="schedule"
+                    value={listingForm.schedule}
+                    onChange={handleListingFieldChange}
+                    className="form-input"
+                    placeholder="Daily check-in from 3:00 PM"
+                  />
+                  <p className="mt-2 text-xs text-slate-400">
+                    Use this for check-in, check-out, weekday availability, or blackout notes.
+                  </p>
                 </div>
                 <div>
-                  <label className="form-label" htmlFor="facilitiesText">Facilities</label>
+                  <label className="form-label" htmlFor="facilitiesText">
+                    Facilities
+                  </label>
                   <textarea
                     id="facilitiesText"
                     name="facilitiesText"
@@ -1588,7 +1935,9 @@ export function DashboardPage({
                     className="form-input"
                     placeholder="Pool, WiFi, Parking, BBQ Place"
                   />
-                  <p className="mt-2 text-xs text-slate-400">Separate facilities with commas so they publish as client-facing tags.</p>
+                  <p className="mt-2 text-xs text-slate-400">
+                    Separate facilities with commas so they publish as client-facing tags.
+                  </p>
                 </div>
                 {uploadError ? (
                   <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">
@@ -1602,21 +1951,48 @@ export function DashboardPage({
                 ) : null}
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <label className="form-label" htmlFor="mood">Guest Experience Copy</label>
-                    <textarea id="mood" name="mood" rows="3" value={listingForm.mood} onChange={handleListingFieldChange} className="form-input" placeholder="Describe the stay in one persuasive sentence." />
+                    <label className="form-label" htmlFor="mood">
+                      Guest Experience Copy
+                    </label>
+                    <textarea
+                      id="mood"
+                      name="mood"
+                      rows="3"
+                      value={listingForm.mood}
+                      onChange={handleListingFieldChange}
+                      className="form-input"
+                      placeholder="Describe the stay in one persuasive sentence."
+                    />
                   </div>
                   <div>
-                    <label className="form-label" htmlFor="bestFor">Best For</label>
-                    <textarea id="bestFor" name="bestFor" rows="3" value={listingForm.bestFor} onChange={handleListingFieldChange} className="form-input" placeholder="Best for families, couples, team retreats..." />
+                    <label className="form-label" htmlFor="bestFor">
+                      Best For
+                    </label>
+                    <textarea
+                      id="bestFor"
+                      name="bestFor"
+                      rows="3"
+                      value={listingForm.bestFor}
+                      onChange={handleListingFieldChange}
+                      className="form-input"
+                      placeholder="Best for families, couples, team retreats..."
+                    />
                   </div>
                 </div>
                 <div className="rounded-2xl bg-ice-50 p-4 text-sm text-slate-500">
-                  Changes here update the public staycation cards and the booking flow because management is now the source of truth for listing content.
+                  Changes here update the public staycation cards and the booking flow because management is now the
+                  source of truth for listing content.
                   {isUploadingMedia ? ` Uploading ${MEDIA_FIELD_CONFIG[isUploadingMedia]?.label.toLowerCase()}...` : ''}
                   {isBulkUploading ? ' Processing the bulk upload queue...' : ''}
-                  {!isUploadingMedia && !isBulkUploading && Object.keys(pendingMediaFiles).length ? ' Ready to sync uploaded files on save.' : ''}
+                  {!isUploadingMedia && !isBulkUploading && Object.keys(pendingMediaFiles).length
+                    ? ' Ready to sync uploaded files on save.'
+                    : ''}
                 </div>
-                <button type="submit" disabled={isSavingListing} className="btn-primary w-full py-4 text-base disabled:cursor-not-allowed disabled:opacity-60">
+                <button
+                  type="submit"
+                  disabled={isSavingListing}
+                  className="btn-primary w-full py-4 text-base disabled:cursor-not-allowed disabled:opacity-60"
+                >
                   {isSavingListing ? 'Saving Listing…' : 'Save Listing Update'}
                 </button>
               </form>
@@ -1625,17 +2001,28 @@ export function DashboardPage({
             <div className="rounded-3xl border border-ice-200 bg-white p-6 shadow-sm">
               <div className="mb-6 flex items-center justify-between">
                 <h2 className="font-display text-2xl font-bold text-brand-950">Published Staycation Choices</h2>
-                <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-600">Client Facing</span>
+                <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-600">
+                  Client Facing
+                </span>
               </div>
               <div className="space-y-4">
                 {listings.map((property) => (
                   <div key={property.id} className="flex items-center gap-4 rounded-2xl border border-ice-200 p-4">
-                    <img src={property.thumbnail} alt={property.name} width="80" height="60" loading="lazy" className="h-14 w-20 rounded-xl object-cover" />
+                    <img
+                      src={property.thumbnail}
+                      alt={property.name}
+                      width="80"
+                      height="60"
+                      loading="lazy"
+                      className="h-14 w-20 rounded-xl object-cover"
+                    />
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-semibold text-brand-900">{property.name}</div>
                       <div className="text-sm text-slate-500">{property.location}</div>
                       <div className="mt-1 text-xs text-slate-400">{property.amenities.join(' · ')}</div>
-                      {property.schedule ? <div className="mt-1 text-xs text-brand-500">{property.schedule}</div> : null}
+                      {property.schedule ? (
+                        <div className="mt-1 text-xs text-brand-500">{property.schedule}</div>
+                      ) : null}
                       {property.videoUrl ? <div className="mt-1 text-xs text-brand-500">Video linked</div> : null}
                     </div>
                     <div className="text-right">
@@ -1675,14 +2062,18 @@ export function DashboardPage({
                   <div key={application.id} className="rounded-2xl border border-ice-200 p-4">
                     <div className="font-semibold text-brand-900">{application.ownerName}</div>
                     <div className="text-sm text-slate-500">{application.ownerAddress}</div>
-                    <div className="mt-1 text-xs text-brand-600">Owner lead · {application.unitCount} unit(s) · {application.budget}</div>
+                    <div className="mt-1 text-xs text-brand-600">
+                      Owner lead · {application.unitCount} unit(s) · {application.budget}
+                    </div>
                   </div>
                 ))}
                 {reviewSubmissions.slice(0, 3).map((submission) => (
                   <div key={submission.id} className="rounded-2xl border border-ice-200 p-4">
                     <div className="font-semibold text-brand-900">{submission.evaluatorName}</div>
                     <div className="text-sm text-slate-500">{submission.evaluatorAddress}</div>
-                    <div className="mt-1 text-xs text-brand-600">Evaluate request · {submission.unitCount} unit(s) · {submission.evaluatorEmail}</div>
+                    <div className="mt-1 text-xs text-brand-600">
+                      Evaluate request · {submission.unitCount} unit(s) · {submission.evaluatorEmail}
+                    </div>
                   </div>
                 ))}
                 {!ownerApplications.length && !reviewSubmissions.length ? (
@@ -1722,7 +2113,10 @@ export function DashboardPage({
 
         <div className="mt-8 rounded-3xl bg-brand-950 p-6 text-white shadow-xl">
           <h2 className="font-display text-2xl font-bold">Operations Snapshot</h2>
-          <p className="mt-3 text-white/70">Management prepares the properties clients see, while bookings, owner leads, evaluate requests, and triggered emails continue to feed the operating queue.</p>
+          <p className="mt-3 text-white/70">
+            Management prepares the properties clients see, while bookings, owner leads, evaluate requests, and
+            triggered emails continue to feed the operating queue.
+          </p>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             <div className="rounded-2xl bg-white/8 p-4">
               <div className="text-sm font-semibold uppercase tracking-[0.2em] text-white/50">Bookings</div>

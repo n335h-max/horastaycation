@@ -5,9 +5,12 @@ const phoneSchema = z
   .trim()
   .regex(/^[+\d][\d\s-]{7,}$/, 'Enter a valid phone number.');
 
-const optionalPhoneSchema = z.string().trim().refine((value) => !value || /^[+\d][\d\s-]{7,}$/.test(value), {
-  message: 'Enter a valid phone number.',
-});
+const optionalPhoneSchema = z
+  .string()
+  .trim()
+  .refine((value) => !value || /^[+\d][\d\s-]{7,}$/.test(value), {
+    message: 'Enter a valid phone number.',
+  });
 
 export const bookingSchema = z
   .object({
@@ -34,7 +37,10 @@ export const paymentSchema = z.object({
     .string()
     .trim()
     .regex(/^(0[1-9]|1[0-2])\/\d{2}$/, 'Use MM/YY format.'),
-  cvc: z.string().trim().regex(/^\d{3}$/, 'Enter a valid 3-digit CVC.'),
+  cvc: z
+    .string()
+    .trim()
+    .regex(/^\d{3}$/, 'Enter a valid 3-digit CVC.'),
   cardholder: z.string().trim().min(2, 'Enter the cardholder name.'),
 });
 

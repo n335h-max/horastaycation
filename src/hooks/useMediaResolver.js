@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { startTransition, useState, useEffect, useRef } from 'react';
 import { getMediaObjectUrl, revokeMediaObjectUrls } from '../lib/mediaStorage';
 import { FEATURED_PROPERTIES } from '../data/siteData';
 
@@ -8,7 +8,9 @@ export function useMediaResolver({ shouldSyncListings, sourceListings }) {
 
   useEffect(() => {
     if (!shouldSyncListings) {
-      setResolvedListings([]);
+      startTransition(() => {
+        setResolvedListings([]);
+      });
       hasHydratedRef.current = false;
       return undefined;
     }
@@ -52,11 +54,15 @@ export function useMediaResolver({ shouldSyncListings, sourceListings }) {
           return;
         }
 
-        setResolvedListings(listings);
+        startTransition(() => {
+          setResolvedListings(listings);
+        });
         hasHydratedRef.current = true;
       } catch {
         if (isActive) {
-          setResolvedListings(sourceListings);
+          startTransition(() => {
+            setResolvedListings(sourceListings);
+          });
         }
       }
     }

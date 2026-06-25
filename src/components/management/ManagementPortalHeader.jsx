@@ -1,7 +1,14 @@
 import { Icon } from '../Icon';
 
 export function ManagementPortalHeader({
-  title, eyebrow, description, authUser, onSignOut, onShowPage, primaryAction, secondaryAction,
+  title,
+  eyebrow,
+  description,
+  authUser,
+  onSignOut,
+  onShowPage,
+  primaryAction,
+  secondaryAction,
 }) {
   return (
     <div className="rounded-[2rem] border border-brand-100 bg-white/90 p-6 shadow-sm backdrop-blur-sm">

@@ -1,9 +1,5 @@
 import { useState, useCallback } from 'react';
-import {
-  DEFAULT_COOKIE_PREFERENCES,
-  readCookiePreferences,
-  saveCookiePreferences,
-} from '../lib/privacyPreferences';
+import { DEFAULT_COOKIE_PREFERENCES, readCookiePreferences, saveCookiePreferences } from '../lib/privacyPreferences';
 
 export function useCookiePreferences() {
   const [cookiePreferences, setCookiePreferences] = useState(() => readCookiePreferences());

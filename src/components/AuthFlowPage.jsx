@@ -98,7 +98,8 @@ export function AuthFlowPage({
                 One Google login, role-based workspaces
               </h1>
               <p className="mt-4 text-lg text-slate-600">
-                Pick the role you want right now, then Hora sends you straight to the correct workspace and remembers your active role for the next visit.
+                Pick the role you want right now, then Hora sends you straight to the correct workspace and remembers
+                your active role for the next visit.
               </p>
             </div>
             <div className="rounded-3xl bg-ice-50 p-5 text-sm text-slate-600 md:max-w-sm">
@@ -153,16 +154,22 @@ export function AuthFlowPage({
                   }`}
                 >
                   <div className="flex items-start justify-between gap-4">
-                    <div className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${
-                      isActive ? 'bg-white/10 text-white' : 'bg-white text-brand-700'
-                    }`}>
-                      <Icon name={card.role === 'management' ? 'shield' : card.role === 'owner' ? 'home' : 'calendar'} />
+                    <div
+                      className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${
+                        isActive ? 'bg-white/10 text-white' : 'bg-white text-brand-700'
+                      }`}
+                    >
+                      <Icon
+                        name={card.role === 'management' ? 'shield' : card.role === 'owner' ? 'home' : 'calendar'}
+                      />
                       {card.eyebrow}
                     </div>
                     {hasRole ? (
-                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        isActive ? 'bg-emerald-400/20 text-emerald-100' : 'bg-emerald-50 text-emerald-700'
-                      }`}>
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                          isActive ? 'bg-emerald-400/20 text-emerald-100' : 'bg-emerald-50 text-emerald-700'
+                        }`}
+                      >
                         Enabled
                       </span>
                     ) : null}
@@ -173,14 +180,18 @@ export function AuthFlowPage({
                   <p className={`mt-4 text-sm leading-relaxed ${isActive ? 'text-white/75' : 'text-slate-600'}`}>
                     {card.description}
                   </p>
-                  <div className={`mt-6 rounded-2xl px-4 py-3 text-sm ${
-                    isActive ? 'bg-white/10 text-white/80' : 'bg-ice-50 text-slate-600'
-                  }`}>
+                  <div
+                    className={`mt-6 rounded-2xl px-4 py-3 text-sm ${
+                      isActive ? 'bg-white/10 text-white/80' : 'bg-ice-50 text-slate-600'
+                    }`}
+                  >
                     Redirect after login: {getDestinationPreview(card.role, nextPath)}
                   </div>
-                  <div className={`mt-4 rounded-2xl px-4 py-3 text-sm ${
-                    isActive ? 'bg-white/10 text-white/80' : 'bg-ice-50 text-slate-600'
-                  }`}>
+                  <div
+                    className={`mt-4 rounded-2xl px-4 py-3 text-sm ${
+                      isActive ? 'bg-white/10 text-white/80' : 'bg-ice-50 text-slate-600'
+                    }`}
+                  >
                     Scope: {card.destination}
                   </div>
                   <button
@@ -193,7 +204,9 @@ export function AuthFlowPage({
                         : 'bg-brand-900 text-white hover:bg-brand-800'
                     }`}
                   >
-                    {isSubmitting || isAuthLoading ? 'Opening Google Sign-In...' : getActionCopy({ authUser, authRole, availableRoles, role: card.role })}
+                    {isSubmitting || isAuthLoading
+                      ? 'Opening Google Sign-In...'
+                      : getActionCopy({ authUser, authRole, availableRoles, role: card.role })}
                   </button>
                 </article>
               );

@@ -14,7 +14,11 @@ export function TestimonialsSection({ ownerBenefits, testimonials }) {
               <article key={testimonial.name} className="rounded-2xl border border-ice-200 bg-white p-6 shadow-sm">
                 <div className="flex items-center gap-2">
                   {Array.from({ length: 5 }, (_, i) => (
-                    <Icon key={i} name="star" className={`text-sm ${i < testimonial.rating ? 'text-amber-400' : 'text-ice-200'}`} />
+                    <Icon
+                      key={i}
+                      name="star"
+                      className={`text-sm ${i < testimonial.rating ? 'text-amber-400' : 'text-ice-200'}`}
+                    />
                   ))}
                 </div>
                 <p className="mt-4 text-sm leading-relaxed text-slate-600">&ldquo;{testimonial.quote}&rdquo;</p>

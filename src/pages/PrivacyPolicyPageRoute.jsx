@@ -1,33 +1,27 @@
 const POLICY_SECTIONS = [
   {
     title: 'What We Collect',
-    body:
-      'We collect booking details, contact information, account profile data, and property-owner submissions needed to deliver Hora Staycation services. Payment forms are used only for checkout flow completion and we only retain limited transaction references required for booking records.',
+    body: 'We collect booking details, contact information, account profile data, and property-owner submissions needed to deliver Hora Staycation services. Payment forms are used only for checkout flow completion and we only retain limited transaction references required for booking records.',
   },
   {
     title: 'How We Use Data',
-    body:
-      'Personal data is used to confirm reservations, coordinate owner and management reviews, provide customer support, prevent abuse, and meet legal or operational obligations connected to the staycation platform.',
+    body: 'Personal data is used to confirm reservations, coordinate owner and management reviews, provide customer support, prevent abuse, and meet legal or operational obligations connected to the staycation platform.',
   },
   {
     title: 'Cookies And Local Storage',
-    body:
-      'Essential cookies and local storage keep you signed in, remember booking progress, and store your privacy preferences. Optional analytics or personalization technologies remain disabled unless you explicitly consent through the cookie banner.',
+    body: 'Essential cookies and local storage keep you signed in, remember booking progress, and store your privacy preferences. Optional analytics or personalization technologies remain disabled unless you explicitly consent through the cookie banner.',
   },
   {
     title: 'GDPR And PDPA Rights',
-    body:
-      'Guests, owners, and partners may request access, correction, deletion, restriction, or export of personal data where applicable under GDPR and Malaysia PDPA. We also honor consent withdrawal requests for any optional processing tied to cookies or marketing.',
+    body: 'Guests, owners, and partners may request access, correction, deletion, restriction, or export of personal data where applicable under GDPR and Malaysia PDPA. We also honor consent withdrawal requests for any optional processing tied to cookies or marketing.',
   },
   {
     title: 'Retention',
-    body:
-      'We keep personal data only as long as necessary for bookings, account administration, owner onboarding, dispute handling, and legal recordkeeping. Draft information stored in your browser can be cleared by using your browser storage controls or cookie settings.',
+    body: 'We keep personal data only as long as necessary for bookings, account administration, owner onboarding, dispute handling, and legal recordkeeping. Draft information stored in your browser can be cleared by using your browser storage controls or cookie settings.',
   },
   {
     title: 'Security Controls',
-    body:
-      'Production traffic must be served over HTTPS to encrypt data in transit. Booking and profile records are intended to be stored in Supabase/Postgres with provider-managed encryption at rest, scoped access controls, and audited management access.',
+    body: 'Production traffic must be served over HTTPS to encrypt data in transit. Booking and profile records are intended to be stored in Supabase/Postgres with provider-managed encryption at rest, scoped access controls, and audited management access.',
   },
 ];
 
@@ -44,8 +38,8 @@ export function PrivacyPolicyPageRoute({ onShowPage, onManageCookies }) {
           </h1>
           <p className="mt-5 text-lg leading-relaxed text-slate-600">
             Hora Staycation protects personal data for guests, owners, and management users in line with GDPR and
-            Malaysia&apos;s Personal Data Protection Act. This page explains what we collect, why we collect it, and
-            how consent and security controls are handled across the platform.
+            Malaysia&apos;s Personal Data Protection Act. This page explains what we collect, why we collect it, and how
+            consent and security controls are handled across the platform.
           </p>
         </div>
 
@@ -80,7 +74,11 @@ export function PrivacyPolicyPageRoute({ onShowPage, onManageCookies }) {
         <div className="mt-10 rounded-3xl border border-brand-100 bg-white p-6 shadow-sm">
           <h2 className="font-display text-2xl font-bold text-brand-950">Contact And Consent</h2>
           <p className="mt-3 text-sm leading-relaxed text-slate-600 md:text-base">
-            For privacy requests, contact <a className="font-semibold text-brand-700 hover:text-brand-900" href={`mailto:${privacyContactEmail}`}>{privacyContactEmail}</a>. You can review or update cookie preferences at any time from this page.
+            For privacy requests, contact{' '}
+            <a className="font-semibold text-brand-700 hover:text-brand-900" href={`mailto:${privacyContactEmail}`}>
+              {privacyContactEmail}
+            </a>
+            . You can review or update cookie preferences at any time from this page.
           </p>
           <div className="mt-6 flex flex-wrap gap-4">
             <button type="button" onClick={onManageCookies} className="btn-outline px-6 py-3 text-sm">

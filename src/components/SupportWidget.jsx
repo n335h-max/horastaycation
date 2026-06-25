@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { startTransition, useEffect, useState } from 'react';
 import { Icon } from './Icon';
 
 const QUICK_TOPICS = [
@@ -18,11 +18,13 @@ export function SupportWidget({ open, onOpen, onClose, onSubmit, authUser, curre
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    setForm((current) => ({
-      ...current,
-      name: current.name || authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || '',
-      email: current.email || authUser?.email || '',
-    }));
+    startTransition(() => {
+      setForm((current) => ({
+        ...current,
+        name: current.name || authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || '',
+        email: current.email || authUser?.email || '',
+      }));
+    });
   }, [authUser]);
 
   function handleChange(event) {
@@ -33,9 +35,10 @@ export function SupportWidget({ open, onOpen, onClose, onSubmit, authUser, curre
       setForm((current) => ({
         ...current,
         topic: value,
-        message: current.message === QUICK_TOPICS.find((item) => item.value === current.topic)?.message
-          ? nextTopic?.message || current.message
-          : current.message,
+        message:
+          current.message === QUICK_TOPICS.find((item) => item.value === current.topic)?.message
+            ? nextTopic?.message || current.message
+            : current.message,
       }));
       return;
     }
@@ -141,7 +144,13 @@ export function SupportWidget({ open, onOpen, onClose, onSubmit, authUser, curre
                 <label className="form-label" htmlFor="support-topic">
                   Topic
                 </label>
-                <select id="support-topic" name="topic" value={form.topic} onChange={handleChange} className="form-input">
+                <select
+                  id="support-topic"
+                  name="topic"
+                  value={form.topic}
+                  onChange={handleChange}
+                  className="form-input"
+                >
                   {QUICK_TOPICS.map((topic) => (
                     <option key={topic.value} value={topic.value}>
                       {topic.value}
@@ -165,7 +174,11 @@ export function SupportWidget({ open, onOpen, onClose, onSubmit, authUser, curre
                 />
               </div>
 
-              <button type="submit" disabled={isSubmitting} className="btn-primary w-full py-3 text-sm disabled:opacity-60">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="btn-primary w-full py-3 text-sm disabled:opacity-60"
+              >
                 <span className="inline-flex items-center gap-2">
                   {isSubmitting ? 'Sending support request…' : 'Send Message'}
                   <Icon name="send" />

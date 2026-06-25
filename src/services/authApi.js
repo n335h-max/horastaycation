@@ -1,4 +1,3 @@
-
 import { isManagementEmailAllowed, isSupabaseConfigured, supabase } from '../lib/supabase';
 import { SUPPORTED_ROLES_SET, ACTIVE_ROLE_STORAGE_KEY, AVAILABLE_ROLES_STORAGE_KEY } from '../lib/constants';
 
@@ -7,17 +6,29 @@ const SUPPORTED_ROLES = SUPPORTED_ROLES_SET;
 
 function readStorage(key) {
   if (typeof window === 'undefined') return '';
-  try { return window.localStorage.getItem(key) || ''; } catch { return ''; }
+  try {
+    return window.localStorage.getItem(key) || '';
+  } catch {
+    return '';
+  }
 }
 
 function writeStorage(key, value) {
   if (typeof window === 'undefined') return;
-  try { window.localStorage.setItem(key, value); } catch { /* noop */ }
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    /* noop */
+  }
 }
 
 function removeStorage(key) {
   if (typeof window === 'undefined') return;
-  try { window.localStorage.removeItem(key); } catch { /* noop */ }
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    /* noop */
+  }
 }
 
 export function getRequestedRole(role) {
@@ -73,11 +84,7 @@ export async function getUserProfile(userId) {
     return null;
   }
 
-  const { data, error } = await supabase
-    .from(PROFILE_TABLE)
-    .select('*')
-    .eq('id', userId)
-    .maybeSingle();
+  const { data, error } = await supabase.from(PROFILE_TABLE).select('*').eq('id', userId).maybeSingle();
 
   if (error) {
     return null;
@@ -111,7 +118,9 @@ export async function syncUserProfile(session, requestedRole) {
 
   const { error } = await supabase.from(PROFILE_TABLE).upsert(profilePayload, { onConflict: 'id' });
 
-  const profile = error ? { ...existingProfile, ...profilePayload } : (await getUserProfile(session.user.id)) || profilePayload;
+  const profile = error
+    ? { ...existingProfile, ...profilePayload }
+    : (await getUserProfile(session.user.id)) || profilePayload;
   const authState = getResolvedAuthState(session, profile, role);
   persistRoleState(authState.activeRole, authState.availableRoles);
 
@@ -248,5 +257,11 @@ function parseRoles(value) {
 }
 
 function normalizeRoles(roles) {
-  return [...new Set(parseRoles(roles).map((role) => getRequestedRole(role)).filter((role) => SUPPORTED_ROLES.has(role)))];
+  return [
+    ...new Set(
+      parseRoles(roles)
+        .map((role) => getRequestedRole(role))
+        .filter((role) => SUPPORTED_ROLES.has(role)),
+    ),
+  ];
 }

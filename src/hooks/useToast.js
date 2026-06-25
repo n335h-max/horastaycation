@@ -17,10 +17,7 @@ export function useToast() {
   }, [toasts]);
 
   const pushToast = useCallback((message, type = 'info', icon = 'email') => {
-    setToasts((current) => [
-      ...current,
-      { id: crypto.randomUUID(), message, type, icon },
-    ]);
+    setToasts((current) => [...current, { id: crypto.randomUUID(), message, type, icon }]);
   }, []);
 
   return {

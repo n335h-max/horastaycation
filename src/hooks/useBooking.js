@@ -1,20 +1,14 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { startTransition, useState, useMemo, useCallback, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import {
-  clearPendingStripeCheckout,
-  getPendingStripeCheckout,
-  savePendingStripeCheckout,
-} from '../lib/stripeCheckout';
-import {
-  submitBooking,
-  saveBookingDraft as persistBookingDraft,
-} from '../services/horaApi';
+import { clearPendingStripeCheckout, getPendingStripeCheckout, savePendingStripeCheckout } from '../lib/stripeCheckout';
+import { submitBooking, saveBookingDraft as persistBookingDraft } from '../services/horaApi';
 import { validateWithSchema, bookingSchema } from '../lib/validation';
 import { isRangeBlocked } from '../lib/guestFeatures';
 import { SERVICE_FEE_RATE } from '../lib/constants';
 import { APP_PATHS } from '../lib/routes';
+import { createCheckoutSessionWithRetry } from '../lib/apiRetry';
 
-export function useBooking({ featuredListings, store, pushToast, recordAnalytics }) {
+export function useBooking({ featuredListings, store, setStore = () => {}, pushToast, recordAnalytics }) {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -70,8 +64,6 @@ export function useBooking({ featuredListings, store, pushToast, recordAnalytics
   // Verify Stripe payment on success page
   useEffect(() => {
     if (location.pathname !== APP_PATHS.bookingSuccess || !bookingSuccessSessionId) {
-      setIsVerifyingStripePayment(false);
-      setStripeVerificationError('');
       return;
     }
 
@@ -82,7 +74,9 @@ export function useBooking({ featuredListings, store, pushToast, recordAnalytics
 
       if (!pendingCheckout) {
         if (isActive) {
-          setStripeVerificationError('Stripe returned successfully, but the pending booking data was not found on this device.');
+          setStripeVerificationError(
+            'Stripe returned successfully, but the pending booking data was not found on this device.',
+          );
         }
         return;
       }
@@ -91,7 +85,9 @@ export function useBooking({ featuredListings, store, pushToast, recordAnalytics
       setStripeVerificationError('');
 
       try {
-        const response = await fetch(`/api/verify-checkout-session?session_id=${encodeURIComponent(bookingSuccessSessionId)}`);
+        const response = await fetch(
+          `/api/verify-checkout-session?session_id=${encodeURIComponent(bookingSuccessSessionId)}`,
+        );
         const payload = await response.json();
 
         if (!response.ok || !payload?.paid) {
@@ -124,7 +120,11 @@ export function useBooking({ featuredListings, store, pushToast, recordAnalytics
         await recordAnalytics('stripe_payment_success', { sessionId: bookingSuccessSessionId });
 
         if (!bookingResult.remote.saved && !bookingResult.remote.alreadyProcessed) {
-          pushToast('Payment is confirmed, but the booking only saved locally because remote sync is not fully configured.', 'warning', 'calendar');
+          pushToast(
+            'Payment is confirmed, but the booking only saved locally because remote sync is not fully configured.',
+            'warning',
+            'calendar',
+          );
         }
 
         return bookingResult;
@@ -137,102 +137,113 @@ export function useBooking({ featuredListings, store, pushToast, recordAnalytics
     }
 
     verifyStripePayment();
-    return () => { isActive = false; };
+    return () => {
+      isActive = false;
+    };
   }, [bookingSuccessSessionId, location.pathname]);
 
   // Handle cancelled checkout
   useEffect(() => {
     if (location.pathname !== APP_PATHS.booking || bookingCheckoutState !== 'cancelled') return;
 
-    pushToast('Stripe checkout was cancelled. Your booking details are still here if you want to try again.', 'warning', 'lock');
+    pushToast(
+      'Stripe checkout was cancelled. Your booking details are still here if you want to try again.',
+      'warning',
+      'lock',
+    );
     void recordAnalytics('stripe_checkout_cancelled', {
       propertyId: store.bookingDraft.property || '',
     });
   }, [bookingCheckoutState, location.pathname]);
 
-  const handleBookingChange = useCallback((event) => {
-    const { name, value } = event.target;
-    setStore((current) => ({
-      ...current,
-      bookingDraft: {
-        ...current.bookingDraft,
-        [name]: value,
-      },
-    }));
+  const handleBookingChange = useCallback(
+    (event) => {
+      const { name, value } = event.target;
+      setStore((current) => ({
+        ...current,
+        bookingDraft: {
+          ...current.bookingDraft,
+          [name]: value,
+        },
+      }));
 
-    if (bookingErrors[name]) {
-      setBookingErrors((current) => ({ ...current, [name]: undefined }));
-    }
-  }, [bookingErrors]);
+      if (bookingErrors[name]) {
+        setBookingErrors((current) => ({ ...current, [name]: undefined }));
+      }
+    },
+    [bookingErrors],
+  );
 
   // We need setStore here, which complicates things. Let's just handle booking state separately.
-  const handleProceedToPayment = useCallback((event, currentStore, setStore) => {
-    event.preventDefault();
-    setIsOpeningPayment(true);
-    const result = validateWithSchema(bookingSchema, currentStore.bookingDraft);
+  const handleProceedToPayment = useCallback(
+    (event, currentStore, setStore) => {
+      event.preventDefault();
+      setIsOpeningPayment(true);
+      const result = validateWithSchema(bookingSchema, currentStore.bookingDraft);
 
-    if (!result.success) {
-      setBookingErrors(result.errors);
-      pushToast('Fix the highlighted booking fields before continuing.', 'warning', 'calendar');
-      setIsOpeningPayment(false);
-      return;
-    }
-
-    const selectedProperty = featuredListings.find((item) => item.id === currentStore.bookingDraft.property);
-
-    if (isRangeBlocked(selectedProperty, currentStore.bookingDraft.checkin, currentStore.bookingDraft.checkout)) {
-      setBookingErrors({ checkin: ['Selected dates are unavailable for this staycation.'] });
-      pushToast('Selected dates are unavailable. Please choose a different stay window.', 'warning', 'calendar');
-      setIsOpeningPayment(false);
-      return;
-    }
-
-    setBookingErrors({});
-    setStripeVerificationError('');
-    setPaymentOpen(true);
-    setIsOpeningPayment(false);
-  }, [featuredListings, pushToast, bookingSummary]);
-
-  const handlePaymentSubmit = useCallback(async (event, currentStore, setStore) => {
-    event.preventDefault();
-    setIsSubmittingPayment(true);
-
-    if (!bookingSummary) {
-      pushToast('Your booking summary is incomplete.', 'warning', 'calendar');
-      setIsSubmittingPayment(false);
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bookingForm: currentStore.bookingDraft,
-          bookingSummary,
-        }),
-      });
-      const payload = await response.json();
-
-      if (!response.ok || !payload?.url || !payload?.sessionId) {
-        throw new Error(payload?.error || 'Unable to start Stripe checkout.');
+      if (!result.success) {
+        setBookingErrors(result.errors);
+        pushToast('Fix the highlighted booking fields before continuing.', 'warning', 'calendar');
+        setIsOpeningPayment(false);
+        return;
       }
 
-      savePendingStripeCheckout(payload.sessionId, {
-        bookingForm: currentStore.bookingDraft,
-        bookingSummary,
-      });
-      await recordAnalytics('stripe_checkout_started', {
-        propertyId: currentStore.bookingDraft.property,
-        sessionId: payload.sessionId,
-      });
-      window.location.assign(payload.url);
-    } catch (error) {
-      pushToast(error instanceof Error ? error.message : 'Unable to start Stripe checkout.', 'warning', 'lock');
-    } finally {
-      setIsSubmittingPayment(false);
-    }
-  }, [bookingSummary, recordAnalytics, pushToast]);
+      const selectedProperty = featuredListings.find((item) => item.id === currentStore.bookingDraft.property);
+
+      if (isRangeBlocked(selectedProperty, currentStore.bookingDraft.checkin, currentStore.bookingDraft.checkout)) {
+        setBookingErrors({ checkin: ['Selected dates are unavailable for this staycation.'] });
+        pushToast('Selected dates are unavailable. Please choose a different stay window.', 'warning', 'calendar');
+        setIsOpeningPayment(false);
+        return;
+      }
+
+      setBookingErrors({});
+      setStripeVerificationError('');
+      setPaymentOpen(true);
+      setIsOpeningPayment(false);
+    },
+    [featuredListings, pushToast, bookingSummary],
+  );
+
+  const handlePaymentSubmit = useCallback(
+    async (event, currentStore, setStore) => {
+      event.preventDefault();
+      setIsSubmittingPayment(true);
+
+      if (!bookingSummary) {
+        pushToast('Your booking summary is incomplete.', 'warning', 'calendar');
+        setIsSubmittingPayment(false);
+        return;
+      }
+
+      try {
+        const payload = await createCheckoutSessionWithRetry(
+          {
+            bookingForm: currentStore.bookingDraft,
+            bookingSummary,
+          },
+          { maxRetries: 3, initialDelayMs: 1000 },
+        );
+
+        savePendingStripeCheckout(payload.sessionId, {
+          bookingForm: currentStore.bookingDraft,
+          bookingSummary,
+        });
+        await recordAnalytics('stripe_checkout_started', {
+          propertyId: currentStore.bookingDraft.property,
+          sessionId: payload.sessionId,
+        });
+        window.location.assign(payload.url);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unable to start Stripe checkout. Please try again.';
+        pushToast(message, 'warning', 'lock');
+        console.error('[useBooking] Payment submission failed:', error);
+      } finally {
+        setIsSubmittingPayment(false);
+      }
+    },
+    [bookingSummary, recordAnalytics, pushToast],
+  );
 
   return {
     paymentOpen,

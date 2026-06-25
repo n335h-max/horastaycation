@@ -63,7 +63,6 @@ export function useAuth() {
   // Initial session hydration & auth state listener
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) {
-      setIsAuthLoading(false);
       return undefined;
     }
 
@@ -190,17 +189,14 @@ export function useAuth() {
     [navigate, location.pathname],
   );
 
-  const handleGoogleSignIn = useCallback(
-    async (role, nextPath) => {
-      setIsLoggingIn(true);
-      const result = await signInWithGoogle(role, buildAuthPath(role, nextPath));
-      if (!result?.started) {
-        setIsLoggingIn(false);
-      }
-      return result;
-    },
-    [],
-  );
+  const handleGoogleSignIn = useCallback(async (role, nextPath) => {
+    setIsLoggingIn(true);
+    const result = await signInWithGoogle(role, buildAuthPath(role, nextPath));
+    if (!result?.started) {
+      setIsLoggingIn(false);
+    }
+    return result;
+  }, []);
 
   const handleRoleSelect = useCallback(
     async (role, nextPath, options = {}, pushToast) => {
@@ -218,9 +214,7 @@ export function useAuth() {
 
       if (!nextAuthState.availableRoles.includes(role) || nextAuthState.activeRole !== role) {
         pushToast?.(
-          role === 'management'
-            ? 'Management access is limited to allowed emails.'
-            : `Unable to switch to ${role}.`,
+          role === 'management' ? 'Management access is limited to allowed emails.' : `Unable to switch to ${role}.`,
           'warning',
           'lock',
         );
