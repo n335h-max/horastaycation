@@ -223,6 +223,7 @@ export default function App() {
   const [isAuthLoading, setIsAuthLoading] = useState(Boolean(isSupabaseConfigured));
   const hasHydratedListingsRef = useRef(false);
   const hasHydratedBookingsRef = useRef(false);
+  const handledRequestedRoleRef = useRef('');
 
   const { formatCurrency, formatCompactNumber, formatDate } = useFormatters();
   const sourceListings = store.managementListings?.length ? store.managementListings : FEATURED_PROPERTIES;
@@ -363,6 +364,8 @@ export default function App() {
         return;
       }
 
+      setIsAuthLoading(false);
+
       const profile = await getUserProfile(session.user.id);
 
       if (!isActive) {
@@ -394,6 +397,8 @@ export default function App() {
         return;
       }
 
+      setIsAuthLoading(false);
+
       const profile = await getUserProfile(session.user.id);
 
       if (!isActive) {
@@ -420,6 +425,12 @@ export default function App() {
         return;
       }
 
+      const requestKey = `${authSession.user.id}:${location.pathname}:${location.search}`;
+
+      if (handledRequestedRoleRef.current === requestKey) {
+        return;
+      }
+
       const params = new URLSearchParams(location.search);
       const requestedRole = params.get('auth_role');
       const nextPath = params.get('next');
@@ -428,13 +439,14 @@ export default function App() {
         return;
       }
 
-      const authState = await syncUserProfile(authSession, requestedRole);
+      handledRequestedRoleRef.current = requestKey;
 
-      if (!isActive || !authState) {
+      const authState = getResolvedAuthState(authSession, authProfile, requestedRole);
+
+      if (!isActive) {
         return;
       }
 
-      setAuthProfile(authState.profile);
       setAuthRole(authState.activeRole);
       setAvailableRoles(authState.availableRoles);
       navigate(getSafeNextPath(nextPath, authState.activeRole), { replace: true });
@@ -445,6 +457,20 @@ export default function App() {
         'success',
         'lock',
       );
+
+      void syncUserProfile(authSession, requestedRole)
+        .then((nextAuthState) => {
+          if (!isActive || !nextAuthState) {
+            return;
+          }
+
+          setAuthProfile(nextAuthState.profile);
+          setAuthRole(nextAuthState.activeRole);
+          setAvailableRoles(nextAuthState.availableRoles);
+        })
+        .catch(() => {
+          /* noop */
+        });
     }
 
     applyRequestedRole();
@@ -452,7 +478,7 @@ export default function App() {
     return () => {
       isActive = false;
     };
-  }, [authSession, location.pathname, location.search, navigate]);
+  }, [authSession, authProfile, location.pathname, location.search, navigate]);
 
   useEffect(() => {
     if (!authSession?.user || !availableRoles.length) {
