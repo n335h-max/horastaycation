@@ -257,6 +257,9 @@ export function SiteHeader({
   const mobileSignOutClass = useHomeChrome
     ? 'mt-3 flex w-full items-center justify-center rounded-2xl bg-white/12 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/18'
     : 'mt-3 flex w-full items-center justify-center rounded-2xl bg-brand-950 px-4 py-3 text-sm font-semibold text-white';
+  const mobileGoToDashboardClass = useHomeChrome
+    ? 'mt-3 flex w-full items-center justify-center rounded-2xl bg-teal-400 px-4 py-3 text-sm font-semibold text-brand-950 transition hover:bg-teal-300'
+    : 'mt-3 flex w-full items-center justify-center rounded-2xl bg-teal-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-400';
   const mobileNavItemClass = useHomeChrome
     ? 'block w-full rounded-2xl border border-transparent px-3 py-3 text-left font-medium text-white/85 transition hover:border-white/20 hover:bg-white/10 hover:text-white'
     : 'block w-full rounded-2xl border border-transparent px-3 py-3 text-left font-medium text-slate-700 transition hover:border-ice-200 hover:bg-ice-50';
@@ -411,6 +414,17 @@ export function SiteHeader({
                         </div>
                       )}
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onGoToDashboard?.();
+                        onToggleMobile(false);
+                      }}
+                      className={mobileGoToDashboardClass}
+                    >
+                      Go to Dashboard
+                    </button>
 
                     <button
                       type="button"
