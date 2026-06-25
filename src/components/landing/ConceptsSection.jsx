@@ -59,6 +59,71 @@ function ConceptCard({ concept }) {
 
 function AddOnCard({ item }) {
   const isPlants = item.id === 'plants';
+  const isFocSignboard = item.id === 'foc-signboard';
+
+  if (isFocSignboard) {
+    return (
+      <article className="rounded-2xl border border-ice-200 bg-white p-6 shadow-sm">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)]">
+          <div>
+            {item.image ? (
+              <div className="mb-5 overflow-hidden rounded-2xl bg-ice-100">
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  width="640"
+                  height="420"
+                  loading="lazy"
+                  className="aspect-[4/3] h-full w-full object-cover"
+                />
+              </div>
+            ) : null}
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
+                <Icon name={item.icon} className="text-xl" />
+              </div>
+              {item.label ? (
+                <span className="rounded-full bg-ice-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-brand-700">
+                  {item.label}
+                </span>
+              ) : null}
+            </div>
+            <h3 className="font-display text-xl font-bold text-brand-950">{item.title}</h3>
+            {item.highlight ? (
+              <p className="mt-2 text-xs font-semibold uppercase tracking-[0.24em] text-brand-500">{item.highlight}</p>
+            ) : null}
+            <p className="mt-3 text-sm leading-relaxed text-slate-500">{item.summary}</p>
+            {item.bullets ? (
+              <div className="mt-5 space-y-2">
+                {item.bullets.map((bullet) => (
+                  <div key={bullet} className="flex items-start gap-2 text-sm text-slate-600">
+                    <span className="mt-1 inline-flex h-2 w-2 rounded-full bg-accent-400" />
+                    <span>{bullet}</span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          {item.features ? (
+            <div className="grid h-full gap-4 sm:grid-cols-2 lg:content-start">
+              {item.features.map((feature) => (
+                <div
+                  key={feature.title}
+                  className="h-full overflow-hidden rounded-2xl border border-ice-200 bg-ice-50 p-4"
+                >
+                  <h4 className="break-words text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-700">
+                    {feature.title}
+                  </h4>
+                  <p className="mt-2 break-words text-[13px] leading-6 text-slate-600">{feature.description}</p>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </article>
+    );
+  }
 
   return (
     <article
@@ -234,12 +299,7 @@ export function ConceptsSection({ onShowPage, onScrollToSection }) {
           </div>
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {ADD_ON_OPTIONS.map((item) => (
-              <div
-                key={item.title}
-                className={item.id === 'plants' ? 'md:col-span-2 xl:col-span-2' : ''}
-              >
-                <AddOnCard item={item} />
-              </div>
+              <AddOnCard key={item.title} item={item} />
             ))}
           </div>
         </div>
