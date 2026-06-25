@@ -39,11 +39,11 @@ export function summarizeAnalytics(events = [], bookingTransactions = [], suppor
     return nextSummary;
   }, {});
 
-  const wishlistedPropertyIds = new Set(
+  const uniqueWishlistedProperties = new Set(
     Object.values(wishlistByUser)
       .flatMap((wishlist) => (Array.isArray(wishlist) ? wishlist : []))
       .filter(Boolean),
-  );
+  ).size;
 
   const searches = counts.search || 0;
   const bookings = bookingTransactions.length;
@@ -58,7 +58,7 @@ export function summarizeAnalytics(events = [], bookingTransactions = [], suppor
     supportOpens: counts.support_open || 0,
     supportMessages: supportRequests.length,
     installPrompts: counts.install_prompt || 0,
-    uniqueWishlistedProperties: wishlistedPropertyIds.size,
+    uniqueWishlistedProperties,
     conversionRate,
     recentEvents: events.slice(0, 6),
   };
