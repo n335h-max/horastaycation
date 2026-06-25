@@ -58,8 +58,16 @@ function ConceptCard({ concept }) {
 }
 
 function AddOnCard({ item }) {
+  const isPlants = item.id === 'plants';
+
   return (
-    <article className="rounded-2xl border border-ice-200 bg-white p-6 shadow-sm">
+    <article
+      className={`rounded-2xl border p-6 shadow-sm ${
+        isPlants
+          ? 'border-emerald-200 bg-gradient-to-b from-emerald-50/70 to-white shadow-[0_12px_30px_rgba(16,185,129,0.16)]'
+          : 'border-ice-200 bg-white'
+      }`}
+    >
       {item.image ? (
         <div className="mb-5 overflow-hidden rounded-2xl bg-ice-100">
           <img
@@ -73,17 +81,32 @@ function AddOnCard({ item }) {
         </div>
       ) : null}
       <div className="mb-4 flex items-start justify-between gap-4">
-        <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
+        <div
+          className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl ${
+            isPlants ? 'bg-emerald-100 text-emerald-700' : 'bg-brand-50 text-brand-600'
+          }`}
+        >
           <Icon name={item.icon} className="text-xl" />
         </div>
         {item.label ? (
-          <span className="rounded-full bg-ice-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-brand-700">
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${
+              isPlants ? 'bg-emerald-100 text-emerald-800' : 'bg-ice-50 text-brand-700'
+            }`}
+          >
             {item.label}
           </span>
         ) : null}
       </div>
+      {isPlants ? (
+        <div className="mb-3 inline-flex rounded-full bg-emerald-600 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white">
+          Featured enhancement
+        </div>
+      ) : null}
       <h3 className="font-display text-xl font-bold text-brand-950">{item.title}</h3>
-      {item.highlight ? <p className="mt-2 text-xs font-semibold uppercase tracking-[0.24em] text-brand-500">{item.highlight}</p> : null}
+      {item.highlight ? (
+        <p className="mt-2 text-xs font-semibold uppercase tracking-[0.24em] text-brand-500">{item.highlight}</p>
+      ) : null}
       <p className="mt-3 text-sm leading-relaxed text-slate-500">{item.summary}</p>
       {item.bullets ? (
         <div className="mt-5 space-y-2">
@@ -96,18 +119,22 @@ function AddOnCard({ item }) {
         </div>
       ) : null}
       {item.varieties ? (
-        <div className={`mt-5 grid gap-6 ${item.id === 'plants' ? 'lg:grid-cols-2' : 'sm:grid-cols-2'}`}>
+        <div className={`mt-5 grid gap-6 ${isPlants ? 'lg:grid-cols-2' : 'sm:grid-cols-2'}`}>
           {item.varieties.map((variety) => (
-            <div key={variety.title} className="rounded-2xl bg-ice-50 p-4">
+            <div key={variety.title} className={`rounded-2xl p-4 ${isPlants ? 'bg-emerald-50/70' : 'bg-ice-50'}`}>
               {variety.image ? (
-                <div className="relative mb-4 overflow-hidden rounded-2xl bg-white">
+                <div
+                  className={`relative mb-4 overflow-hidden rounded-2xl bg-white ${
+                    isPlants ? 'ring-1 ring-emerald-200 shadow-md shadow-emerald-100/80' : ''
+                  }`}
+                >
                   <img
                     src={variety.image}
                     alt={variety.title}
                     width="320"
                     height="240"
                     loading="lazy"
-                    className={`h-full w-full object-cover ${item.id === 'plants' ? 'aspect-[4/5] sm:aspect-[3/4]' : 'aspect-[4/3]'}`}
+                    className={`h-full w-full object-cover ${isPlants ? 'aspect-[5/6] sm:aspect-[4/5]' : 'aspect-[4/3]'}`}
                   />
                 </div>
               ) : null}
@@ -124,9 +151,11 @@ function AddOnCard({ item }) {
       {item.features ? (
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           {item.features.map((feature) => (
-            <div key={feature.title} className="rounded-2xl border border-ice-200 bg-ice-50 p-4">
-              <h4 className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-700">{feature.title}</h4>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">{feature.description}</p>
+            <div key={feature.title} className="h-full overflow-hidden rounded-2xl border border-ice-200 bg-ice-50 p-4">
+              <h4 className="break-words text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-700">
+                {feature.title}
+              </h4>
+              <p className="mt-2 break-words text-[13px] leading-6 text-slate-600">{feature.description}</p>
             </div>
           ))}
         </div>
@@ -145,13 +174,18 @@ export function ConceptsSection({ onShowPage, onScrollToSection }) {
           <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-accent-400">For Owners</p>
           <h2 className="font-display text-4xl font-bold text-white md:text-6xl">Build with Hora</h2>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/65">
-            Hora works with property owners to build, design, and list curated staycation spaces. Submit your details and let us help bring your space to life.
+            Hora works with property owners to build, design, and list curated staycation spaces. Submit your details
+            and let us help bring your space to life.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <button type="button" onClick={() => onShowPage('owner-signup')} className="btn-accent px-8 py-4 text-base">
               Submit Your Property
             </button>
-            <button type="button" onClick={() => onScrollToSection('proposal-projects')} className="rounded-xl border border-white/20 bg-transparent px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-white/10">
+            <button
+              type="button"
+              onClick={() => onScrollToSection('proposal-projects')}
+              className="rounded-xl border border-white/20 bg-transparent px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-white/10"
+            >
               See Past Projects
             </button>
           </div>
@@ -179,7 +213,9 @@ export function ConceptsSection({ onShowPage, onScrollToSection }) {
           <div className="mb-12 text-center">
             <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-brand-500">Design Concepts</p>
             <h2 className="font-display text-3xl font-bold text-brand-950 md:text-4xl">Choose Your Concept</h2>
-            <p className="mt-2 text-slate-500">Each concept comes with curated furniture, colour palette, and spatial layout guidance.</p>
+            <p className="mt-2 text-slate-500">
+              Each concept comes with curated furniture, colour palette, and spatial layout guidance.
+            </p>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
             {CONCEPT_OPTIONS.map((concept) => (
