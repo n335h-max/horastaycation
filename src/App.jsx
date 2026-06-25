@@ -143,10 +143,20 @@ function getSafeNextPath(nextPath, role) {
   return getDefaultPathForRole(role);
 }
 
+function getAuthReturnPath(role, nextPath) {
+  const safeNextPath = getSafeNextPath(nextPath, role);
+
+  if (safeNextPath === APP_PATHS.authLogin) {
+    return getDefaultPathForRole(role);
+  }
+
+  return safeNextPath;
+}
+
 function buildAuthPath(role, nextPath) {
   const params = new URLSearchParams();
   params.set('role', role);
-  params.set('next', getSafeNextPath(nextPath, role));
+  params.set('next', getAuthReturnPath(role, nextPath));
   return `${APP_PATHS.authLogin}?${params.toString()}`;
 }
 
@@ -870,12 +880,12 @@ export default function App() {
   }
 
   function openAuthPage(role = 'client', nextPath) {
-    navigate(buildAuthPath(role, nextPath || location.pathname));
+    navigate(buildAuthPath(role, getAuthReturnPath(role, nextPath || location.pathname)));
   }
 
   async function handleGoogleSignIn(role, nextPath) {
     setIsLoggingIn(true);
-    const result = await signInWithGoogle(role, buildAuthPath(role, nextPath));
+    const result = await signInWithGoogle(role, buildAuthPath(role, getAuthReturnPath(role, nextPath)));
     if (!result?.started) {
       pushToast('Google sign-in is unavailable until Supabase is configured.', 'warning', 'lock');
     }
