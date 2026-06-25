@@ -80,7 +80,15 @@ function UserAvatarIndicator({ authUser, authRole, isLanding = false }) {
   );
 }
 
-function UserProfileMenu({ authUser, authRole, availableRoles, onRoleSwitch, onSignOut, isLanding = false }) {
+function UserProfileMenu({
+  authUser,
+  authRole,
+  availableRoles,
+  onRoleSwitch,
+  onGoToDashboard,
+  onSignOut,
+  isLanding = false,
+}) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
   const badge = getAuthBadgeCopy(authUser, authRole);
@@ -123,6 +131,9 @@ function UserProfileMenu({ authUser, authRole, availableRoles, onRoleSwitch, onS
   const signOutClass = isLanding
     ? 'bg-white/10 text-white hover:bg-white/16'
     : 'bg-ice-50 text-brand-900 hover:bg-ice-100';
+  const goToDashboardClass = isLanding
+    ? 'bg-teal-400 text-brand-950 hover:bg-teal-300'
+    : 'bg-teal-500 text-white hover:bg-teal-400';
 
   return (
     <div ref={containerRef} className="relative">
@@ -172,6 +183,17 @@ function UserProfileMenu({ authUser, authRole, availableRoles, onRoleSwitch, onS
             type="button"
             onClick={() => {
               setOpen(false);
+              onGoToDashboard?.();
+            }}
+            className={`mt-3 flex w-full items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition ${goToDashboardClass}`}
+          >
+            Go to Dashboard
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
               onSignOut?.();
             }}
             className={`mt-4 flex w-full items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition ${signOutClass}`}
@@ -194,6 +216,7 @@ export function SiteHeader({
   authRole,
   availableRoles = ['client'],
   onRoleSwitch,
+  onGoToDashboard,
   onOpenAuth,
   onSignOut,
   headerAction,
@@ -320,6 +343,7 @@ export function SiteHeader({
               authRole={authRole}
               availableRoles={availableRoles}
               onRoleSwitch={onRoleSwitch}
+              onGoToDashboard={onGoToDashboard}
               onSignOut={onSignOut}
               isLanding={useHomeChrome}
             />

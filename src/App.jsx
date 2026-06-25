@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, startTransition, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { SiteFooter, SiteHeader, ToastStack } from './components/SiteChrome';
@@ -125,7 +125,12 @@ const ROLE_DEFAULT_PATHS = {
   client: APP_PATHS.booking,
   management: APP_PATHS.dashboard,
 };
-const LISTING_SYNC_PATHS = new Set([APP_PATHS.landing, APP_PATHS.booking, APP_PATHS.dashboard, APP_PATHS.managementListings]);
+const LISTING_SYNC_PATHS = new Set([
+  APP_PATHS.landing,
+  APP_PATHS.booking,
+  APP_PATHS.dashboard,
+  APP_PATHS.managementListings,
+]);
 const BOOKING_SYNC_PATHS = new Set([APP_PATHS.dashboard]);
 
 function getDefaultPathForRole(role) {
@@ -217,18 +222,10 @@ export default function App() {
   const featuredListings = dashboardListings.filter(
     (listing) => listing.publishStatus !== 'draft' && !listing.isDeleted,
   );
-  const wishlistIds = useMemo(
-    () => getWishlistIds(store, authSession?.user),
-    [authSession?.user, store],
-  );
+  const wishlistIds = useMemo(() => getWishlistIds(store, authSession?.user), [authSession?.user, store]);
   const analyticsSummary = useMemo(
     () =>
-      summarizeAnalytics(
-        store.analyticsEvents,
-        store.bookingTransactions,
-        store.supportRequests,
-        store.wishlistByUser,
-      ),
+      summarizeAnalytics(store.analyticsEvents, store.bookingTransactions, store.supportRequests, store.wishlistByUser),
     [store.analyticsEvents, store.bookingTransactions, store.supportRequests, store.wishlistByUser],
   );
   const canInstallApp = Boolean(deferredInstallPrompt);
@@ -239,8 +236,25 @@ export default function App() {
         ? { label: 'Back to Dashboard', onClick: () => navigate(APP_PATHS.dashboard) }
         : null;
 
-  useEffect(() => {
-    setMobileOpen(false);
+  function handleGoToDashboard() {
+    if (authRole === 'management') {
+      navigate(APP_PATHS.dashboard);
+      return;
+    }
+
+    if (authRole === 'owner') {
+      navigate(APP_PATHS.ownerDashboard);
+      return;
+    }
+
+    navigate(APP_PATHS.booking);
+  }
+
+  useLayoutEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    startTransition(() => {
+      setMobileOpen(false);
+    });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [location.pathname]);
 
@@ -320,7 +334,6 @@ export default function App() {
 
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) {
-      setIsAuthLoading(false);
       return undefined;
     }
 
@@ -467,7 +480,6 @@ export default function App() {
 
   useEffect(() => {
     if (!shouldSyncListings) {
-      setResolvedListings([]);
       return undefined;
     }
 
@@ -527,10 +539,7 @@ export default function App() {
   }, [shouldSyncListings, sourceListings]);
 
   function pushToast(message, type = 'info', icon = 'email') {
-    setToasts((current) => [
-      ...current,
-      { id: crypto.randomUUID(), message, type, icon },
-    ]);
+    setToasts((current) => [...current, { id: crypto.randomUUID(), message, type, icon }]);
   }
 
   function showPage(page) {
@@ -596,8 +605,10 @@ export default function App() {
   }
 
   useEffect(() => {
-    void recordAnalytics('page_view');
-  }, [cookiePreferences?.analytics, location.pathname]);
+    startTransition(() => {
+      void recordAnalytics('page_view');
+    });
+  }, [cookiePreferences?.analytics, location.pathname, recordAnalytics]);
 
   function handleBookingChange(event) {
     const { name, value } = event.target;
@@ -647,8 +658,6 @@ export default function App() {
 
   useEffect(() => {
     if (location.pathname !== APP_PATHS.bookingSuccess || !bookingSuccessSessionId) {
-      setIsVerifyingStripePayment(false);
-      setStripeVerificationError('');
       return;
     }
 
@@ -659,7 +668,9 @@ export default function App() {
 
       if (!pendingCheckout) {
         if (isActive) {
-          setStripeVerificationError('Stripe returned successfully, but the pending booking data was not found on this device.');
+          setStripeVerificationError(
+            'Stripe returned successfully, but the pending booking data was not found on this device.',
+          );
         }
         return;
       }
@@ -668,7 +679,9 @@ export default function App() {
       setStripeVerificationError('');
 
       try {
-        const response = await fetch(`/api/verify-checkout-session?session_id=${encodeURIComponent(bookingSuccessSessionId)}`);
+        const response = await fetch(
+          `/api/verify-checkout-session?session_id=${encodeURIComponent(bookingSuccessSessionId)}`,
+        );
         const payload = await response.json();
 
         if (!response.ok || !payload?.paid) {
@@ -704,7 +717,11 @@ export default function App() {
         await recordAnalytics('stripe_payment_success', { sessionId: bookingSuccessSessionId });
 
         if (!bookingResult.remote.saved && !bookingResult.remote.alreadyProcessed) {
-          pushToast('Payment is confirmed, but the booking only saved locally because remote sync is not fully configured.', 'warning', 'calendar');
+          pushToast(
+            'Payment is confirmed, but the booking only saved locally because remote sync is not fully configured.',
+            'warning',
+            'calendar',
+          );
         }
       } catch (error) {
         if (!isActive) {
@@ -731,11 +748,17 @@ export default function App() {
       return;
     }
 
-    pushToast('Stripe checkout was cancelled. Your booking details are still here if you want to try again.', 'warning', 'lock');
-    void recordAnalytics('stripe_checkout_cancelled', {
-      propertyId: store.bookingDraft.property || '',
+    pushToast(
+      'Stripe checkout was cancelled. Your booking details are still here if you want to try again.',
+      'warning',
+      'lock',
+    );
+    startTransition(() => {
+      void recordAnalytics('stripe_checkout_cancelled', {
+        propertyId: store.bookingDraft.property || '',
+      });
     });
-  }, [bookingCheckoutState, location.pathname]);
+  }, [bookingCheckoutState, location.pathname, recordAnalytics, store.bookingDraft.property]);
 
   function handleProceedToPayment(event) {
     event.preventDefault();
@@ -822,7 +845,11 @@ export default function App() {
     setStore(result.store);
     pushToast('Owner request submitted successfully.', 'success', 'send');
     if (!result.remote.saved) {
-      pushToast('Owner request saved locally. Update the Supabase schema if you want the new fields synced remotely.', 'warning', 'calendar');
+      pushToast(
+        'Owner request saved locally. Update the Supabase schema if you want the new fields synced remotely.',
+        'warning',
+        'calendar',
+      );
     }
     setIsSubmittingOwner(false);
     navigate(APP_PATHS.ownerSuccess);
@@ -834,7 +861,11 @@ export default function App() {
     setStore(result.store);
     pushToast('Evaluation request submitted successfully.', 'success', 'send');
     if (!result.remote.saved) {
-      pushToast('Evaluation request saved locally. Update the Supabase schema if you want the new fields synced remotely.', 'warning', 'calendar');
+      pushToast(
+        'Evaluation request saved locally. Update the Supabase schema if you want the new fields synced remotely.',
+        'warning',
+        'calendar',
+      );
     }
     setIsSubmittingReview(false);
     navigate(APP_PATHS.reviewSuccess);
@@ -871,9 +902,7 @@ export default function App() {
 
     if (!nextAuthState.availableRoles.includes(role) || nextAuthState.activeRole !== role) {
       pushToast(
-        role === 'management'
-          ? 'Management access is limited to allowed emails.'
-          : `Unable to switch to ${role}.`,
+        role === 'management' ? 'Management access is limited to allowed emails.' : `Unable to switch to ${role}.`,
         'warning',
         'lock',
       );
@@ -1053,7 +1082,9 @@ export default function App() {
 
   return (
     <>
-      <a href="#main-content" className="skip-link">Skip to main content</a>
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
       <ToastStack toasts={toasts} />
       <SiteHeader
         activePage={activePage}
@@ -1065,6 +1096,7 @@ export default function App() {
         authRole={authRole}
         availableRoles={availableRoles}
         onRoleSwitch={(role) => handleRoleSelect(role, getDefaultPathForRole(role))}
+        onGoToDashboard={handleGoToDashboard}
         onOpenAuth={() => openAuthPage(getRouteRole(location.pathname) || 'client', location.pathname)}
         onSignOut={handleSignOut}
         headerAction={headerAction}
@@ -1072,196 +1104,205 @@ export default function App() {
 
       <main id="main-content">
         <ErrorBoundary>
-        <Suspense fallback={<RouteLoadingFallback />}>
-          <Routes>
-            <Route
-              path={APP_PATHS.landing}
-              element={
-                <LandingPageRoute
-                  onShowPage={showPage}
-                  onScrollToSection={scrollToSection}
-                  featuredProperties={featuredListings}
-                  formatCompactNumber={formatCompactNumber}
-                  formatCurrency={formatCurrency}
-                  wishlistCount={wishlistIds.length}
-                  analyticsSummary={analyticsSummary}
-                  onOpenSupport={() => handleSupportOpen('landing')}
-                  canInstallApp={canInstallApp}
-                  onInstallApp={handleInstallApp}
-                />
-              }
-            />
-            <Route
-              path={APP_PATHS.privacyPolicy}
-              element={
-                <PrivacyPolicyPageRoute
-                  onShowPage={showPage}
-                  onManageCookies={() => setCookieBannerOpen(true)}
-                />
-              }
-            />
-            <Route
-              path={APP_PATHS.authLogin}
-              element={
-                <AuthLoginPageRoute
-                  authUser={authSession?.user}
-                  authRole={authRole}
-                  availableRoles={availableRoles}
-                  isSubmitting={isLoggingIn}
-                  isAuthLoading={isAuthLoading}
-                  requestedRole={requestedAuthRole}
-                  nextPath={requestedNextPath}
-                  onSelectRole={(role) => handleRoleSelect(role, requestedNextPath || getDefaultPathForRole(role))}
-                  onShowPage={showPage}
-                  onSignOut={handleSignOut}
-                />
-              }
-            />
-            <Route
-              path={APP_PATHS.ownerSignup}
-              element={
-                <OwnerSignupPageRoute
-                  onShowPage={showPage}
-                  onSubmitOwner={handleOwnerSubmit}
-                  isSubmitting={isSubmittingOwner}
-                  authUser={authSession?.user}
-                  authRole={authRole}
-                  availableRoles={availableRoles}
-                  isAuthLoading={isAuthLoading}
-                  onOpenAuth={() => openAuthPage('owner', APP_PATHS.ownerSignup)}
-                />
-              }
-            />
-            <Route
-              path={APP_PATHS.ownerDashboard}
-              element={
-                <RoleProtectedRoute
-                  authUser={authSession?.user}
-                  availableRoles={availableRoles}
-                  requiredRole="owner"
-                  fallbackPath={buildAuthPath('owner', APP_PATHS.ownerDashboard)}
-                >
-                  <OwnerDashboardPageRoute
-                    ownerApplications={store.ownerApplications}
-                    bookingTransactions={store.bookingTransactions}
-                    emails={store.dashboardEmails}
+          <Suspense fallback={<RouteLoadingFallback />}>
+            <Routes>
+              <Route
+                path={APP_PATHS.landing}
+                element={
+                  <LandingPageRoute
+                    onShowPage={showPage}
+                    onScrollToSection={scrollToSection}
+                    featuredProperties={featuredListings}
+                    formatCompactNumber={formatCompactNumber}
+                    formatCurrency={formatCurrency}
+                    wishlistCount={wishlistIds.length}
+                    analyticsSummary={analyticsSummary}
+                    onOpenSupport={() => handleSupportOpen('landing')}
+                    canInstallApp={canInstallApp}
+                    onInstallApp={handleInstallApp}
+                  />
+                }
+              />
+              <Route
+                path={APP_PATHS.privacyPolicy}
+                element={
+                  <PrivacyPolicyPageRoute onShowPage={showPage} onManageCookies={() => setCookieBannerOpen(true)} />
+                }
+              />
+              <Route
+                path={APP_PATHS.authLogin}
+                element={
+                  <AuthLoginPageRoute
+                    authUser={authSession?.user}
+                    authRole={authRole}
+                    availableRoles={availableRoles}
+                    isSubmitting={isLoggingIn}
+                    isAuthLoading={isAuthLoading}
+                    requestedRole={requestedAuthRole}
+                    nextPath={requestedNextPath}
+                    onSelectRole={(role) => handleRoleSelect(role, requestedNextPath || getDefaultPathForRole(role))}
                     onShowPage={showPage}
                     onSignOut={handleSignOut}
-                    authUser={authSession?.user}
-                    formatCurrency={formatCurrency}
                   />
-                </RoleProtectedRoute>
-              }
-            />
-            <Route
-              path={APP_PATHS.booking}
-              element={
-                <BookingPageRoute
-                  properties={featuredListings}
-                  bookingForm={store.bookingDraft}
-                  bookingErrors={bookingErrors}
-                  isSubmitting={isOpeningPayment}
-                  onBookingChange={handleBookingChange}
-                  onShowPage={showPage}
-                  onProceedToPayment={handleProceedToPayment}
-                  bookingSummary={bookingSummary}
-                  formatCurrency={formatCurrency}
-                  formatDate={formatDate}
-                  authUser={authSession?.user}
-                  authRole={authRole}
-                  availableRoles={availableRoles}
-                  isAuthLoading={isAuthLoading}
-                  onOpenAuth={() => openAuthPage('client', APP_PATHS.booking)}
-                  wishlistIds={wishlistIds}
-                  onToggleWishlist={handleWishlistToggle}
-                  onSearch={handleBookingSearch}
-                  onOpenSupport={() => handleSupportOpen('booking')}
-                  canInstallApp={canInstallApp}
-                  onInstallApp={handleInstallApp}
-                />
-              }
-            />
-            <Route
-              path={APP_PATHS.review}
-              element={<ReviewPageRoute onShowPage={showPage} onSubmitReview={handleReviewSubmit} isSubmitting={isSubmittingReview} />}
-            />
-            <Route
-              path={APP_PATHS.managementLogin}
-              element={<Navigate to={buildAuthPath('management', APP_PATHS.dashboard)} replace />}
-            />
-            <Route
-              path={APP_PATHS.bookingSuccess}
-              element={
-                <SuccessPageRoute
-                  variant="booking"
-                  onShowPage={showPage}
-                  isLoading={isVerifyingStripePayment}
-                  errorMessage={stripeVerificationError}
-                />
-              }
-            />
-            <Route path={APP_PATHS.ownerSuccess} element={<SuccessPageRoute variant="owner" onShowPage={showPage} />} />
-            <Route path={APP_PATHS.reviewSuccess} element={<SuccessPageRoute variant="review" onShowPage={showPage} />} />
-            <Route
-              path={APP_PATHS.dashboard}
-              element={
-                <RoleProtectedRoute
-                  authUser={authSession?.user}
-                  availableRoles={availableRoles}
-                  requiredRole="management"
-                  fallbackPath={buildAuthPath('management', APP_PATHS.dashboard)}
-                >
-                  <DashboardPageRoute
-                    listings={dashboardListings}
-                    bookings={store.dashboardBookings}
-                    bookingTransactions={store.bookingTransactions}
-                    emails={store.dashboardEmails}
-                    revenue={store.dashboardRevenue}
-                    ownerApplications={store.ownerApplications}
-                    reviewSubmissions={store.reviewSubmissions}
-                    onSaveListing={handleManagementListingSave}
-                    onDeleteListing={handleManagementListingDelete}
-                    onUpdateBookingStatus={handleBookingStatusChange}
-                    onRefundBooking={handleBookingRefund}
-                    onCancelBooking={handleBookingCancellation}
+                }
+              />
+              <Route
+                path={APP_PATHS.ownerSignup}
+                element={
+                  <OwnerSignupPageRoute
                     onShowPage={showPage}
-                    onSignOut={handleSignOut}
+                    onSubmitOwner={handleOwnerSubmit}
+                    isSubmitting={isSubmittingOwner}
                     authUser={authSession?.user}
-                    formatCurrency={formatCurrency}
-                    analyticsEvents={store.analyticsEvents}
-                    supportRequests={store.supportRequests}
+                    authRole={authRole}
+                    availableRoles={availableRoles}
+                    isAuthLoading={isAuthLoading}
+                    onOpenAuth={() => openAuthPage('owner', APP_PATHS.ownerSignup)}
                   />
-                </RoleProtectedRoute>
-              }
-            />
-            <Route
-              path={APP_PATHS.managementListings}
-              element={
-                <RoleProtectedRoute
-                  authUser={authSession?.user}
-                  availableRoles={availableRoles}
-                  requiredRole="management"
-                  fallbackPath={buildAuthPath('management', APP_PATHS.managementListings)}
-                >
-                  <ManagementListingsPageRoute
-                    listings={dashboardListings}
-                    bookings={store.dashboardBookings}
-                    revenue={store.dashboardRevenue}
-                    ownerApplications={store.ownerApplications}
-                    reviewSubmissions={store.reviewSubmissions}
-                    onSaveListing={handleManagementListingSave}
-                    onDeleteListing={handleManagementListingDelete}
+                }
+              />
+              <Route
+                path={APP_PATHS.ownerDashboard}
+                element={
+                  <RoleProtectedRoute
+                    authUser={authSession?.user}
+                    availableRoles={availableRoles}
+                    requiredRole="owner"
+                    fallbackPath={buildAuthPath('owner', APP_PATHS.ownerDashboard)}
+                  >
+                    <OwnerDashboardPageRoute
+                      ownerApplications={store.ownerApplications}
+                      bookingTransactions={store.bookingTransactions}
+                      emails={store.dashboardEmails}
+                      onShowPage={showPage}
+                      onSignOut={handleSignOut}
+                      authUser={authSession?.user}
+                      formatCurrency={formatCurrency}
+                    />
+                  </RoleProtectedRoute>
+                }
+              />
+              <Route
+                path={APP_PATHS.booking}
+                element={
+                  <BookingPageRoute
+                    properties={featuredListings}
+                    bookingForm={store.bookingDraft}
+                    bookingErrors={bookingErrors}
+                    isSubmitting={isOpeningPayment}
+                    onBookingChange={handleBookingChange}
                     onShowPage={showPage}
-                    onSignOut={handleSignOut}
-                    authUser={authSession?.user}
+                    onProceedToPayment={handleProceedToPayment}
+                    bookingSummary={bookingSummary}
                     formatCurrency={formatCurrency}
+                    formatDate={formatDate}
+                    authUser={authSession?.user}
+                    authRole={authRole}
+                    availableRoles={availableRoles}
+                    isAuthLoading={isAuthLoading}
+                    onOpenAuth={() => openAuthPage('client', APP_PATHS.booking)}
+                    wishlistIds={wishlistIds}
+                    onToggleWishlist={handleWishlistToggle}
+                    onSearch={handleBookingSearch}
+                    onOpenSupport={() => handleSupportOpen('booking')}
+                    canInstallApp={canInstallApp}
+                    onInstallApp={handleInstallApp}
                   />
-                </RoleProtectedRoute>
-              }
-            />
-            <Route path="*" element={<Navigate to={APP_PATHS.landing} replace />} />
-          </Routes>
-        </Suspense>
+                }
+              />
+              <Route
+                path={APP_PATHS.review}
+                element={
+                  <ReviewPageRoute
+                    onShowPage={showPage}
+                    onSubmitReview={handleReviewSubmit}
+                    isSubmitting={isSubmittingReview}
+                  />
+                }
+              />
+              <Route
+                path={APP_PATHS.managementLogin}
+                element={<Navigate to={buildAuthPath('management', APP_PATHS.dashboard)} replace />}
+              />
+              <Route
+                path={APP_PATHS.bookingSuccess}
+                element={
+                  <SuccessPageRoute
+                    variant="booking"
+                    onShowPage={showPage}
+                    isLoading={isVerifyingStripePayment}
+                    errorMessage={stripeVerificationError}
+                  />
+                }
+              />
+              <Route
+                path={APP_PATHS.ownerSuccess}
+                element={<SuccessPageRoute variant="owner" onShowPage={showPage} />}
+              />
+              <Route
+                path={APP_PATHS.reviewSuccess}
+                element={<SuccessPageRoute variant="review" onShowPage={showPage} />}
+              />
+              <Route
+                path={APP_PATHS.dashboard}
+                element={
+                  <RoleProtectedRoute
+                    authUser={authSession?.user}
+                    availableRoles={availableRoles}
+                    requiredRole="management"
+                    fallbackPath={buildAuthPath('management', APP_PATHS.dashboard)}
+                  >
+                    <DashboardPageRoute
+                      listings={dashboardListings}
+                      bookings={store.dashboardBookings}
+                      bookingTransactions={store.bookingTransactions}
+                      emails={store.dashboardEmails}
+                      revenue={store.dashboardRevenue}
+                      ownerApplications={store.ownerApplications}
+                      reviewSubmissions={store.reviewSubmissions}
+                      onSaveListing={handleManagementListingSave}
+                      onDeleteListing={handleManagementListingDelete}
+                      onUpdateBookingStatus={handleBookingStatusChange}
+                      onRefundBooking={handleBookingRefund}
+                      onCancelBooking={handleBookingCancellation}
+                      onShowPage={showPage}
+                      onSignOut={handleSignOut}
+                      authUser={authSession?.user}
+                      formatCurrency={formatCurrency}
+                      analyticsEvents={store.analyticsEvents}
+                      supportRequests={store.supportRequests}
+                    />
+                  </RoleProtectedRoute>
+                }
+              />
+              <Route
+                path={APP_PATHS.managementListings}
+                element={
+                  <RoleProtectedRoute
+                    authUser={authSession?.user}
+                    availableRoles={availableRoles}
+                    requiredRole="management"
+                    fallbackPath={buildAuthPath('management', APP_PATHS.managementListings)}
+                  >
+                    <ManagementListingsPageRoute
+                      listings={dashboardListings}
+                      bookings={store.dashboardBookings}
+                      revenue={store.dashboardRevenue}
+                      ownerApplications={store.ownerApplications}
+                      reviewSubmissions={store.reviewSubmissions}
+                      onSaveListing={handleManagementListingSave}
+                      onDeleteListing={handleManagementListingDelete}
+                      onShowPage={showPage}
+                      onSignOut={handleSignOut}
+                      authUser={authSession?.user}
+                      formatCurrency={formatCurrency}
+                    />
+                  </RoleProtectedRoute>
+                }
+              />
+              <Route path="*" element={<Navigate to={APP_PATHS.landing} replace />} />
+            </Routes>
+          </Suspense>
         </ErrorBoundary>
       </main>
 
