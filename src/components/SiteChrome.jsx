@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useRef, useState } from 'react';
+import { startTransition, useEffect, useId, useRef, useState } from 'react';
 import { NAV_ITEMS, SOCIAL_LINKS } from '../data/siteData';
 import { Icon } from './Icon';
 
@@ -91,6 +91,7 @@ function UserProfileMenu({
 }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
+  const dropdownId = useId();
   const badge = getAuthBadgeCopy(authUser, authRole);
 
   useEffect(() => {
@@ -98,8 +99,8 @@ function UserProfileMenu({
       return undefined;
     }
 
-    function handlePointerDown(event) {
-      if (!containerRef.current?.contains(event.target)) {
+    function handleClickOutside(event) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
         setOpen(false);
       }
     }
@@ -110,11 +111,13 @@ function UserProfileMenu({
       }
     }
 
-    document.addEventListener('mousedown', handlePointerDown);
+    // Use click instead of pointerdown to avoid race conditions with
+    // React 18's synthetic click event delegation on the root element.
+    document.addEventListener('click', handleClickOutside);
     document.addEventListener('keydown', handleEscape);
 
     return () => {
-      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('click', handleClickOutside);
       document.removeEventListener('keydown', handleEscape);
     };
   }, [open]);
@@ -139,14 +142,11 @@ function UserProfileMenu({
     <div ref={containerRef} className="relative z-30 shrink-0">
       <button
         type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          setOpen((current) => !current);
-        }}
+        onClick={() => setOpen((current) => !current)}
         className="relative z-10 cursor-pointer rounded-full pointer-events-auto"
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-controls="user-profile-dropdown"
+        aria-controls={dropdownId}
         aria-label="Open profile menu"
       >
         <UserAvatarIndicator authUser={authUser} authRole={authRole} isLanding={isLanding} />
@@ -154,7 +154,7 @@ function UserProfileMenu({
 
       {open ? (
         <div
-          id="user-profile-dropdown"
+          id={dropdownId}
           className={`pointer-events-auto absolute right-0 mt-3 w-64 rounded-3xl border p-4 ${dropdownClass}`}
         >
           <div className="flex items-center gap-3">
