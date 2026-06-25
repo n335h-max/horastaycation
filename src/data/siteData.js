@@ -9,29 +9,25 @@ export const HORA_VALUES = [
   {
     letter: 'H',
     title: 'Healing',
-    description:
-      'Restore mind and soul with stays designed to bring calm, comfort, and a genuine sense of escape.',
+    description: 'Restore mind and soul with stays designed to bring calm, comfort, and a genuine sense of escape.',
     cardClass: 'from-brand-600 to-brand-700',
   },
   {
     letter: 'O',
     title: 'Outdoor',
-    description:
-      'Experience the beauty of landscape, from beaches to highlands, through memorable outdoor moments.',
+    description: 'Experience the beauty of landscape, from beaches to highlands, through memorable outdoor moments.',
     cardClass: 'from-brand-500 to-brand-600',
   },
   {
     letter: 'R',
     title: 'Retreat',
-    description:
-      'Step away from the rush and retreat into spaces created for rest, reflection, and renewal.',
+    description: 'Step away from the rush and retreat into spaces created for rest, reflection, and renewal.',
     cardClass: 'from-accent-500 to-accent-400',
   },
   {
     letter: 'A',
     title: 'Ambience',
-    description:
-      'Enjoy thoughtfully crafted ambience where every detail adds warmth, comfort, and connection.',
+    description: 'Enjoy thoughtfully crafted ambience where every detail adds warmth, comfort, and connection.',
     cardClass: 'from-brand-700 to-brand-800',
   },
 ];
@@ -39,14 +35,12 @@ export const HORA_VALUES = [
 export const FEATURE_PILLARS = [
   {
     title: 'Tiny House Staycation',
-    description:
-      'Compact staycation spaces designed wisely for maximum comfort and a more meaningful stay experience.',
+    description: 'Compact staycation spaces designed wisely for maximum comfort and a more meaningful stay experience.',
     icon: 'home',
   },
   {
     title: 'Close to Nature',
-    description:
-      'Surrounded by greenery to support calm, comfort, and the peaceful mood guests expect from Hora.',
+    description: 'Surrounded by greenery to support calm, comfort, and the peaceful mood guests expect from Hora.',
     icon: 'leaf',
   },
   {
@@ -377,10 +371,7 @@ export const ADD_ON_OPTIONS = [
     summary: 'Free signboard plus an additional 5% discount, included and customizable with your homestay brand name.',
     label: '01.',
     highlight: 'Included',
-    bullets: [
-      'Free signboard + less 5% discount',
-      'Customizable with homestay brand name',
-    ],
+    bullets: ['Free signboard + less 5% discount', 'Customizable with homestay brand name'],
     features: [
       {
         title: 'Free Signboard',
@@ -404,7 +395,8 @@ export const ADD_ON_OPTIONS = [
     id: 'plants',
     title: 'Heliconia & Jasminum',
     icon: 'leaf',
-    summary: 'Bring nature closer with low-maintenance greenery that adds freshness, texture, and a relaxing staycation vibe.',
+    summary:
+      'Bring nature closer with low-maintenance greenery that adds freshness, texture, and a relaxing staycation vibe.',
     label: 'Plants',
     varieties: [
       {
@@ -432,27 +424,26 @@ export const STARTING_PACKAGE = {
   title: 'Starting From RM80,000',
   description:
     'The proposal frames this level as a compact, well worth the experience direction for a tiny-house staycation with curated design and landscape value.',
-  includes: [
-    'Tiny house base direction',
-    'Landscape and ambience planning',
-    'Flexible add-on discussion',
-  ],
+  includes: ['Tiny house base direction', 'Landscape and ambience planning', 'Flexible add-on discussion'],
 };
 
 export const OWNER_BENEFITS = [
   {
     title: 'Starter Budget Guidance',
-    description: 'The proposal positions a starter direction around RM80,000 for a compact, well worth the experience setup.',
+    description:
+      'The proposal positions a starter direction around RM80,000 for a compact, well worth the experience setup.',
     icon: 'list-check',
   },
   {
     title: 'Add-On ++ Support',
-    description: 'Pool, BBQ place, outdoor kitchen, planting, water features, and other curated enhancements can be planned with Hora.',
+    description:
+      'Pool, BBQ place, outdoor kitchen, planting, water features, and other curated enhancements can be planned with Hora.',
     icon: 'chart',
   },
   {
     title: 'Marketing & Identity',
-    description: 'Professional visuals, awareness support, and F.O.C signboard ideas help shape a stronger public-facing listing.',
+    description:
+      'Professional visuals, awareness support, and F.O.C signboard ideas help shape a stronger public-facing listing.',
     icon: 'shield',
   },
 ];
@@ -521,14 +512,7 @@ export const INITIAL_EMAILS = [
   },
 ];
 
-export const OWNER_AMENITIES = [
-  'Swimming Pool',
-  'WiFi',
-  'Kitchen',
-  'Parking',
-  'Hot Tub',
-  'Pet Friendly',
-];
+export const OWNER_AMENITIES = ['Swimming Pool', 'WiFi', 'Kitchen', 'Parking', 'Hot Tub', 'Pet Friendly'];
 
 export const OWNER_PROPERTY_TYPES = [
   'Tiny House',
@@ -573,18 +557,24 @@ export const SPECIAL_REQUEST_OPTIONS = [
   { value: 'Family-ready setup request', label: 'Family-ready setup' },
 ];
 
-export const RATING_OPTIONS = [
-  '5 - Excellent',
-  '4 - Good',
-  '3 - Average',
-  '2 - Below Average',
-  '1 - Poor',
-];
+export const RATING_OPTIONS = ['5 - Excellent', '4 - Good', '3 - Average', '2 - Below Average', '1 - Poor'];
 
 export const SOCIAL_LINKS = [
-  { label: 'Instagram', href: '#', icon: 'instagram' },
-  { label: 'Twitter', href: '#', icon: 'twitter' },
-  { label: 'LinkedIn', href: '#', icon: 'linkedin' },
+  {
+    label: 'Facebook',
+    href: 'https://www.facebook.com/p/Hijau-Group-Landscape-100063573459541/',
+    icon: 'facebook',
+  },
+  {
+    label: 'Instagram',
+    href: 'https://www.instagram.com/hijaugroup.landscape/',
+    icon: 'instagram',
+  },
+  {
+    label: 'TikTok',
+    href: 'https://www.tiktok.com/@hijaugrouplandscape',
+    icon: 'tiktok',
+  },
 ];
 
 export const RANDOM_GUEST_NAMES = ['Alex Turner', 'Maria Garcia', 'David Kim', 'Lisa Wang', 'Omar Hassan'];
