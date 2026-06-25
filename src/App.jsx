@@ -28,6 +28,7 @@ import {
 } from './services/horaApi';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { SERVICE_FEE_RATE, TOAST_DURATION_MS, INSTALL_PROMPT_EVENT } from './lib/constants';
+import { AuthLoginPageRoute } from './pages/AuthLoginPageRoute';
 import {
   getCurrentSession,
   getResolvedAuthState,
@@ -67,9 +68,6 @@ const PrivacyPolicyPageRoute = lazy(() =>
 );
 const PaymentModal = lazy(() =>
   import('./components/PaymentModal').then((module) => ({ default: module.PaymentModal })),
-);
-const AuthLoginPageRoute = lazy(() =>
-  import('./pages/AuthLoginPageRoute').then((module) => ({ default: module.AuthLoginPageRoute })),
 );
 
 function RouteLoadingFallback() {
