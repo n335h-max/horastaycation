@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { startTransition, useEffect, useRef, useState } from 'react';
 import { NAV_ITEMS, SOCIAL_LINKS } from '../data/siteData';
 import { Icon } from './Icon';
 
@@ -21,13 +21,14 @@ function getAuthBadgeCopy(authUser, authRole) {
   }
 
   const displayName =
-    authUser.user_metadata?.full_name ||
-    authUser.user_metadata?.name ||
-    authUser.email ||
-    'Signed In User';
+    authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email || 'Signed In User';
   const subtitle = authUser.email || authRole || 'Authenticated User';
   const initialSource = authUser.email || displayName;
-  const initial = String(initialSource || 'H').trim().charAt(0).toUpperCase() || 'H';
+  const initial =
+    String(initialSource || 'H')
+      .trim()
+      .charAt(0)
+      .toUpperCase() || 'H';
 
   return {
     displayName,
@@ -49,9 +50,7 @@ function UserAvatarIndicator({ authUser, authRole, isLanding = false }) {
     return null;
   }
 
-  const containerClass = isLanding
-    ? 'border-white/20 bg-white/10'
-    : 'border-brand-100 bg-white shadow-sm';
+  const containerClass = isLanding ? 'border-white/20 bg-white/10' : 'border-brand-100 bg-white shadow-sm';
   const avatarFallbackClass = isLanding ? 'bg-white/15 text-white' : 'bg-brand-600 text-white';
   const statusDotClass = isLanding ? 'bg-emerald-300 ring-brand-950' : 'bg-emerald-500 ring-white';
   const title = `${badge.displayName} · ${badge.roleLabel}${badge.subtitle ? ` · ${badge.subtitle}` : ''}`;
@@ -63,9 +62,16 @@ function UserAvatarIndicator({ authUser, authRole, isLanding = false }) {
       aria-label={title}
     >
       {badge.photoUrl ? (
-        <img src={badge.photoUrl} alt={badge.displayName} className="h-full w-full rounded-full object-cover" referrerPolicy="no-referrer" />
+        <img
+          src={badge.photoUrl}
+          alt={badge.displayName}
+          className="h-full w-full rounded-full object-cover"
+          referrerPolicy="no-referrer"
+        />
       ) : (
-        <div className={`flex h-full w-full items-center justify-center rounded-full text-sm font-bold ${avatarFallbackClass}`}>
+        <div
+          className={`flex h-full w-full items-center justify-center rounded-full text-sm font-bold ${avatarFallbackClass}`}
+        >
           {badge.initial}
         </div>
       )}
@@ -194,15 +200,16 @@ export function SiteHeader({
 }) {
   const [mobileProfileOpen, setMobileProfileOpen] = useState(false);
   const isLanding = activePage === 'landing';
-  const navTextClass = isLanding ? 'text-white/80 hover:text-white' : 'text-slate-600 hover:text-brand-600';
-  const brandTextClass = isLanding ? 'text-white group-hover:text-white/80' : 'text-brand-950 group-hover:text-brand-600';
-  const menuButtonClass = isLanding ? 'text-white' : 'text-brand-800';
-  const authButtonClass = isLanding
+  const useHomeChrome = true;
+  const navTextClass = useHomeChrome ? 'text-white/80 hover:text-white' : 'text-slate-600 hover:text-brand-600';
+  const brandTextClass = useHomeChrome
+    ? 'text-white group-hover:text-white/80'
+    : 'text-brand-950 group-hover:text-brand-600';
+  const menuButtonClass = useHomeChrome ? 'text-white' : 'text-brand-800';
+  const authButtonClass = useHomeChrome
     ? 'rounded-xl border border-white/25 bg-white/10 px-5 py-2 text-sm text-white backdrop-blur-sm transition-colors hover:bg-white/20'
     : 'btn-outline px-5 py-2 text-sm';
-  const activeLinkClass = isLanding
-    ? 'bg-white/14 text-white shadow-sm'
-    : 'bg-brand-50 text-brand-700 shadow-sm';
+  const activeLinkClass = useHomeChrome ? 'bg-white/14 text-white shadow-sm' : 'bg-brand-50 text-brand-700 shadow-sm';
 
   function itemIsActive(item) {
     if (item.page) {
@@ -214,7 +221,9 @@ export function SiteHeader({
 
   useEffect(() => {
     if (!mobileOpen) {
-      setMobileProfileOpen(false);
+      startTransition(() => {
+        setMobileProfileOpen(false);
+      });
     }
   }, [mobileOpen]);
 
@@ -222,9 +231,7 @@ export function SiteHeader({
 
   return (
     <header
-      className={`navbar-glass fixed inset-x-0 top-0 z-40 px-4 py-4 md:px-8 ${
-        isLanding ? 'landing' : 'scrolled'
-      }`}
+      className={`navbar-glass fixed inset-x-0 top-0 z-40 px-4 py-4 md:px-8 ${useHomeChrome ? 'landing' : 'scrolled'}`}
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between">
         <button
@@ -287,7 +294,7 @@ export function SiteHeader({
               availableRoles={availableRoles}
               onRoleSwitch={onRoleSwitch}
               onSignOut={onSignOut}
-              isLanding={isLanding}
+              isLanding={useHomeChrome}
             />
           ) : null}
         </div>
@@ -318,14 +325,13 @@ export function SiteHeader({
                 >
                   <UserAvatarIndicator authUser={authUser} authRole={authRole} />
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-semibold text-brand-950">
-                      {mobileBadge?.displayName}
-                    </div>
-                    <div className="truncate text-xs text-slate-500">
-                      Tap to manage account
-                    </div>
+                    <div className="truncate text-sm font-semibold text-brand-950">{mobileBadge?.displayName}</div>
+                    <div className="truncate text-xs text-slate-500">Tap to manage account</div>
                   </div>
-                  <Icon name="arrow-right" className={`text-sm text-slate-400 transition-transform ${mobileProfileOpen ? 'rotate-90' : ''}`} />
+                  <Icon
+                    name="arrow-right"
+                    className={`text-sm text-slate-400 transition-transform ${mobileProfileOpen ? 'rotate-90' : ''}`}
+                  />
                 </button>
 
                 {mobileProfileOpen ? (
@@ -441,20 +447,32 @@ export function SiteFooter({ onShowPage, onManageCookies }) {
               <span className="font-display text-lg font-bold text-white">HORA Staycation</span>
             </div>
             <p className="text-sm leading-relaxed text-white/50">
-              Your staycation partner, curating unique stays and authentic experiences with GDPR and PDPA-aware
-              privacy controls.
+              Your staycation partner, curating unique stays and authentic experiences with GDPR and PDPA-aware privacy
+              controls.
             </p>
           </div>
           <div>
             <h3 className="mb-3 font-semibold text-white">Platform</h3>
             <div className="space-y-2">
-              <button type="button" onClick={() => onShowPage('booking')} className="block text-sm text-white/50 transition-colors hover:text-accent-400">
+              <button
+                type="button"
+                onClick={() => onShowPage('booking')}
+                className="block text-sm text-white/50 transition-colors hover:text-accent-400"
+              >
                 Book a Stay
               </button>
-              <button type="button" onClick={() => onShowPage('owner-signup')} className="block text-sm text-white/50 transition-colors hover:text-accent-400">
+              <button
+                type="button"
+                onClick={() => onShowPage('owner-signup')}
+                className="block text-sm text-white/50 transition-colors hover:text-accent-400"
+              >
                 List Property
               </button>
-              <button type="button" onClick={() => onShowPage('evaluate')} className="block text-sm text-white/50 transition-colors hover:text-accent-400">
+              <button
+                type="button"
+                onClick={() => onShowPage('evaluate')}
+                className="block text-sm text-white/50 transition-colors hover:text-accent-400"
+              >
                 Write Review
               </button>
             </div>
@@ -462,10 +480,18 @@ export function SiteFooter({ onShowPage, onManageCookies }) {
           <div>
             <h3 className="mb-3 font-semibold text-white">Company</h3>
             <div className="space-y-2 text-sm text-white/50">
-              <button type="button" onClick={() => onShowPage('privacy-policy')} className="block text-left transition-colors hover:text-accent-400">
+              <button
+                type="button"
+                onClick={() => onShowPage('privacy-policy')}
+                className="block text-left transition-colors hover:text-accent-400"
+              >
                 Privacy Policy
               </button>
-              <button type="button" onClick={onManageCookies} className="block text-left transition-colors hover:text-accent-400">
+              <button
+                type="button"
+                onClick={onManageCookies}
+                className="block text-left transition-colors hover:text-accent-400"
+              >
                 Cookie Preferences
               </button>
               <a href="mailto:privacy@horastaycation.com" className="block transition-colors hover:text-accent-400">
