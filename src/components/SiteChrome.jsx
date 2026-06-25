@@ -210,6 +210,33 @@ export function SiteHeader({
     ? 'rounded-xl border border-white/25 bg-white/10 px-5 py-2 text-sm text-white backdrop-blur-sm transition-colors hover:bg-white/20'
     : 'btn-outline px-5 py-2 text-sm';
   const activeLinkClass = useHomeChrome ? 'bg-white/14 text-white shadow-sm' : 'bg-brand-50 text-brand-700 shadow-sm';
+  const mobileMenuContainerClass = useHomeChrome
+    ? 'mx-auto mt-4 max-w-7xl rounded-3xl border border-white/10 bg-brand-950/95 p-6 text-white shadow-xl backdrop-blur-md md:hidden'
+    : 'mx-auto mt-4 max-w-7xl rounded-3xl bg-white p-6 shadow-xl md:hidden';
+  const mobileProfileCardClass = useHomeChrome
+    ? 'overflow-hidden rounded-[1.6rem] border border-white/15 bg-white/5'
+    : 'overflow-hidden rounded-[1.6rem] border border-ice-200 bg-ice-50';
+  const mobileProfileMenuClass = useHomeChrome
+    ? 'border-t border-white/10 bg-brand-950/70 px-4 py-4'
+    : 'border-t border-ice-200 bg-white px-4 py-4';
+  const mobileRolePanelClass = useHomeChrome
+    ? 'rounded-2xl border border-white/10 bg-white/5 px-4 py-3'
+    : 'rounded-2xl border border-ice-200 bg-ice-50 px-4 py-3';
+  const mobileRoleLabelClass = useHomeChrome
+    ? 'text-xs font-semibold uppercase tracking-[0.2em] text-white/60'
+    : 'text-xs font-semibold uppercase tracking-[0.2em] text-slate-400';
+  const mobileRoleSelectClass = useHomeChrome
+    ? 'mt-2 w-full rounded-xl border border-white/20 bg-brand-950 px-3 py-2 text-sm text-white'
+    : 'mt-2 w-full rounded-xl border border-ice-200 bg-white px-3 py-2 text-sm text-slate-700';
+  const mobileRoleChipClass = useHomeChrome
+    ? 'mt-2 inline-flex rounded-full bg-white/10 px-3 py-1 text-sm font-semibold text-white'
+    : 'mt-2 inline-flex rounded-full bg-brand-50 px-3 py-1 text-sm font-semibold text-brand-700';
+  const mobileSignOutClass = useHomeChrome
+    ? 'mt-3 flex w-full items-center justify-center rounded-2xl bg-white/12 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/18'
+    : 'mt-3 flex w-full items-center justify-center rounded-2xl bg-brand-950 px-4 py-3 text-sm font-semibold text-white';
+  const mobileNavItemClass = useHomeChrome
+    ? 'block w-full rounded-2xl border border-transparent px-3 py-3 text-left font-medium text-white/85 transition hover:border-white/20 hover:bg-white/10 hover:text-white'
+    : 'block w-full rounded-2xl border border-transparent px-3 py-3 text-left font-medium text-slate-700 transition hover:border-ice-200 hover:bg-ice-50';
 
   function itemIsActive(item) {
     if (item.page) {
@@ -312,10 +339,10 @@ export function SiteHeader({
       </div>
 
       {mobileOpen ? (
-        <div id="mobile-menu" className="mx-auto mt-4 max-w-7xl rounded-3xl bg-white p-6 shadow-xl md:hidden">
+        <div id="mobile-menu" className={mobileMenuContainerClass}>
           <div className="space-y-4">
             {authUser ? (
-              <div className="overflow-hidden rounded-[1.6rem] border border-ice-200 bg-ice-50">
+              <div className={mobileProfileCardClass}>
                 <button
                   type="button"
                   onClick={() => setMobileProfileOpen((current) => !current)}
@@ -323,26 +350,30 @@ export function SiteHeader({
                   aria-expanded={mobileProfileOpen}
                   aria-controls="mobile-profile-menu"
                 >
-                  <UserAvatarIndicator authUser={authUser} authRole={authRole} />
+                  <UserAvatarIndicator authUser={authUser} authRole={authRole} isLanding={useHomeChrome} />
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-semibold text-brand-950">{mobileBadge?.displayName}</div>
-                    <div className="truncate text-xs text-slate-500">Tap to manage account</div>
+                    <div className={`truncate text-sm font-semibold ${useHomeChrome ? 'text-white' : 'text-brand-950'}`}>
+                      {mobileBadge?.displayName}
+                    </div>
+                    <div className={`truncate text-xs ${useHomeChrome ? 'text-white/65' : 'text-slate-500'}`}>
+                      Tap to manage account
+                    </div>
                   </div>
                   <Icon
                     name="arrow-right"
-                    className={`text-sm text-slate-400 transition-transform ${mobileProfileOpen ? 'rotate-90' : ''}`}
+                    className={`text-sm ${useHomeChrome ? 'text-white/50' : 'text-slate-400'} transition-transform ${mobileProfileOpen ? 'rotate-90' : ''}`}
                   />
                 </button>
 
                 {mobileProfileOpen ? (
-                  <div id="mobile-profile-menu" className="border-t border-ice-200 bg-white px-4 py-4">
-                    <div className="rounded-2xl border border-ice-200 bg-ice-50 px-4 py-3">
-                      <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Role</div>
+                  <div id="mobile-profile-menu" className={mobileProfileMenuClass}>
+                    <div className={mobileRolePanelClass}>
+                      <div className={mobileRoleLabelClass}>Role</div>
                       {availableRoles.length > 1 ? (
                         <select
                           value={authRole}
                           onChange={(event) => onRoleSwitch?.(event.target.value)}
-                          className="mt-2 w-full rounded-xl border border-ice-200 bg-white px-3 py-2 text-sm text-slate-700"
+                          className={mobileRoleSelectClass}
                         >
                           {availableRoles.map((role) => (
                             <option key={role} value={role}>
@@ -351,7 +382,7 @@ export function SiteHeader({
                           ))}
                         </select>
                       ) : (
-                        <div className="mt-2 inline-flex rounded-full bg-brand-50 px-3 py-1 text-sm font-semibold text-brand-700">
+                        <div className={mobileRoleChipClass}>
                           {mobileBadge?.roleLabel}
                         </div>
                       )}
@@ -363,7 +394,7 @@ export function SiteHeader({
                         onSignOut?.();
                         onToggleMobile(false);
                       }}
-                      className="mt-3 flex w-full items-center justify-center rounded-2xl bg-brand-950 px-4 py-3 text-sm font-semibold text-white"
+                      className={mobileSignOutClass}
                     >
                       Sign Out
                     </button>
@@ -377,7 +408,7 @@ export function SiteHeader({
                   key={item.label}
                   type="button"
                   onClick={() => onScrollToSection(item.sectionId, true)}
-                  className="block w-full rounded-2xl border border-transparent px-3 py-3 text-left font-medium text-slate-700 transition hover:border-ice-200 hover:bg-ice-50"
+                  className={mobileNavItemClass}
                 >
                   {item.label}
                 </button>
@@ -389,7 +420,7 @@ export function SiteHeader({
                     onShowPage(item.page);
                     onToggleMobile(false);
                   }}
-                  className="block w-full rounded-2xl border border-transparent px-3 py-3 text-left font-medium text-slate-700 transition hover:border-ice-200 hover:bg-ice-50"
+                  className={mobileNavItemClass}
                 >
                   {item.label}
                 </button>
