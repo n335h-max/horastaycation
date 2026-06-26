@@ -1,4 +1,3 @@
-import { FEATURED_PROPERTIES, RANDOM_GUEST_NAMES, INITIAL_BOOKINGS } from '../data/siteData';
 import { loadStore, saveStore, clone, initialBookingDraft } from './localStore';
 import { getAuthenticatedUser, insertRemote, updateRemote } from './supabaseClient';
 import { MAX_DASHBOARD_PREVIEW_ITEMS } from '../lib/constants';
@@ -11,11 +10,11 @@ function formatBookingStatusLabel(status = 'confirmed') {
 
 function refreshBookingDashboard(store) {
   store.dashboardBookings = store.bookingTransactions.slice(0, MAX_DASHBOARD_PREVIEW_ITEMS).map((tx) => ({
-    guest: tx.bookingForm.guestName || RANDOM_GUEST_NAMES[0],
+    guest: tx.bookingForm.guestName || 'Guest',
     property: `${tx.bookingSummary.name} — ${tx.bookingSummary.nights} night${tx.bookingSummary.nights > 1 ? 's' : ''}`,
     amount: tx.bookingSummary.total,
     status: formatBookingStatusLabel(tx.bookingStatus || 'confirmed'),
-    image: `https://picsum.photos/seed/${encodeURIComponent(tx.bookingForm.guestName || RANDOM_GUEST_NAMES[0])}/40/40.jpg`,
+    image: '',
   }));
   store.dashboardRevenue = store.bookingTransactions.reduce(
     (total, tx) => total + (tx.paymentStatus === 'refunded' ? 0 : Number(tx.bookingSummary.total) || 0),
@@ -65,7 +64,7 @@ function buildExtendedRemoteBookingPayload({ currentUser, bookingForm, bookingSu
 export async function submitBooking({ bookingForm, bookingSummary, paymentForm = {}, paymentMeta = {} }) {
   const store = loadStore();
   const currentUser = await getAuthenticatedUser();
-  const guest = bookingForm.guestName || RANDOM_GUEST_NAMES[0];
+  const guest = bookingForm.guestName || 'Guest';
   const stripeSessionId = paymentMeta.stripeSessionId || '';
   const bookingStatus = paymentMeta.bookingStatus || 'confirmed';
   const paymentStatus = paymentMeta.paymentStatus || 'paid';
@@ -104,7 +103,7 @@ export async function submitBooking({ bookingForm, bookingSummary, paymentForm =
       property: `${bookingSummary.name} — ${bookingSummary.nights} night${bookingSummary.nights > 1 ? 's' : ''}`,
       amount: bookingSummary.total,
       status: formatBookingStatusLabel(bookingStatus),
-      image: `https://picsum.photos/seed/${encodeURIComponent(guest)}/40/40.jpg`,
+      image: '',
     },
     ...store.dashboardBookings,
   ].slice(0, MAX_DASHBOARD_PREVIEW_ITEMS);
@@ -112,7 +111,7 @@ export async function submitBooking({ bookingForm, bookingSummary, paymentForm =
   store.dashboardEmails = [
     { title: 'Booking Confirmed — Customer', detail: `Sent to ${customerReceiptEmail}`, tone: 'indigo' },
     { title: 'New Booking Alert — Owner', detail: `Sent for ${bookingSummary.name}`, tone: 'brand' },
-    { title: 'New Booking Alert — Management', detail: 'Sent to admin@horastaycation.com', tone: 'accent' },
+    { title: 'New Booking Alert — Management', detail: 'Sent to management inbox', tone: 'accent' },
     ...store.dashboardEmails,
   ].slice(0, MAX_DASHBOARD_PREVIEW_ITEMS);
 

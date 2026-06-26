@@ -503,47 +503,9 @@ export const DASHBOARD_STATS = [
   { id: 'reviews', label: 'Average Rating', value: 4.8, icon: 'star' },
 ];
 
-export const INITIAL_BOOKINGS = [
-  {
-    guest: 'Sarah Mitchell',
-    property: 'Ayer Keroh — 3 nights',
-    amount: 3,
-    status: 'Confirmed',
-    image: 'https://picsum.photos/seed/guest1/40/40.jpg',
-  },
-  {
-    guest: 'James Rodriguez',
-    property: 'Sama Sama Tido — 5 nights',
-    amount: 5,
-    status: 'Confirmed',
-    image: 'https://picsum.photos/seed/guest2/40/40.jpg',
-  },
-  {
-    guest: 'Emily Chen',
-    property: 'Bohejiwa — 2 nights',
-    amount: 2,
-    status: 'Pending',
-    image: 'https://picsum.photos/seed/guest3/40/40.jpg',
-  },
-];
+export const INITIAL_BOOKINGS = [];
 
-export const INITIAL_EMAILS = [
-  {
-    title: 'Booking Confirmed — Customer',
-    detail: 'Sent to sarah@example.com',
-    tone: 'indigo',
-  },
-  {
-    title: 'New Booking Alert — Owner',
-    detail: 'Sent to villa-owner@example.com',
-    tone: 'brand',
-  },
-  {
-    title: 'New Booking Alert — Management',
-    detail: 'Sent to admin@horastaycation.com',
-    tone: 'accent',
-  },
-];
+export const INITIAL_EMAILS = [];
 
 export const OWNER_AMENITIES = ['Swimming Pool', 'WiFi', 'Kitchen', 'Parking', 'Hot Tub', 'Pet Friendly'];
 
@@ -610,4 +572,3 @@ export const SOCIAL_LINKS = [
   },
 ];
 
-export const RANDOM_GUEST_NAMES = ['Alex Turner', 'Maria Garcia', 'David Kim', 'Lisa Wang', 'Omar Hassan'];

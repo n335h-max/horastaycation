@@ -199,7 +199,7 @@ export async function syncRemoteData(options = {}) {
       status: String(tx.bookingStatus || 'confirmed')
         .replace(/[-_]/g, ' ')
         .replace(/^\w/, (m) => m.toUpperCase()),
-      image: `https://picsum.photos/seed/${encodeURIComponent(tx.bookingForm.guestName || 'Guest')}/40/40.jpg`,
+      image: '',
     }));
     store.dashboardRevenue = remoteBookings.transactions.reduce(
       (t, tx) => t + (tx.paymentStatus === 'refunded' ? 0 : Number(tx.bookingSummary.total) || 0),
