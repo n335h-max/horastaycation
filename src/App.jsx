@@ -1,4 +1,4 @@
-import { Suspense, lazy, startTransition, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { SiteFooter, SiteHeader, ToastStack } from './components/SiteChrome';
@@ -260,7 +260,6 @@ export default function App() {
   }
 
   useLayoutEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     startTransition(() => {
       setMobileOpen(false);
     });
@@ -624,20 +623,23 @@ export default function App() {
     }
   }
 
-  async function recordAnalytics(type, payload = {}) {
-    if (!cookiePreferences?.analytics) {
-      return null;
-    }
+  const recordAnalytics = useCallback(
+    async (type, payload = {}) => {
+      if (!cookiePreferences?.analytics) {
+        return null;
+      }
 
-    const result = await trackAnalyticsEvent({
-      type,
-      page: activePage,
-      path: location.pathname,
-      ...payload,
-    });
-    setStore(result.store);
-    return result;
-  }
+      const result = await trackAnalyticsEvent({
+        type,
+        page: activePage,
+        path: location.pathname,
+        ...payload,
+      });
+      setStore(result.store);
+      return result;
+    },
+    [cookiePreferences?.analytics, activePage, location.pathname],
+  );
 
   useEffect(() => {
     startTransition(() => {
@@ -776,7 +778,7 @@ export default function App() {
     return () => {
       isActive = false;
     };
-  }, [bookingSuccessSessionId, location.pathname]);
+  }, [bookingSuccessSessionId, location.pathname, recordAnalytics]);
 
   useEffect(() => {
     if (location.pathname !== APP_PATHS.booking || bookingCheckoutState !== 'cancelled') {
@@ -797,6 +799,7 @@ export default function App() {
 
   function handleProceedToPayment(event) {
     event.preventDefault();
+    console.log('[booking] Proceed to Payment: start');
     setIsOpeningPayment(true);
     const result = validateWithSchema(bookingSchema, store.bookingDraft);
 
@@ -804,6 +807,7 @@ export default function App() {
       setBookingErrors(result.errors);
       pushToast('Fix the highlighted booking fields before continuing.', 'warning', 'calendar');
       setIsOpeningPayment(false);
+      console.log('[booking] Proceed to Payment: end (validation_failed)');
       return;
     }
 
@@ -811,6 +815,7 @@ export default function App() {
       setBookingErrors({ checkout: ['Check-out must be after check-in.'] });
       pushToast('Select valid dates to continue to payment.', 'warning', 'calendar');
       setIsOpeningPayment(false);
+      console.log('[booking] Proceed to Payment: end (summary_incomplete)');
       return;
     }
 
@@ -820,6 +825,7 @@ export default function App() {
       setBookingErrors({ checkin: ['Selected dates are unavailable for this staycation.'] });
       pushToast('Selected dates are unavailable. Please choose a different stay window.', 'warning', 'calendar');
       setIsOpeningPayment(false);
+      console.log('[booking] Proceed to Payment: end (date_range_blocked)');
       return;
     }
 
@@ -827,6 +833,7 @@ export default function App() {
     setStripeVerificationError('');
     setPaymentOpen(true);
     setIsOpeningPayment(false);
+    console.log('[booking] Proceed to Payment: end (success_modal_opened)');
   }
 
   async function handlePaymentSubmit(event) {
