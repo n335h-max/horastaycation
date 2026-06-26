@@ -450,16 +450,49 @@ export const OWNER_BENEFITS = [
 
 export const TESTIMONIALS = [
   {
-    quote: 'Absolutely stunning property! The host was incredibly welcoming.',
-    name: 'Sarah M.',
-    role: 'Guest',
+    quote:
+      'The best... a pleasure to deal with. 5 stars for the green group team. Let the pictures speak for themselves 🤭',
+    name: 'lera. Hsn',
+    role: 'Reviewer',
     rating: 5,
+    image: 'image_d67fc7.png',
   },
   {
-    quote: 'Perfect weekend getaway. We will definitely come back!',
-    name: 'James K.',
-    role: 'Guest',
-    rating: 4,
+    quote:
+      'Excellent landscape service by Hijau Group. Provided a design up to my expectation and executed the job vey well. Good value for money. Highly recommend.',
+    name: 'Subra Perumal',
+    role: 'Reviewer',
+    rating: 5,
+    image: 'image_d67fd0.jpg',
+  },
+  {
+    quote: 'Had a very smooth project with Hijau Group recently . Best timeline with best results!',
+    name: 'Qaesya Azizi',
+    role: 'Reviewer',
+    rating: 5,
+    image: 'image_d67fea.jpg',
+  },
+  {
+    quote:
+      'I am pleased and delighted with the services provided. End to end services provided seamlessly. The professionalism and artistic design given put me at ease in living everthing in their hand. Highly recommends Hijau Group for quick turnaround of your landscape refresh need.',
+    name: 'Zarul Zarul',
+    role: 'Reviewer',
+    rating: 5,
+    image: 'image_d67fef.png',
+  },
+  {
+    quote: 'Decent owner and best service provided',
+    name: 'ouija81 Ask',
+    role: 'Reviewer',
+    rating: 5,
+    image: 'image_d6800a.jpg',
+  },
+  {
+    quote:
+      "I am very satisfied with Hijau Landscape's service. The work was neat, professional and met my and my husband's needs. My house has really changed and looks much more beautiful after their touch. Highly recommended for anyone looking for quality landscaping services. 👍🌿",
+    name: 'ZULIANA ZOOLKEFLI',
+    role: 'Reviewer',
+    rating: 5,
   },
 ];
 

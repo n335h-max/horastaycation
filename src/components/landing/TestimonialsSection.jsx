@@ -1,6 +1,12 @@
 import { Icon } from '../Icon';
 
 export function TestimonialsSection({ ownerBenefits, testimonials }) {
+  const resolveImageSrc = (image) => {
+    if (!image) return null;
+    if (image.startsWith('http://') || image.startsWith('https://') || image.startsWith('/')) return image;
+    return `/${image}`;
+  };
+
   return (
     <>
       <section className="bg-ice-50 py-20">
@@ -23,9 +29,18 @@ export function TestimonialsSection({ ownerBenefits, testimonials }) {
                 </div>
                 <p className="mt-4 text-sm leading-relaxed text-slate-600">&ldquo;{testimonial.quote}&rdquo;</p>
                 <div className="mt-5 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700">
-                    {testimonial.name.charAt(0)}
-                  </div>
+                  {resolveImageSrc(testimonial.image) ? (
+                    <img
+                      src={resolveImageSrc(testimonial.image)}
+                      alt={testimonial.name}
+                      className="h-10 w-10 rounded-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700">
+                      {testimonial.name.charAt(0)}
+                    </div>
+                  )}
                   <div>
                     <div className="text-sm font-semibold text-brand-950">{testimonial.name}</div>
                     <div className="text-xs text-slate-400">{testimonial.role}</div>
