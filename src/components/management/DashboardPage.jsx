@@ -1,7 +1,5 @@
 import { useState, useMemo } from 'react';
 import { FEATURED_PROPERTIES } from '../../data/siteData';
-import { Icon } from '../Icon';
-import { PublishedListingsGrid } from './PublishedListingsGrid';
 import { getWindowConfig, isInWindow } from '../../hooks/useManagementStudio';
 
 const WINDOW_OPTIONS = [
@@ -70,9 +68,9 @@ export function DashboardPage({
   revenue = 0,
   ownerApplications = [],
   reviewSubmissions = [],
-  onUpdateBookingStatus,
-  onRefundBooking,
-  onCancelBooking,
+  onUpdateBookingStatus: _onUpdateBookingStatus,
+  onRefundBooking: _onRefundBooking,
+  onCancelBooking: _onCancelBooking,
   onShowPage,
   onSignOut,
   authUser,
@@ -86,14 +84,10 @@ export function DashboardPage({
     [analyticsEvents, analyticsWindow, bookingTransactions, supportRequests],
   );
   const analyticsWindowLabel = getWindowConfig(analyticsWindow).description;
-  const currentMonthLabel = new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(new Date());
   const liveListingsCount = listings.filter((l) => l.publishStatus !== 'draft' && !l.isDeleted).length;
   const draftListingsCount = listings.filter((l) => l.publishStatus === 'draft' && !l.isDeleted).length;
   const confirmedBookings = bookingTransactions.filter((b) => (b.bookingStatus || 'confirmed') === 'confirmed').length;
-  const publishedListings = listings.filter((l) => !l.isDeleted);
   const queuePreview = bookingTransactions.slice(0, 3);
-  const ownerLeads = ownerApplications.slice(0, 3);
-  const evalLeads = reviewSubmissions.slice(0, 3);
   const userName = authUser?.user_metadata?.full_name || authUser?.email || 'Hora Admin';
   const initial = String(userName).trim().charAt(0).toUpperCase() || 'H';
 
@@ -165,10 +159,6 @@ export function DashboardPage({
       sub: draftListingsCount ? `${draftListingsCount} draft` : 'All published',
     },
   ];
-  const healthCopy = liveListingsCount
-    ? 'System is healthy. Queue, email triggers, and live listings are running normally.'
-    : 'System is ready. Publish your first listing to activate the operator workflow.';
-
   const statCards = [
     {
       id: 'confirmed',
@@ -193,18 +183,17 @@ export function DashboardPage({
 
   return (
     <div
-      className="flex h-screen overflow-hidden bg-[#F5F7FA] text-sm text-[#0F1F3D]"
+      className="flex h-screen overflow-hidden bg-[#f0f2f7] text-sm text-[#0F1F3D]"
       style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}
     >
       {/* Sidebar */}
-      <aside className="flex h-full w-[220px] min-w-[220px] flex-shrink-0 flex-col bg-[#0F1F3D]">
+      <aside className="flex h-full w-[220px] min-w-[220px] flex-shrink-0 flex-col bg-[#0D1B3E]">
         <div className="flex items-center gap-2.5 border-b border-white/10 px-[18px] py-5">
-          <div className="flex h-[30px] w-[30px] flex-shrink-0 items-center justify-center rounded-lg bg-[#1D9E75] text-sm font-bold text-white">
+          <div className="flex h-[30px] w-[30px] flex-shrink-0 items-center justify-center rounded-lg bg-white/95 text-sm font-bold text-[#0D1B3E]">
             H
           </div>
           <div>
-            <div className="text-sm font-semibold text-white">Hora</div>
-            <div className="mt-0.5 text-[10px] text-white/55">Staycation</div>
+            <div className="text-sm font-semibold text-white">HORA Staycation</div>
           </div>
         </div>
         <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2.5 py-3.5">
@@ -227,8 +216,8 @@ export function DashboardPage({
             {
               title: 'Clients',
               items: [
-                { id: 'owner-leads', label: 'Owner leads', href: '#portal-owner-leads' },
-                { id: 'evaluate-leads', label: 'Evaluate leads', href: '#portal-evaluate-leads' },
+                { id: 'owner-leads', label: 'Owner leads', href: '#portal-activity' },
+                { id: 'evaluate-leads', label: 'Evaluate leads', href: '#portal-activity' },
                 { id: 'email-activity', label: 'Email activity', href: '#portal-email-triggers' },
               ],
             },
@@ -363,88 +352,34 @@ export function DashboardPage({
 
       {/* Main Content */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden" style={{ height: '100%' }}>
-        <div className="flex h-[52px] flex-shrink-0 items-center gap-3.5 border-b border-[rgba(15,31,61,0.12)] bg-white px-6">
-          <span className="text-sm font-semibold text-[#0F1F3D]">Operations dashboard</span>
-          <div className="ml-auto flex items-center gap-2.5">
-            <span className="flex items-center gap-1.5 rounded-full border border-[rgba(15,31,61,0.12)] bg-[#F5F7FA] px-3 py-1.5 text-xs text-[#5A6A84]">
-              <svg
-                viewBox="0 0 24 24"
-                className="h-[13px] w-[13px]"
-                style={{
-                  stroke: 'currentColor',
-                  fill: 'none',
-                  strokeWidth: 1.8,
-                  strokeLinecap: 'round',
-                  strokeLinejoin: 'round',
-                }}
-              >
-                <rect x="3" y="4" width="18" height="18" rx="2" />
-                <line x1="16" y1="2" x2="16" y2="6" />
-                <line x1="8" y1="2" x2="8" y2="6" />
-                <line x1="3" y1="10" x2="21" y2="10" />
-              </svg>
-              {currentMonthLabel}
-            </span>
-            <button
-              type="button"
-              onClick={() => onShowPage('landing')}
-              className="btn-outline rounded-md border border-[rgba(15,31,61,0.12)] bg-white px-3.5 py-1.5 text-xs font-medium text-[#0F1F3D]"
+        <div className="flex h-[56px] flex-shrink-0 items-center gap-3.5 border-b border-white/10 bg-[#0D1B3E] px-6 text-white">
+          {snapItems.map((item, index) => (
+            <span
+              key={item.id}
+              className={`rounded-md px-3 py-1.5 text-xs ${index === 0 ? 'bg-white/10 font-semibold text-white' : 'text-white/70'}`}
             >
-              Return to site
-            </button>
+              {index === 0 ? 'This month' : item.sub}
+            </span>
+          ))}
+          <div className="ml-auto flex items-center gap-2.5">
             <button
               type="button"
               onClick={() => onShowPage('management-listings')}
-              className="btn-primary flex items-center gap-1.5 rounded-md border-none bg-[#0F1F3D] px-3.5 py-1.5 text-xs font-medium text-white"
+              className="rounded-md border-none bg-[#1B6FEB] px-4 py-1.5 text-xs font-semibold text-white"
             >
-              <svg
-                viewBox="0 0 24 24"
-                className="h-3.5 w-3.5"
-                style={{
-                  stroke: 'currentColor',
-                  fill: 'none',
-                  strokeWidth: 2,
-                  strokeLinecap: 'round',
-                  strokeLinejoin: 'round',
-                }}
-              >
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              New listing
+              + New listing
+            </button>
+            <button
+              type="button"
+              onClick={() => onShowPage('booking')}
+              className="rounded-md border border-[#2DD4BF] bg-[#2DD4BF] px-4 py-1.5 text-xs font-semibold text-[#0D1B3E]"
+            >
+              Book Now
             </button>
           </div>
         </div>
 
         <div className="flex flex-1 flex-col gap-[18px] overflow-y-auto p-6">
-          {/* Snapshot bar */}
-          <div className="flex items-stretch gap-0 rounded-xl bg-[#0F1F3D] px-6 py-[18px]">
-            <div className="flex flex-col gap-0.5 pr-6">
-              <span className="text-[10px] uppercase tracking-[0.06em] text-white/35">Bookings</span>
-              <span className="text-[22px] font-semibold text-white">{bookings.length}</span>
-              <span className="text-[11px] text-white/55">This month</span>
-            </div>
-            <div className="flex flex-col gap-0.5 px-6">
-              <span className="text-[10px] uppercase tracking-[0.06em] text-white/35">Revenue</span>
-              <span className="text-[22px] font-semibold text-white">{formatCurrency(revenue)}</span>
-              <span className="text-[11px] text-white/55">Confirmed only</span>
-            </div>
-            <div className="flex flex-col gap-0.5 px-6">
-              <span className="text-[10px] uppercase tracking-[0.06em] text-white/35">Emails Sent</span>
-              <span className="text-[22px] font-semibold text-white">{emails.length}</span>
-              <span className="text-[11px] text-white/55">All triggers active</span>
-            </div>
-            <div className="flex flex-col gap-0.5 px-6">
-              <span className="text-[10px] uppercase tracking-[0.06em] text-white/35">Listings Live</span>
-              <span className="text-[22px] font-semibold text-white">{liveListingsCount}</span>
-              <span className="text-[11px] text-white/55">
-                {draftListingsCount ? `${draftListingsCount} draft` : 'All published'}
-              </span>
-            </div>
-            <div className="flex-shrink-0 self-stretch w-px bg-white/10" />
-            <div className="flex items-center flex-1 pl-6 text-xs leading-relaxed text-white/55">{healthCopy}</div>
-          </div>
-
           {/* Stat grid */}
           <div className="grid grid-cols-4 gap-3">
             {statCards.map((card) => (
@@ -562,11 +497,7 @@ export function DashboardPage({
                   </svg>
                   Live booking queue
                 </span>
-                <button
-                  type="button"
-                  onClick={() => onShowPage('booking')}
-                  className="border-none bg-transparent text-xs font-medium text-[#0F1F3D]"
-                >
+                <button type="button" onClick={() => onShowPage('booking')} className="border-none bg-transparent text-xs font-medium text-[#1B6FEB]">
                   View all
                 </button>
               </div>
@@ -615,7 +546,7 @@ export function DashboardPage({
 
             {/* Right column */}
             <div className="flex flex-col gap-4">
-              <div className="rounded-xl border border-[rgba(15,31,61,0.12)] bg-white p-[18px]">
+              <div id="portal-activity" className="rounded-xl border border-[rgba(15,31,61,0.12)] bg-white p-[18px]">
                 <div className="mb-3.5 flex items-center justify-between">
                   <span className="flex items-center gap-1.5 text-[13px] font-semibold text-[#0F1F3D]">
                     <svg
@@ -680,7 +611,7 @@ export function DashboardPage({
                 ))}
               </div>
 
-              <div className="rounded-xl border border-[rgba(15,31,61,0.12)] bg-white p-[18px]">
+              <div id="portal-email-triggers" className="rounded-xl border border-[rgba(15,31,61,0.12)] bg-white p-[18px]">
                 <div className="mb-3.5 flex items-center justify-between">
                   <span className="flex items-center gap-1.5 text-[13px] font-semibold text-[#0F1F3D]">
                     <svg
@@ -724,256 +655,14 @@ export function DashboardPage({
                       <div className="text-xs font-medium text-[#0F1F3D]">{item.title}</div>
                       <div className="mt-0.5 text-[11px] text-[#8FA0B8]">{item.detail}</div>
                       {item.id !== 'email-empty' ? (
-                        <div className="mt-0.5 text-[11px] font-medium text-[#1D9E75]">Active</div>
+                        <span className="mt-1 inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                          Active
+                        </span>
                       ) : null}
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
-
-          {/* Published listings */}
-          <div className="rounded-xl border border-[rgba(15,31,61,0.12)] bg-white p-[18px]">
-            <div className="mb-3.5 flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-[13px] font-semibold text-[#0F1F3D]">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-[15px] w-[15px]"
-                  style={{
-                    stroke: '#5A6A84',
-                    fill: 'none',
-                    strokeWidth: 1.8,
-                    strokeLinecap: 'round',
-                    strokeLinejoin: 'round',
-                  }}
-                >
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                  <polyline points="9 22 9 12 15 12 15 22" />
-                </svg>
-                Published listings
-              </span>
-              <button
-                type="button"
-                onClick={() => onShowPage('management-listings')}
-                className="border-none bg-transparent text-xs font-medium text-[#0F1F3D]"
-              >
-                Manage all
-              </button>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              {publishedListings.map((property) => (
-                <div
-                  key={property.id}
-                  className="overflow-hidden rounded-xl border border-[rgba(15,31,61,0.12)] bg-white"
-                >
-                  <div className="flex h-24 items-center justify-center overflow-hidden bg-[#1E3560]">
-                    {property.image ? (
-                      <img src={property.image} alt={property.name} className="h-full w-full object-cover" />
-                    ) : (
-                      <svg
-                        viewBox="0 0 24 24"
-                        className="h-7 w-7"
-                        style={{
-                          stroke: 'rgba(255,255,255,0.4)',
-                          fill: 'none',
-                          strokeWidth: 1.5,
-                          strokeLinecap: 'round',
-                          strokeLinejoin: 'round',
-                        }}
-                      >
-                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                        <polyline points="9 22 9 12 15 12 15 22" />
-                      </svg>
-                    )}
-                  </div>
-                  <div className="px-[13px] py-[11px]">
-                    <div className="truncate text-xs font-semibold text-[#0F1F3D]">{property.name}</div>
-                    <div className="mt-0.5 text-[10px] text-[#8FA0B8]">{property.location}</div>
-                    <div className="mb-[9px] mt-[7px] flex gap-1">
-                      {(property.amenities || []).slice(0, 2).map((tag) => (
-                        <span
-                          key={tag}
-                          className="whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] text-[#5A6A84]"
-                          style={{ border: '1px solid rgba(15,31,61,0.12)', background: '#F5F7FA' }}
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>
-                        <span className="text-[13px] font-bold text-[#0F1F3D]">{formatCurrency(property.price)}</span>
-                        <span className="text-[10px] font-normal text-[#8FA0B8]">/night</span>
-                      </span>
-                      <span
-                        className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                          property.publishStatus === 'draft'
-                            ? 'bg-slate-100 text-slate-600'
-                            : 'bg-emerald-50 text-emerald-700'
-                        }`}
-                      >
-                        {property.publishStatus === 'draft' ? 'Draft' : 'Published'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Owner & Evaluate + Email log */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="rounded-xl border border-[rgba(15,31,61,0.12)] bg-white p-[18px]">
-              <div className="mb-3.5 flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-[13px] font-semibold text-[#0F1F3D]">
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="h-[15px] w-[15px]"
-                    style={{
-                      stroke: '#5A6A84',
-                      fill: 'none',
-                      strokeWidth: 1.8,
-                      strokeLinecap: 'round',
-                      strokeLinejoin: 'round',
-                    }}
-                  >
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <line x1="19" y1="8" x2="19" y2="14" />
-                    <line x1="22" y1="11" x2="16" y2="11" />
-                  </svg>
-                  Owner & evaluate requests
-                </span>
-              </div>
-              {ownerLeads.length || evalLeads.length ? (
-                <>
-                  {ownerLeads.map((app) => (
-                    <div
-                      key={app.id}
-                      className="flex items-start gap-2.5 border-b border-[rgba(15,31,61,0.12)] py-[9px]"
-                    >
-                      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-amber-50">
-                        <svg
-                          viewBox="0 0 24 24"
-                          className="h-[13px] w-[13px]"
-                          style={{
-                            stroke: '#633806',
-                            fill: 'none',
-                            strokeWidth: 2,
-                            strokeLinecap: 'round',
-                            strokeLinejoin: 'round',
-                          }}
-                        >
-                          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                          <circle cx="9" cy="7" r="4" />
-                          <line x1="19" y1="8" x2="19" y2="14" />
-                          <line x1="22" y1="11" x2="16" y2="11" />
-                        </svg>
-                      </div>
-                      <div>
-                        <div className="text-xs font-medium text-[#0F1F3D]">{app.ownerName}</div>
-                        <div className="mt-0.5 text-[11px] text-[#8FA0B8]">{app.ownerAddress}</div>
-                        <div className="mt-0.5 text-[10px] text-[#5A6A84]">
-                          {app.unitCount} unit{app.unitCount === '1' ? '' : 's'} · {app.budget}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {evalLeads.map((sub) => (
-                    <div
-                      key={sub.id}
-                      className="flex items-start gap-2.5 border-b border-[rgba(15,31,61,0.12)] py-[9px]"
-                    >
-                      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-amber-50">
-                        <svg
-                          viewBox="0 0 24 24"
-                          className="h-[13px] w-[13px]"
-                          style={{
-                            stroke: '#633806',
-                            fill: 'none',
-                            strokeWidth: 2,
-                            strokeLinecap: 'round',
-                            strokeLinejoin: 'round',
-                          }}
-                        >
-                          <path d="M9 11l3 3L22 4" />
-                          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-                        </svg>
-                      </div>
-                      <div>
-                        <div className="text-xs font-medium text-[#0F1F3D]">{sub.evaluatorName}</div>
-                        <div className="mt-0.5 text-[11px] text-[#8FA0B8]">{sub.evaluatorAddress}</div>
-                        <div className="mt-0.5 text-[10px] text-[#5A6A84]">{sub.evaluatorEmail}</div>
-                      </div>
-                    </div>
-                  ))}
-                </>
-              ) : (
-                <div className="py-6 text-center text-xs leading-relaxed text-[#8FA0B8]">
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="mx-auto mb-2.5 block h-7 w-7"
-                    style={{
-                      stroke: '#8FA0B8',
-                      fill: 'none',
-                      strokeWidth: 1.5,
-                      strokeLinecap: 'round',
-                      strokeLinejoin: 'round',
-                    }}
-                  >
-                    <path d="M22 12h-6l-2 3h-4l-2-3H2" />
-                    <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
-                  </svg>
-                  No requests yet — new owner and evaluation submissions will appear here
-                </div>
-              )}
-            </div>
-
-            <div className="rounded-xl border border-[rgba(15,31,61,0.12)] bg-white p-[18px]">
-              <div className="mb-3.5 flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-[13px] font-semibold text-[#0F1F3D]">
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="h-[15px] w-[15px]"
-                    style={{
-                      stroke: '#5A6A84',
-                      fill: 'none',
-                      strokeWidth: 1.8,
-                      strokeLinecap: 'round',
-                      strokeLinejoin: 'round',
-                    }}
-                  >
-                    <line x1="22" y1="2" x2="11" y2="13" />
-                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                  </svg>
-                  Triggered email log
-                </span>
-              </div>
-              {emailTriggers.map((item) => (
-                <div key={item.id} className="flex items-start gap-2.5 border-b border-[rgba(15,31,61,0.12)] py-[9px]">
-                  <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-emerald-50">
-                    <svg
-                      viewBox="0 0 24 24"
-                      className="h-[13px] w-[13px]"
-                      style={{
-                        stroke: '#085041',
-                        fill: 'none',
-                        strokeWidth: 2,
-                        strokeLinecap: 'round',
-                        strokeLinejoin: 'round',
-                      }}
-                    >
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="text-xs font-medium text-[#0F1F3D]">{item.title}</div>
-                    <div className="mt-0.5 text-[11px] text-[#8FA0B8]">{item.detail}</div>
-                    <div className="mt-0.5 text-[11px] font-medium text-[#1D9E75]">Active</div>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </div>
