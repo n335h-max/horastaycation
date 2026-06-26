@@ -5,9 +5,9 @@ const CONTENT = {
     eyebrow: 'Booking Confirmed',
     title: 'Your staycation is reserved.',
     description:
-      'Your booking details are locked in. You can return to the dashboard for activity updates or keep exploring new destinations.',
-    primaryLabel: 'View Dashboard',
-    primaryPage: 'dashboard',
+      'Your booking details are locked in. You can head back home or keep exploring new destinations.',
+    primaryLabel: 'Back to Home',
+    primaryPage: 'landing',
   },
   owner: {
     eyebrow: 'Application Received',
