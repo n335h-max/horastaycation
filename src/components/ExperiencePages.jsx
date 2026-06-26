@@ -475,6 +475,7 @@ export function ManagementLoginPage({
 
 function DashboardStat({ stat, formatCurrency }) {
   const value = stat.currency ? formatCurrency(stat.value) : stat.value;
+  const isEmpty = Number(stat.value) === 0;
 
   return (
     <article className="dash-card rounded-2xl border border-ice-200 bg-white p-6 shadow-sm">
@@ -485,11 +486,21 @@ function DashboardStat({ stat, formatCurrency }) {
         </span>
       </div>
       <div className="number-gradient text-3xl font-black">{value}</div>
+      <p className="mt-2 text-sm text-slate-500">{stat.subLabel || 'No updates yet.'}</p>
       {stat.trend ? (
         <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-600">
           <Icon name="trend" />
           {stat.trend} from last month
         </div>
+      ) : null}
+      {isEmpty && stat.emptyAction ? (
+        <button
+          type="button"
+          onClick={stat.emptyAction.onClick}
+          className="mt-4 text-sm font-semibold text-brand-600 hover:text-brand-800"
+        >
+          {stat.emptyAction.label}
+        </button>
       ) : null}
     </article>
   );
@@ -539,21 +550,60 @@ export function OwnerDashboardPage({
   formatCurrency,
 }) {
   const latestOwner = ownerApplications[0] ?? null;
-  const latestBooking = bookingTransactions[0] ?? null;
+  const [isNextStepsExpanded, setIsNextStepsExpanded] = useState(true);
+  const [isNextStepsDismissed, setIsNextStepsDismissed] = useState(false);
+
   const ownerStats = useMemo(
     () => [
-      { id: 'requests', label: 'Owner Requests', value: ownerApplications.length, icon: 'home' },
-      { id: 'booking-alerts', label: 'Client Bookings', value: bookingTransactions.length, icon: 'calendar' },
-      { id: 'notifications', label: 'Notifications', value: emails.length, icon: 'email' },
+      {
+        id: 'requests',
+        label: 'Owner Requests',
+        value: ownerApplications.length,
+        icon: 'home',
+        subLabel: latestOwner ? `Latest request for ${latestOwner.ownerAddress}` : 'No request submitted yet',
+        emptyAction: {
+          label: 'Submit your first request ->',
+          onClick: () => onShowPage('owner-signup'),
+        },
+      },
+      {
+        id: 'booking-alerts',
+        label: 'Client Bookings',
+        value: bookingTransactions.length,
+        icon: 'calendar',
+        subLabel: bookingTransactions.length
+          ? 'Live guest booking alerts are active'
+          : 'Bookings appear once guests complete checkout',
+        emptyAction: {
+          label: 'Explore booking flow ->',
+          onClick: () => onShowPage('booking'),
+        },
+      },
+      {
+        id: 'notifications',
+        label: 'Notifications',
+        value: emails.length,
+        icon: 'email',
+        subLabel: emails.length ? `${emails.length} unread emails sent` : 'Email alerts appear after activity starts',
+        emptyAction: {
+          label: 'Start with a request ->',
+          onClick: () => onShowPage('owner-signup'),
+        },
+      },
       {
         id: 'projected-revenue',
         label: 'Projected Revenue',
         value: bookingTransactions.reduce((sum, booking) => sum + (booking.bookingSummary?.total ?? 0), 0),
         icon: 'dollar',
         currency: true,
+        subLabel: bookingTransactions.length ? 'Updated from confirmed bookings' : 'Updates after first booking',
+        emptyAction: {
+          label: 'See booking journey ->',
+          onClick: () => onShowPage('booking'),
+        },
       },
     ],
-    [bookingTransactions, emails.length, ownerApplications.length],
+    [bookingTransactions, emails.length, latestOwner, onShowPage, ownerApplications.length],
   );
 
   const requestStages = latestOwner
@@ -572,6 +622,24 @@ export function OwnerDashboardPage({
       ]
     : [];
 
+  const mergedNotifications = useMemo(
+    () =>
+      emails.map((email, index) => {
+        const detail = String(email.detail || '').trim();
+        const recipient = detail.replace(/^Sent\s+(to|for)\s+/i, '') || detail || 'Owner mailbox';
+        const timestamp =
+          email.timestamp || email.sentAt || email.createdAt || (index === 0 ? 'Just now' : `${index} min ago`);
+
+        return {
+          id: `${email.title}-${email.detail}-${index}`,
+          title: email.title || 'Owner notification',
+          recipient,
+          timestamp,
+        };
+      }),
+    [emails],
+  );
+
   return (
     <section className="min-h-screen bg-ice-50 px-4 pb-16 pt-28 md:px-8">
       <div className="mx-auto max-w-7xl">
@@ -580,8 +648,7 @@ export function OwnerDashboardPage({
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-brand-500">Owner Workspace</p>
             <h1 className="font-display text-4xl font-bold text-brand-950 md:text-5xl">Owner Dashboard</h1>
             <p className="mt-3 max-w-2xl text-base text-slate-600">
-              Track your build request, review client booking alerts, and see how Hora is moving your staycation into
-              the live listing stage.
+              Track your build request, bookings, and revenue in one place.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -590,14 +657,11 @@ export function OwnerDashboardPage({
                 {authUser.email}
               </div>
             ) : null}
-            <button type="button" onClick={() => onShowPage('owner-signup')} className="btn-outline px-6 py-3 text-sm">
-              Submit Another Request
+            <button type="button" onClick={() => onShowPage('owner-signup')} className="btn-primary px-6 py-3 text-sm">
+              + New request
             </button>
             <button type="button" onClick={onSignOut} className="btn-outline px-6 py-3 text-sm">
               Sign Out
-            </button>
-            <button type="button" onClick={() => onShowPage('landing')} className="btn-primary px-6 py-3 text-sm">
-              Return to Site
             </button>
           </div>
         </div>
@@ -608,177 +672,183 @@ export function OwnerDashboardPage({
           ))}
         </div>
 
-        <div className="mt-8 grid gap-8 xl:grid-cols-[0.95fr_1.05fr]">
-          <div className="space-y-8">
-            {latestBooking ? (
-              <div className="rounded-3xl border border-brand-200 bg-gradient-to-r from-brand-900 via-brand-800 to-brand-700 p-6 text-white shadow-xl">
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white/75">
-                      <Icon name="calendar" />
-                      New booking request!
-                    </div>
-                    <h2 className="mt-3 font-display text-2xl font-bold">{latestBooking.bookingSummary.name}</h2>
-                    <p className="mt-2 text-sm text-white/75">
-                      {latestBooking.bookingForm.guestName} requested {latestBooking.bookingSummary.nights} night(s)
-                      from {latestBooking.bookingForm.checkin} to {latestBooking.bookingForm.checkout}.
-                    </p>
-                  </div>
-                  <div className="rounded-2xl bg-white/10 px-5 py-4 text-left md:text-right">
-                    <div className="text-xs uppercase tracking-[0.2em] text-white/55">Expected payout</div>
-                    <div className="mt-1 text-2xl font-bold">{formatCurrency(latestBooking.bookingSummary.total)}</div>
-                  </div>
-                </div>
-              </div>
-            ) : null}
-
-            <div className="rounded-3xl border border-ice-200 bg-white p-6 shadow-sm">
-              <h2 className="mb-6 font-display text-2xl font-bold text-brand-950">Current Request Status</h2>
-              {latestOwner ? (
-                <div className="space-y-4">
-                  <div className="rounded-2xl bg-brand-950 p-5 text-white">
-                    <div className="text-xs font-semibold uppercase tracking-[0.25em] text-white/55">
-                      Latest Owner Request
-                    </div>
-                    <div className="mt-3 text-2xl font-bold">{latestOwner.ownerName}</div>
-                    <div className="mt-2 text-sm text-white/75">{latestOwner.ownerEmail}</div>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      <div className="rounded-2xl bg-white/10 p-4">
-                        <div className="text-xs uppercase tracking-[0.2em] text-white/50">Location</div>
-                        <div className="mt-2 text-sm font-medium">{latestOwner.ownerAddress}</div>
-                      </div>
-                      <div className="rounded-2xl bg-white/10 p-4">
-                        <div className="text-xs uppercase tracking-[0.2em] text-white/50">Budget & Units</div>
-                        <div className="mt-2 text-sm font-medium">
-                          {latestOwner.budget} · {latestOwner.unitCount} unit(s)
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    {requestStages.map((stage) => (
-                      <div key={stage.title} className="flex items-start gap-4 rounded-2xl border border-ice-200 p-4">
-                        <span
-                          className={`mt-1 flex h-10 w-10 items-center justify-center rounded-xl ${
-                            stage.status === 'done'
-                              ? 'bg-emerald-100 text-emerald-600'
-                              : stage.status === 'active'
-                                ? 'bg-brand-50 text-brand-600'
-                                : 'bg-slate-100 text-slate-400'
-                          }`}
-                        >
-                          <Icon name={stage.status === 'upcoming' ? 'calendar' : 'shield'} />
-                        </span>
-                        <div>
-                          <div className="font-semibold text-brand-900">{stage.title}</div>
-                          <div className="mt-1 text-sm text-slate-500">{stage.detail}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-dashed border-ice-200 p-6 text-sm text-slate-500">
-                  No owner request has been submitted yet. Use the owner form first, then this dashboard will show the
-                  live request status.
-                </div>
-              )}
-            </div>
-
-            <div className="rounded-3xl border border-ice-200 bg-white p-6 shadow-sm">
-              <h2 className="mb-6 font-display text-2xl font-bold text-brand-950">Owner Notifications</h2>
-              <div className="space-y-4">
-                {emails.length ? (
-                  emails.slice(0, 5).map((email) => (
-                    <div key={`${email.title}-${email.detail}`} className="rounded-2xl border border-ice-200 p-4">
-                      <div className="flex items-center gap-3">
-                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-                          <Icon name="email" />
-                        </span>
-                        <div>
-                          <div className="font-semibold text-brand-900">{email.title}</div>
-                          <div className="text-sm text-slate-500">{email.detail}</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="rounded-2xl border border-dashed border-ice-200 p-4 text-sm text-slate-500">
-                    Owner notifications appear here after booking and request activity starts.
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-8">
-            <div className="rounded-3xl border border-ice-200 bg-white p-6 shadow-sm">
-              <div className="mb-6 flex items-center justify-between">
-                <h2 className="font-display text-2xl font-bold text-brand-950">Client Booking Alerts</h2>
-                <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-600">
-                  Owner View
-                </span>
-              </div>
-              <div className="space-y-4">
-                {bookingTransactions.length ? (
-                  bookingTransactions.map((booking) => (
-                    <div key={booking.id} className="rounded-2xl border border-ice-200 p-5">
-                      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                        <div>
-                          <div className="font-semibold text-brand-900">{booking.bookingSummary.name}</div>
-                          <div className="mt-1 text-sm text-slate-500">
-                            {booking.bookingForm.guestName} · {booking.bookingForm.guestEmail}
-                          </div>
-                          <div className="mt-2 text-sm text-slate-500">
-                            {booking.bookingForm.checkin} to {booking.bookingForm.checkout} ·{' '}
-                            {booking.bookingSummary.nights} night(s)
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold text-brand-700">{formatCurrency(booking.bookingSummary.total)}</div>
-                          <div className="mt-1 text-xs text-slate-400">Client booking alert</div>
-                        </div>
-                      </div>
-                      {booking.bookingForm.specialRequests ? (
-                        <div className="mt-4 rounded-xl bg-ice-50 px-4 py-3 text-sm text-slate-600">
-                          <span className="font-semibold text-brand-900">Special requests:</span>{' '}
-                          {booking.bookingForm.specialRequests}
-                        </div>
-                      ) : null}
-                    </div>
-                  ))
-                ) : (
-                  <div className="rounded-2xl border border-dashed border-ice-200 p-6 text-sm text-slate-500">
-                    No client bookings yet. When guests book, the owner dashboard will show them here.
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="rounded-3xl bg-brand-950 p-6 text-white shadow-xl">
+        {!isNextStepsDismissed ? (
+          <div className="mt-8 rounded-3xl bg-brand-950 p-6 text-white shadow-xl">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="font-display text-2xl font-bold">What Happens Next</h2>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsNextStepsExpanded((current) => !current)}
+                  className="rounded-full border border-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/80"
+                >
+                  {isNextStepsExpanded ? 'Collapse' : 'Expand'}
+                </button>
+                {latestOwner ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsNextStepsDismissed(true)}
+                    className="rounded-full border border-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/80"
+                  >
+                    Dismiss
+                  </button>
+                ) : null}
+              </div>
+            </div>
+            {isNextStepsExpanded ? (
               <div className="mt-4 grid gap-4 md:grid-cols-3">
                 <div className="rounded-2xl bg-white/8 p-4">
                   <div className="text-sm font-semibold uppercase tracking-[0.2em] text-white/50">1</div>
                   <div className="mt-2 text-sm text-white/80">
-                    Management reviews the owner request and confirms the next build direction.
+                    Submit your owner request so management can review the build direction.
                   </div>
                 </div>
                 <div className="rounded-2xl bg-white/8 p-4">
                   <div className="text-sm font-semibold uppercase tracking-[0.2em] text-white/50">2</div>
                   <div className="mt-2 text-sm text-white/80">
-                    Hora prepares the listing details, facilities, visuals, and schedule.
+                    Hora prepares listing visuals, facilities, and availability once approved.
                   </div>
                 </div>
                 <div className="rounded-2xl bg-white/8 p-4">
                   <div className="text-sm font-semibold uppercase tracking-[0.2em] text-white/50">3</div>
                   <div className="mt-2 text-sm text-white/80">
-                    Owner sees new client booking alerts and expected revenue in one place.
+                    Booking alerts and projected revenue begin appearing automatically.
                   </div>
                 </div>
               </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="mt-8 grid gap-8 xl:grid-cols-2">
+          <div className="rounded-3xl border border-ice-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-6 font-display text-2xl font-bold text-brand-950">Request Status</h2>
+            {latestOwner ? (
+              <div className="space-y-4">
+                <div className="rounded-2xl bg-brand-950 p-5 text-white">
+                  <div className="text-xs font-semibold uppercase tracking-[0.25em] text-white/55">Latest request</div>
+                  <div className="mt-3 text-2xl font-bold">{latestOwner.ownerName}</div>
+                  <div className="mt-2 text-sm text-white/75">{latestOwner.ownerEmail}</div>
+                </div>
+                <div className="space-y-3">
+                  {requestStages.map((stage) => (
+                    <div key={stage.title} className="flex items-start gap-4 rounded-2xl border border-ice-200 p-4">
+                      <span
+                        className={`mt-1 flex h-10 w-10 items-center justify-center rounded-xl ${
+                          stage.status === 'done'
+                            ? 'bg-emerald-100 text-emerald-600'
+                            : stage.status === 'active'
+                              ? 'bg-brand-50 text-brand-600'
+                              : 'bg-slate-100 text-slate-400'
+                        }`}
+                      >
+                        <Icon name={stage.status === 'upcoming' ? 'calendar' : 'shield'} />
+                      </span>
+                      <div>
+                        <div className="font-semibold text-brand-900">{stage.title}</div>
+                        <div className="mt-1 text-sm text-slate-500">{stage.detail}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-ice-200 p-8 text-center">
+                <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-ice-50 text-brand-600">
+                  <Icon name="home" />
+                </span>
+                <p className="mt-4 text-base text-slate-600">
+                  No request yet. Submit the owner form to get started and this card will show live progress updates.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => onShowPage('owner-signup')}
+                  className="btn-outline mt-5 px-6 py-3 text-sm"
+                >
+                  Submit a request
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-3xl border border-ice-200 bg-white p-6 shadow-sm">
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="font-display text-2xl font-bold text-brand-950">Client Booking Alerts</h2>
+              <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-600">Owner view</span>
+            </div>
+            <div className="space-y-4">
+              {bookingTransactions.length ? (
+                bookingTransactions.slice(0, 4).map((booking) => (
+                  <div key={booking.id} className="rounded-2xl border border-ice-200 p-5">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                      <div>
+                        <div className="font-semibold text-brand-900">{booking.bookingSummary.name}</div>
+                        <div className="mt-1 text-sm text-slate-500">
+                          {booking.bookingForm.guestName} · {booking.bookingForm.guestEmail}
+                        </div>
+                        <div className="mt-2 text-sm text-slate-500">
+                          {booking.bookingForm.checkin} to {booking.bookingForm.checkout} · {booking.bookingSummary.nights} night(s)
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-brand-700">{formatCurrency(booking.bookingSummary.total)}</div>
+                        <div className="mt-1 text-xs text-slate-400">Client booking alert</div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-2xl border border-dashed border-ice-200 p-8 text-center">
+                  <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-ice-50 text-brand-600">
+                    <Icon name="calendar" />
+                  </span>
+                  <p className="mt-4 text-base text-slate-600">
+                    No bookings yet. Guest bookings will appear here in real time once checkout starts.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => onShowPage('booking')}
+                    className="btn-outline mt-5 px-6 py-3 text-sm"
+                  >
+                    Open booking flow
+                  </button>
+                </div>
+              )}
             </div>
           </div>
+        </div>
+
+        <div className="mt-8 rounded-3xl border border-ice-200 bg-white p-6 shadow-sm">
+          <div className="mb-6 flex items-center justify-between gap-4">
+            <h2 className="font-display text-2xl font-bold text-brand-950">Recent Notifications</h2>
+            <button type="button" className="text-sm font-semibold text-brand-600 hover:text-brand-800">
+              View all
+            </button>
+          </div>
+          {mergedNotifications.length ? (
+            <div className="space-y-3">
+              {mergedNotifications.map((item) => (
+                <article key={item.id} className="rounded-2xl border border-ice-200 bg-ice-50/40 px-4 py-3">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50 text-sm font-bold text-brand-700">
+                        {item.title.charAt(0)}
+                      </span>
+                      <div>
+                        <div className="font-semibold text-brand-900">{item.title}</div>
+                        <div className="text-sm text-slate-500">Sent to {item.recipient}</div>
+                      </div>
+                    </div>
+                    <div className="text-sm text-slate-400">{item.timestamp}</div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-ice-200 p-6 text-sm text-slate-500">
+              No notifications yet. Booking emails and owner alerts will appear here as one unified feed.
+            </div>
+          )}
         </div>
       </div>
     </section>
