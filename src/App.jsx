@@ -176,6 +176,19 @@ function getRouteRole(pathname) {
   return null;
 }
 
+function normalizeAvailableRoles(roles) {
+  if (!Array.isArray(roles)) {
+    return ['client'];
+  }
+
+  const normalizedRoles = roles
+    .filter((role) => typeof role === 'string')
+    .map((role) => role.trim())
+    .filter(Boolean);
+
+  return normalizedRoles.length ? Array.from(new Set(normalizedRoles)) : ['client'];
+}
+
 function RoleProtectedRoute({ authUser, availableRoles, requiredRole, fallbackPath, children }) {
   if (!authUser) {
     return <Navigate to={fallbackPath} replace />;
@@ -226,6 +239,7 @@ export default function App() {
   const handledRequestedRoleRef = useRef('');
 
   const { formatCurrency, formatCompactNumber, formatDate } = useFormatters();
+  const safeAvailableRoles = normalizeAvailableRoles(availableRoles);
   const sourceListings = Array.isArray(store.managementListings) && store.managementListings.length
     ? store.managementListings
     : FEATURED_PROPERTIES;
@@ -376,7 +390,7 @@ export default function App() {
       setAuthProfile(profile);
       const authState = getResolvedAuthState(session, profile);
       setAuthRole(authState.activeRole);
-      setAvailableRoles(authState.availableRoles);
+      setAvailableRoles(normalizeAvailableRoles(authState.availableRoles));
       setIsAuthLoading(false);
     }
 
@@ -409,7 +423,7 @@ export default function App() {
       setAuthProfile(profile);
       const authState = getResolvedAuthState(session, profile);
       setAuthRole(authState.activeRole);
-      setAvailableRoles(authState.availableRoles);
+      setAvailableRoles(normalizeAvailableRoles(authState.availableRoles));
     });
 
     return () => {
@@ -450,7 +464,7 @@ export default function App() {
       }
 
       setAuthRole(authState.activeRole);
-      setAvailableRoles(authState.availableRoles);
+      setAvailableRoles(normalizeAvailableRoles(authState.availableRoles));
       navigate(getSafeNextPath(nextPath, authState.activeRole), { replace: true });
       pushToast(
         requestedRole === 'management'
@@ -468,7 +482,7 @@ export default function App() {
 
           setAuthProfile(nextAuthState.profile);
           setAuthRole(nextAuthState.activeRole);
-          setAvailableRoles(nextAuthState.availableRoles);
+          setAvailableRoles(normalizeAvailableRoles(nextAuthState.availableRoles));
         })
         .catch(() => {
           /* noop */
@@ -483,13 +497,13 @@ export default function App() {
   }, [authSession, authProfile, location.pathname, location.search, navigate]);
 
   useEffect(() => {
-    if (!authSession?.user || !availableRoles.length) {
+    if (!authSession?.user || !safeAvailableRoles.length) {
       return;
     }
 
     const routeRole = getRouteRole(location.pathname);
 
-    if (!routeRole || routeRole === authRole || !availableRoles.includes(routeRole)) {
+    if (!routeRole || routeRole === authRole || !safeAvailableRoles.includes(routeRole)) {
       return;
     }
 
@@ -504,7 +518,7 @@ export default function App() {
 
       setAuthProfile(nextAuthState.profile);
       setAuthRole(nextAuthState.activeRole);
-      setAvailableRoles(nextAuthState.availableRoles);
+      setAvailableRoles(normalizeAvailableRoles(nextAuthState.availableRoles));
     }
 
     syncRoleToRoute();
@@ -512,7 +526,7 @@ export default function App() {
     return () => {
       isActive = false;
     };
-  }, [authRole, authSession, availableRoles, location.pathname]);
+  }, [authRole, authSession, location.pathname, safeAvailableRoles]);
 
   useEffect(() => {
     if (!shouldSyncListings) {
@@ -942,9 +956,10 @@ export default function App() {
 
     setAuthProfile(nextAuthState.profile);
     setAuthRole(nextAuthState.activeRole);
-    setAvailableRoles(nextAuthState.availableRoles);
+    const nextRoles = normalizeAvailableRoles(nextAuthState.availableRoles);
+    setAvailableRoles(nextRoles);
 
-    if (!nextAuthState.availableRoles.includes(role) || nextAuthState.activeRole !== role) {
+    if (!nextRoles.includes(role) || nextAuthState.activeRole !== role) {
       pushToast(
         role === 'management' ? 'Management access is limited to allowed emails.' : `Unable to switch to ${role}.`,
         'warning',
@@ -1138,7 +1153,7 @@ export default function App() {
         onScrollToSection={scrollToSection}
         authUser={authSession?.user}
         authRole={authRole}
-        availableRoles={availableRoles}
+        availableRoles={safeAvailableRoles}
         onRoleSwitch={(role) => handleRoleSelect(role, getDefaultPathForRole(role))}
         onGoToDashboard={handleGoToDashboard}
         onOpenAuth={() => openAuthPage(getRouteRole(location.pathname) || 'client', location.pathname)}
@@ -1179,7 +1194,7 @@ export default function App() {
                   <AuthLoginPageRoute
                     authUser={authSession?.user}
                     authRole={authRole}
-                    availableRoles={availableRoles}
+                    availableRoles={safeAvailableRoles}
                     isSubmitting={isLoggingIn}
                     isAuthLoading={isAuthLoading}
                     requestedRole={requestedAuthRole}
@@ -1199,7 +1214,7 @@ export default function App() {
                     isSubmitting={isSubmittingOwner}
                     authUser={authSession?.user}
                     authRole={authRole}
-                    availableRoles={availableRoles}
+                    availableRoles={safeAvailableRoles}
                     isAuthLoading={isAuthLoading}
                     onOpenAuth={() => openAuthPage('owner', APP_PATHS.ownerSignup)}
                   />
@@ -1210,7 +1225,7 @@ export default function App() {
                 element={
                   <RoleProtectedRoute
                     authUser={authSession?.user}
-                    availableRoles={availableRoles}
+                    availableRoles={safeAvailableRoles}
                     requiredRole="owner"
                     fallbackPath={buildAuthPath('owner', APP_PATHS.ownerDashboard)}
                   >
@@ -1242,7 +1257,7 @@ export default function App() {
                     formatDate={formatDate}
                     authUser={authSession?.user}
                     authRole={authRole}
-                    availableRoles={availableRoles}
+                    availableRoles={safeAvailableRoles}
                     isAuthLoading={isAuthLoading}
                     onOpenAuth={() => openAuthPage('client', APP_PATHS.booking)}
                     wishlistIds={wishlistIds}
@@ -1292,7 +1307,7 @@ export default function App() {
                 element={
                   <RoleProtectedRoute
                     authUser={authSession?.user}
-                    availableRoles={availableRoles}
+                    availableRoles={safeAvailableRoles}
                     requiredRole="management"
                     fallbackPath={buildAuthPath('management', APP_PATHS.dashboard)}
                   >

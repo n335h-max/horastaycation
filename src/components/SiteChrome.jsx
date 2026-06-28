@@ -93,6 +93,9 @@ function UserProfileMenu({
   const containerRef = useRef(null);
   const dropdownId = useId();
   const badge = getAuthBadgeCopy(authUser, authRole);
+  const safeAvailableRoles = Array.isArray(availableRoles)
+    ? availableRoles.filter((role) => typeof role === 'string' && role.trim())
+    : ['client'];
 
   useEffect(() => {
     if (!open) {
@@ -167,13 +170,13 @@ function UserProfileMenu({
 
           <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
             <div className={`text-xs font-semibold uppercase tracking-[0.18em] ${mutedTextClass}`}>Role</div>
-            {availableRoles.length > 1 ? (
+            {safeAvailableRoles.length > 1 ? (
               <select
                 value={authRole}
                 onChange={(event) => onRoleSwitch?.(event.target.value)}
                 className={`mt-2 w-full rounded-xl border border-white/10 bg-transparent px-3 py-2 text-sm outline-none ${isLanding ? 'text-white' : 'text-brand-900'}`}
               >
-                {availableRoles.map((role) => (
+                {safeAvailableRoles.map((role) => (
                   <option key={role} value={role} className="text-slate-900">
                     {role.charAt(0).toUpperCase() + role.slice(1)}
                   </option>
@@ -229,6 +232,9 @@ export function SiteHeader({
   headerAction,
 }) {
   const [mobileProfileOpen, setMobileProfileOpen] = useState(false);
+  const safeAvailableRoles = Array.isArray(availableRoles)
+    ? availableRoles.filter((role) => typeof role === 'string' && role.trim())
+    : ['client'];
   const isLanding = activePage === 'landing';
   const useHomeChrome = true;
   const navTextClass = useHomeChrome ? 'text-white/80 hover:text-white' : 'text-slate-600 hover:text-brand-600';
@@ -351,7 +357,7 @@ export function SiteHeader({
             <UserProfileMenu
               authUser={authUser}
               authRole={authRole}
-              availableRoles={availableRoles}
+              availableRoles={safeAvailableRoles}
               onRoleSwitch={onRoleSwitch}
               onGoToDashboard={onGoToDashboard}
               onSignOut={onSignOut}
@@ -403,13 +409,13 @@ export function SiteHeader({
                   <div id="mobile-profile-menu" className={mobileProfileMenuClass}>
                     <div className={mobileRolePanelClass}>
                       <div className={mobileRoleLabelClass}>Role</div>
-                      {availableRoles.length > 1 ? (
+                      {safeAvailableRoles.length > 1 ? (
                         <select
                           value={authRole}
                           onChange={(event) => onRoleSwitch?.(event.target.value)}
                           className={mobileRoleSelectClass}
                         >
-                          {availableRoles.map((role) => (
+                          {safeAvailableRoles.map((role) => (
                             <option key={role} value={role}>
                               {role.charAt(0).toUpperCase() + role.slice(1)}
                             </option>

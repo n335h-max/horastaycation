@@ -70,7 +70,12 @@ export function LandingPage({
   onInstallApp,
 }) {
   const [selectedFeaturedLocation, setSelectedFeaturedLocation] = useState('All locations');
-  const safeFeaturedProperties = Array.isArray(featuredProperties) ? featuredProperties : [];
+  const safeFeaturedProperties = Array.isArray(featuredProperties)
+    ? featuredProperties.filter(
+        (property) =>
+          property && typeof property === 'object' && typeof property.location === 'string' && property.location.trim(),
+      )
+    : [];
   const startingPackageIncludes = Array.isArray(STARTING_PACKAGE?.includes) ? STARTING_PACKAGE.includes : [];
   const whatsappBaseUrl = 'https://wa.me/601110629990?text=';
   const featuredLocationOptions = [
