@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hora-pwa-v1';
+const CACHE_NAME = 'hora-pwa-v2';
 const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/favicon-transparent-v4.svg', '/hora-logo.svg'];
 
 self.addEventListener('install', (event) => {
@@ -23,6 +23,7 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+  const url = new URL(request.url);
 
   if (request.method !== 'GET') {
     return;
@@ -38,7 +39,24 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (new URL(request.url).origin !== self.location.origin) {
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  if (url.pathname.startsWith('/assets/')) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response?.ok) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseClone);
+            });
+          }
+          return response;
+        })
+        .catch(() => caches.match(request)),
+    );
     return;
   }
 
