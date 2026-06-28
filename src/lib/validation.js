@@ -29,18 +29,6 @@ export const bookingSchema = z
   });
 
 export const paymentSchema = z.object({
-  cardNumber: z
-    .string()
-    .trim()
-    .regex(/^(\d{4}\s){3}\d{4}$/, 'Enter a valid 16-digit card number.'),
-  expiry: z
-    .string()
-    .trim()
-    .regex(/^(0[1-9]|1[0-2])\/\d{2}$/, 'Use MM/YY format.'),
-  cvc: z
-    .string()
-    .trim()
-    .regex(/^\d{3}$/, 'Enter a valid 3-digit CVC.'),
   cardholder: z.string().trim().min(2, 'Enter the cardholder name.'),
 });
 

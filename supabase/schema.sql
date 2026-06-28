@@ -39,6 +39,7 @@ create table if not exists public.stripe_events (
 
 create table if not exists public.booking_transactions (
   id uuid primary key default gen_random_uuid(),
+  client_user_id uuid references auth.users(id) on delete set null,
   property_id text not null,
   property_name text not null,
   property_location text not null,
@@ -102,14 +103,6 @@ create table if not exists public.user_profiles (
   updated_at timestamptz not null default now()
 );
 
-alter table public.user_profiles
-add column if not exists available_roles text[] not null default array['client'];
-
-update public.user_profiles
-set available_roles = array[preferred_role, 'client']
-where available_roles is null
-   or array_length(available_roles, 1) is null;
-
 create table if not exists public.management_users (
   email text primary key,
   is_active boolean not null default true,
@@ -122,38 +115,22 @@ add column if not exists owner_user_id uuid references auth.users(id) on delete 
 alter table public.booking_transactions
 add column if not exists client_user_id uuid references auth.users(id) on delete set null;
 
-alter table public.booking_transactions
-add column if not exists payment_provider text not null default 'manual';
-
-alter table public.booking_transactions
-add column if not exists payment_status text not null default 'paid';
-
-alter table public.booking_transactions
-add column if not exists stripe_session_id text;
-
-alter table public.booking_transactions
-add column if not exists stripe_payment_intent_id text;
-
-alter table public.booking_transactions
-add column if not exists stripe_refund_id text;
-
-alter table public.booking_transactions
-add column if not exists refund_status text;
-
-alter table public.booking_transactions
-add column if not exists refunded_at timestamptz;
-
-alter table public.booking_transactions
-add column if not exists cancelled_at timestamptz;
-
-alter table public.booking_transactions
-add column if not exists customer_receipt_email text;
-
-alter table public.booking_transactions
-add column if not exists status_note text;
-
 alter table public.management_listings
 add column if not exists updated_by uuid references auth.users(id) on delete set null;
+
+alter table public.booking_transactions
+drop constraint if exists booking_transactions_payment_status_check;
+
+alter table public.booking_transactions
+add constraint booking_transactions_payment_status_check
+check (payment_status in ('paid', 'pending', 'refunded', 'failed', 'cancelled'));
+
+alter table public.booking_transactions
+drop constraint if exists booking_transactions_booking_status_check;
+
+alter table public.booking_transactions
+add constraint booking_transactions_booking_status_check
+check (booking_status in ('confirmed', 'pending', 'cancelled', 'completed', 'refunded'));
 
 create or replace function public.is_management_user()
 returns boolean
@@ -186,6 +163,7 @@ $$;
 
 alter table public.owner_applications enable row level security;
 alter table public.review_submissions enable row level security;
+alter table public.stripe_events enable row level security;
 alter table public.booking_transactions enable row level security;
 alter table public.management_listings enable row level security;
 alter table public.management_users enable row level security;
@@ -218,6 +196,20 @@ on public.review_submissions
 for insert
 to anon, authenticated
 with check (true);
+
+drop policy if exists "management_can_select_review_submissions" on public.review_submissions;
+create policy "management_can_select_review_submissions"
+on public.review_submissions
+for select
+to authenticated
+using (public.is_management_user());
+
+drop policy if exists "management_can_select_stripe_events" on public.stripe_events;
+create policy "management_can_select_stripe_events"
+on public.stripe_events
+for select
+to authenticated
+using (public.is_management_user());
 
 drop policy if exists "public_can_insert_booking_transactions" on public.booking_transactions;
 drop policy if exists "clients_can_insert_own_booking_transactions" on public.booking_transactions;
@@ -365,3 +357,35 @@ using (
   bucket_id in ('listing-images', 'listing-videos')
   and public.is_management_user()
 );
+
+create unique index if not exists booking_transactions_stripe_session_id_idx
+on public.booking_transactions (stripe_session_id)
+where stripe_session_id is not null;
+
+create index if not exists booking_transactions_stripe_payment_intent_id_idx
+on public.booking_transactions (stripe_payment_intent_id)
+where stripe_payment_intent_id is not null;
+
+create index if not exists booking_transactions_stripe_refund_id_idx
+on public.booking_transactions (stripe_refund_id)
+where stripe_refund_id is not null;
+
+create index if not exists booking_transactions_client_user_id_idx
+on public.booking_transactions (client_user_id)
+where client_user_id is not null;
+
+create index if not exists booking_transactions_property_id_idx
+on public.booking_transactions (property_id);
+
+create index if not exists owner_applications_owner_user_id_idx
+on public.owner_applications (owner_user_id)
+where owner_user_id is not null;
+
+create index if not exists management_listings_publish_status_deleted_idx
+on public.management_listings (publish_status, is_deleted);
+
+create index if not exists management_users_email_lower_idx
+on public.management_users (lower(email));
+
+create index if not exists user_profiles_email_lower_idx
+on public.user_profiles (lower(email));

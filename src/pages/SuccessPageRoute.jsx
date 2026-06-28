@@ -27,7 +27,30 @@ const CONTENT = {
 };
 
 export function SuccessPageRoute({ variant, onShowPage, isLoading = false, errorMessage = '' }) {
-  const content = CONTENT[variant] ?? CONTENT.booking;
+  const content = CONTENT[variant];
+
+  if (!content) {
+    return (
+      <section className="min-h-screen bg-ice-50 px-4 pb-16 pt-28 md:px-8">
+        <div className="mx-auto max-w-3xl rounded-[2rem] border border-brand-100 bg-white p-10 text-center shadow-xl">
+          <div className="mx-auto mb-6 flex h-18 w-18 items-center justify-center rounded-full bg-red-50 text-red-600">
+            <Icon name="close" className="text-3xl" />
+          </div>
+          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-red-500">Invalid Success View</p>
+          <h1 className="font-display text-4xl font-bold text-brand-950 md:text-5xl">This result page is unavailable.</h1>
+          <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-slate-600">
+            We could not determine which success flow to show. Please return home and retry.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+            <button type="button" onClick={() => onShowPage('landing')} className="btn-primary px-7 py-4 text-base">
+              <span>Back to Home</span>
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   const eyebrow = isLoading ? 'Confirming Payment' : errorMessage ? 'Payment Check Needed' : content.eyebrow;
   const title = isLoading
     ? 'Verifying your Stripe payment.'

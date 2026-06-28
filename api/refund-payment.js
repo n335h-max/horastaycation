@@ -1,9 +1,19 @@
 import { getJsonBody, getStripeClient } from './_lib/stripeServer.js';
+import { requireManagementUser } from './_lib/auth.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method not allowed.' });
+  }
+
+  const management = await requireManagementUser(req);
+  if (!management.ok) {
+    return res.status(management.status || 500).json({ error: management.error || 'Unauthorized.' });
+  }
+
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return res.status(500).json({ error: 'Stripe secret key is not configured.' });
   }
 
   try {

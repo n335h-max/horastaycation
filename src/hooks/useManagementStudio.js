@@ -292,7 +292,7 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
     fileInput.accept = MEDIA_FIELD_CONFIG[field]?.accept || 'image/*';
     fileInput.multiple = true;
 
-    fileInput.addEventListener('change', async () => {
+    fileInput.onchange = async () => {
       const files = Array.from(fileInput.files || []);
       if (!files.length) return;
       setIsBulkUploading(true);
@@ -305,8 +305,10 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
         setUploadError('Bulk upload failed.');
       } finally {
         setIsBulkUploading(false);
+        fileInput.onchange = null;
+        fileInput.remove();
       }
-    });
+    };
 
     fileInput.click();
   }, [bulkUploadField]);

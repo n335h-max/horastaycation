@@ -14,7 +14,7 @@
 export { initialBookingDraft, getSnapshot, saveBookingDraft } from './localStore';
 export { toggleWishlistProperty } from './wishlistService';
 export { submitBooking, updateBookingTransactionStatus, updateBookingTransactionDetails } from './bookingService';
-export { saveManagementListing, deleteManagementListing, syncRemoteData, loginManagement } from './listingService';
+export { saveManagementListing, deleteManagementListing, syncRemoteData } from './listingService';
 export { submitSupportRequest } from './supportService';
 export { trackAnalyticsEvent } from './analyticsService';
 export { submitOwnerApplication, submitReview } from './applicationService';

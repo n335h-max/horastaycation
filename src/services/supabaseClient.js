@@ -1,6 +1,6 @@
 import { isSupabaseConfigured, supabase, SUPABASE_BUCKETS } from '../lib/supabase';
 import { REMOTE_BOOKING_LIMIT } from '../lib/constants';
-import { FEATURED_PROPERTIES } from '../data/siteData';
+import { fromRemoteManagementListing, mergeManagementListings, normalizeListingPayload } from './listingMapper';
 
 // ── Auth ──
 
@@ -80,80 +80,6 @@ export async function uploadListingMediaFile(listingId, fieldName, file) {
 
 // ── Listing sync helpers ──
 
-function normalizeListingPayload(listing) {
-  const amenities = String(listing.facilitiesText || '')
-    .split(',')
-    .map((i) => i.trim())
-    .filter(Boolean);
-  const blockedDates = Array.isArray(listing.blockedDates)
-    ? listing.blockedDates
-    : String(listing.blockedDatesText || '')
-        .split(',')
-        .map((i) => i.trim())
-        .filter(Boolean);
-  return {
-    ...listing,
-    price: Number(listing.price) || 0,
-    amenities: amenities.length ? amenities : listing.amenities || [],
-    image: listing.image || listing.summaryImage || listing.thumbnail,
-    summaryImage: listing.summaryImage || listing.image || listing.thumbnail,
-    thumbnail: listing.thumbnail || listing.image || listing.summaryImage,
-    videoUrl: listing.videoUrl || '',
-    schedule: listing.schedule || '',
-    publishStatus: listing.publishStatus || 'published',
-    availabilityNotes: listing.availabilityNotes || '',
-    blockedDates,
-    blockedDatesText: blockedDates.join(', '),
-    isDeleted: Boolean(listing.isDeleted),
-    imageAsset: listing.imageAsset || null,
-    summaryImageAsset: listing.summaryImageAsset || null,
-    thumbnailAsset: listing.thumbnailAsset || null,
-    videoAsset: listing.videoAsset || null,
-  };
-}
-
-function mergeManagementListings(listings = []) {
-  const listingMap = new Map(listings.map((l) => [l.id, normalizeListingPayload(l)]));
-  const mergedDefaults = FEATURED_PROPERTIES.map((l) =>
-    normalizeListingPayload({ ...l, ...(listingMap.get(l.id) || {}) }),
-  ).filter((l) => !l.isDeleted);
-  const extras = listings
-    .filter((l) => !FEATURED_PROPERTIES.some((d) => d.id === l.id) && !l.isDeleted)
-    .map((l) => normalizeListingPayload(l));
-  return [...mergedDefaults, ...extras];
-}
-
-function fromRemoteManagementListing(record) {
-  const defaults = FEATURED_PROPERTIES.find((l) => l.id === record.id) || FEATURED_PROPERTIES[0];
-  return normalizeListingPayload({
-    ...defaults,
-    id: record.id,
-    name: record.name ?? defaults.name,
-    location: record.location ?? defaults.location,
-    price: Number(record.price ?? defaults.price) || 0,
-    ratingLabel: record.rating_label ?? defaults.ratingLabel,
-    reviewCount: Number(record.review_count ?? defaults.reviewCount) || 0,
-    badge: record.badge ?? defaults.badge,
-    badgeIcon: record.badge_icon ?? defaults.badgeIcon,
-    statusNote: record.status_note ?? defaults.statusNote,
-    mood: record.mood ?? defaults.mood,
-    bestFor: record.best_for ?? defaults.bestFor,
-    image: record.image ?? defaults.image,
-    summaryImage: record.summary_image ?? defaults.summaryImage,
-    thumbnail: record.thumbnail ?? defaults.thumbnail,
-    videoUrl: record.video_url ?? '',
-    schedule: record.schedule ?? defaults.schedule,
-    publishStatus: record.publish_status ?? 'published',
-    availabilityNotes: record.availability_notes ?? '',
-    blockedDates: Array.isArray(record.blocked_dates) ? record.blocked_dates : [],
-    isDeleted: Boolean(record.is_deleted),
-    amenities: Array.isArray(record.amenities) ? record.amenities : defaults.amenities,
-    imageAsset: null,
-    summaryImageAsset: null,
-    thumbnailAsset: null,
-    videoAsset: null,
-  });
-}
 
 export async function fetchRemoteManagementListings() {
   if (!isSupabaseConfigured || !supabase) {

@@ -126,7 +126,7 @@ export function useAuth() {
   useEffect(() => {
     let isActive = true;
 
-    async function applyRequestedRole(pushToast) {
+    async function applyRequestedRole() {
       if (!authSession?.user) return;
 
       const params = new URLSearchParams(location.search);
@@ -142,20 +142,14 @@ export function useAuth() {
       setAuthRole(authState.activeRole);
       setAvailableRoles(authState.availableRoles);
       navigate(getSafeNextPath(nextPath, authState.activeRole), { replace: true });
-      pushToast?.(
-        requestedRole === 'management'
-          ? 'Google sign-in complete. Management access is now checked against the allowed email list.'
-          : `Signed in successfully as ${requestedRole}.`,
-        'success',
-        'lock',
-      );
+      // Toast messaging is handled by the caller layer (App) to keep hook side effects focused on auth state.
     }
 
-    // Return a function that expects pushToast
+    applyRequestedRole();
+
     return () => {
       isActive = false;
     };
-    // We handle this specially in App.jsx by calling a returned function
   }, [authSession, location.pathname, location.search, navigate]);
 
   // Sync role with route

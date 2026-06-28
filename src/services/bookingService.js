@@ -40,7 +40,7 @@ function buildLegacyRemoteBookingPayload({ currentUser, bookingForm, bookingSumm
     service_fee: bookingSummary.serviceFee,
     total: bookingSummary.total,
     special_requests: bookingForm.specialRequests || null,
-    payment_last4: paymentForm.cardLast4 || paymentForm.cardNumber?.replace(/\s/g, '').slice(-4) || null,
+    payment_last4: paymentForm.cardLast4 || null,
     booking_status: 'confirmed',
   };
 }
@@ -92,7 +92,7 @@ export async function submitBooking({ bookingForm, bookingSummary, paymentForm =
       cancelledAt: paymentMeta.cancelledAt || '',
       customerReceiptEmail,
       statusNote,
-      paymentLast4: paymentForm.cardLast4 || paymentForm.cardNumber?.replace(/\s/g, '').slice(-4) || '',
+      paymentLast4: paymentForm.cardLast4 || '',
     },
     ...store.bookingTransactions,
   ];

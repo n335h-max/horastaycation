@@ -43,6 +43,15 @@ function getAuthBadgeCopy(authUser, authRole) {
   };
 }
 
+function normalizeRoles(availableRoles) {
+  if (!Array.isArray(availableRoles)) {
+    return ['client'];
+  }
+
+  const filteredRoles = availableRoles.filter((role) => typeof role === 'string' && role.trim());
+  return filteredRoles.length ? filteredRoles : ['client'];
+}
+
 function UserAvatarIndicator({ authUser, authRole, isLanding = false }) {
   const badge = getAuthBadgeCopy(authUser, authRole);
 
@@ -93,9 +102,7 @@ function UserProfileMenu({
   const containerRef = useRef(null);
   const dropdownId = useId();
   const badge = getAuthBadgeCopy(authUser, authRole);
-  const safeAvailableRoles = Array.isArray(availableRoles)
-    ? availableRoles.filter((role) => typeof role === 'string' && role.trim())
-    : ['client'];
+  const safeAvailableRoles = normalizeRoles(availableRoles);
 
   useEffect(() => {
     if (!open) {
@@ -140,6 +147,7 @@ function UserProfileMenu({
   const goToDashboardClass = isLanding
     ? 'bg-teal-400 text-brand-950 hover:bg-teal-300'
     : 'bg-teal-500 text-white hover:bg-teal-400';
+  const canGoToDashboard = String(authRole || '').toLowerCase() !== 'client';
 
   return (
     <div ref={containerRef} className="relative z-30 shrink-0">
@@ -189,16 +197,18 @@ function UserProfileMenu({
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              onGoToDashboard?.();
-            }}
-            className={`mt-3 flex w-full items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition ${goToDashboardClass}`}
-          >
-            Go to Dashboard
-          </button>
+          {canGoToDashboard ? (
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                onGoToDashboard?.();
+              }}
+              className={`mt-3 flex w-full items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition ${goToDashboardClass}`}
+            >
+              Go to Dashboard
+            </button>
+          ) : null}
 
           <button
             type="button"
@@ -232,9 +242,7 @@ export function SiteHeader({
   headerAction,
 }) {
   const [mobileProfileOpen, setMobileProfileOpen] = useState(false);
-  const safeAvailableRoles = Array.isArray(availableRoles)
-    ? availableRoles.filter((role) => typeof role === 'string' && role.trim())
-    : ['client'];
+  const safeAvailableRoles = normalizeRoles(availableRoles);
   const isLanding = activePage === 'landing';
   const useHomeChrome = true;
   const navTextClass = useHomeChrome ? 'text-white/80 hover:text-white' : 'text-slate-600 hover:text-brand-600';
@@ -273,6 +281,7 @@ export function SiteHeader({
   const mobileGoToDashboardClass = useHomeChrome
     ? 'mt-3 flex w-full items-center justify-center rounded-2xl bg-teal-400 px-4 py-3 text-sm font-semibold text-brand-950 transition hover:bg-teal-300'
     : 'mt-3 flex w-full items-center justify-center rounded-2xl bg-teal-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-400';
+  const canGoToDashboard = String(authRole || '').toLowerCase() !== 'client';
   const mobileNavItemClass = useHomeChrome
     ? 'block w-full rounded-2xl border border-transparent px-3 py-3 text-left font-medium text-white/85 transition hover:border-white/20 hover:bg-white/10 hover:text-white'
     : 'block w-full rounded-2xl border border-transparent px-3 py-3 text-left font-medium text-slate-700 transition hover:border-ice-200 hover:bg-ice-50';
@@ -428,16 +437,18 @@ export function SiteHeader({
                       )}
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onGoToDashboard?.();
-                        onToggleMobile(false);
-                      }}
-                      className={mobileGoToDashboardClass}
-                    >
-                      Go to Dashboard
-                    </button>
+                    {canGoToDashboard ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onGoToDashboard?.();
+                          onToggleMobile(false);
+                        }}
+                        className={mobileGoToDashboardClass}
+                      >
+                        Go to Dashboard
+                      </button>
+                    ) : null}
 
                     <button
                       type="button"

@@ -90,17 +90,56 @@ export async function fetchWithRetry(url, options = {}, retryConfig = {}) {
   throw lastError || new Error('Max retries exceeded');
 }
 
+function getAuthHeaders(accessToken) {
+  if (!accessToken) {
+    return {};
+  }
+  return { Authorization: `Bearer ${accessToken}` };
+}
+
+function stableStringify(value) {
+  if (value === null || typeof value !== 'object') {
+    return JSON.stringify(value);
+  }
+
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableStringify(item)).join(',')}]`;
+  }
+
+  const keys = Object.keys(value).sort();
+  return `{${keys.map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`).join(',')}}`;
+}
+
+async function hashString(value) {
+  const encoder = new TextEncoder();
+  const input = encoder.encode(value);
+  const digest = await globalThis.crypto.subtle.digest('SHA-256', input);
+  const bytes = Array.from(new Uint8Array(digest));
+  return bytes.map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+async function buildCheckoutIdempotencyKey(bookingData) {
+  const normalizedPayload = stableStringify(bookingData || {});
+  const digest = await hashString(normalizedPayload);
+  return `checkout-${digest}`;
+}
+
 /**
  * Create a stripe checkout session with retry logic
  */
-export async function createCheckoutSessionWithRetry(bookingData, retryConfig = {}) {
+export async function createCheckoutSessionWithRetry(bookingData, accessToken = '', retryConfig = {}) {
   const config = { maxRetries: 3, ...retryConfig };
+  const idempotencyKey = await buildCheckoutIdempotencyKey(bookingData);
 
   const response = await fetchWithRetry(
     '/api/create-checkout-session',
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Idempotency-Key': idempotencyKey,
+        ...getAuthHeaders(accessToken),
+      },
       body: JSON.stringify(bookingData),
     },
     config,
@@ -126,12 +165,12 @@ export async function createCheckoutSessionWithRetry(bookingData, retryConfig = 
 /**
  * Verify a stripe checkout session with retry logic
  */
-export async function verifyCheckoutSessionWithRetry(sessionId, retryConfig = {}) {
+export async function verifyCheckoutSessionWithRetry(sessionId, accessToken = '', retryConfig = {}) {
   const config = { maxRetries: 3, ...retryConfig };
 
   const response = await fetchWithRetry(
     `/api/verify-checkout-session?session_id=${encodeURIComponent(sessionId)}`,
-    { method: 'GET' },
+    { method: 'GET', headers: { ...getAuthHeaders(accessToken) } },
     config,
   );
 

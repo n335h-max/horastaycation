@@ -23,7 +23,11 @@ export function writeStorage(value) {
     return;
   }
 
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+  } catch {
+    /* noop */
+  }
 }
 
 export function readBookingDraft(defaultValue) {
@@ -49,5 +53,9 @@ export function writeBookingDraft(value) {
     return;
   }
 
-  window.localStorage.setItem(BOOKING_DRAFT_KEY, JSON.stringify(value));
+  try {
+    window.localStorage.setItem(BOOKING_DRAFT_KEY, JSON.stringify(value));
+  } catch {
+    /* noop */
+  }
 }

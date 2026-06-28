@@ -6,8 +6,8 @@ import { validateWithSchema, bookingSchema } from '../lib/validation';
 import { isRangeBlocked } from '../lib/guestFeatures';
 import { SERVICE_FEE_RATE } from '../lib/constants';
 import { APP_PATHS } from '../lib/routes';
-import { createCheckoutSessionWithRetry } from '../lib/apiRetry';
-import { isSupabaseConfigured } from '../lib/supabase';
+import { createCheckoutSessionWithRetry, verifyCheckoutSessionWithRetry } from '../lib/apiRetry';
+import { isSupabaseConfigured, supabase } from '../lib/supabase';
 
 export function useBooking({ featuredListings, store, setStore = () => {}, pushToast, recordAnalytics }) {
   const location = useLocation();
@@ -54,6 +54,18 @@ export function useBooking({ featuredListings, store, setStore = () => {}, pushT
     };
   }, [featuredListings, store.bookingDraft]);
 
+  const getAccessToken = useCallback(async () => {
+    if (!isSupabaseConfigured || !supabase) {
+      return '';
+    }
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    return session?.access_token || '';
+  }, []);
+
   // Persist booking draft with debounce
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -86,12 +98,13 @@ export function useBooking({ featuredListings, store, setStore = () => {}, pushT
       setStripeVerificationError('');
 
       try {
-        const response = await fetch(
-          `/api/verify-checkout-session?session_id=${encodeURIComponent(bookingSuccessSessionId)}`,
-        );
-        const payload = await response.json();
+        const accessToken = await getAccessToken();
+        const payload = await verifyCheckoutSessionWithRetry(bookingSuccessSessionId, accessToken, {
+          maxRetries: 3,
+          initialDelayMs: 1000,
+        });
 
-        if (!response.ok || !payload?.paid) {
+        if (!payload?.paid) {
           throw new Error(payload?.error || 'Stripe has not marked this checkout as paid yet.');
         }
 
@@ -141,7 +154,7 @@ export function useBooking({ featuredListings, store, setStore = () => {}, pushT
     return () => {
       isActive = false;
     };
-  }, [bookingSuccessSessionId, location.pathname]);
+  }, [bookingSuccessSessionId, location.pathname, getAccessToken, pushToast, recordAnalytics]);
 
   // Handle cancelled checkout
   useEffect(() => {
@@ -155,7 +168,7 @@ export function useBooking({ featuredListings, store, setStore = () => {}, pushT
     void recordAnalytics('stripe_checkout_cancelled', {
       propertyId: store.bookingDraft.property || '',
     });
-  }, [bookingCheckoutState, location.pathname]);
+  }, [bookingCheckoutState, location.pathname, pushToast, recordAnalytics, store.bookingDraft.property]);
 
   const handleBookingChange = useCallback(
     (event) => {
@@ -177,7 +190,7 @@ export function useBooking({ featuredListings, store, setStore = () => {}, pushT
 
   // We need setStore here, which complicates things. Let's just handle booking state separately.
   const handleProceedToPayment = useCallback(
-    (event, currentStore, setStore) => {
+    (event, currentStore) => {
       event.preventDefault();
       setIsOpeningPayment(true);
       const result = validateWithSchema(bookingSchema, currentStore.bookingDraft);
@@ -203,11 +216,11 @@ export function useBooking({ featuredListings, store, setStore = () => {}, pushT
       setPaymentOpen(true);
       setIsOpeningPayment(false);
     },
-    [featuredListings, pushToast, bookingSummary],
+    [featuredListings, pushToast],
   );
 
   const handlePaymentSubmit = useCallback(
-    async (event, currentStore, setStore) => {
+    async (event, currentStore) => {
       event.preventDefault();
       setIsSubmittingPayment(true);
 
@@ -218,11 +231,13 @@ export function useBooking({ featuredListings, store, setStore = () => {}, pushT
       }
 
       try {
+        const accessToken = await getAccessToken();
         const payload = await createCheckoutSessionWithRetry(
           {
             bookingForm: currentStore.bookingDraft,
             bookingSummary,
           },
+          accessToken,
           { maxRetries: 3, initialDelayMs: 1000 },
         );
 
@@ -243,7 +258,7 @@ export function useBooking({ featuredListings, store, setStore = () => {}, pushT
         setIsSubmittingPayment(false);
       }
     },
-    [bookingSummary, recordAnalytics, pushToast],
+    [bookingSummary, getAccessToken, recordAnalytics, pushToast],
   );
 
   return {

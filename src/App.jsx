@@ -241,7 +241,11 @@ function normalizeAvailableRoles(roles) {
   return normalizedRoles.length ? Array.from(new Set(normalizedRoles)) : ['client'];
 }
 
-function RoleProtectedRoute({ authUser, availableRoles, requiredRole, fallbackPath, children }) {
+function RoleProtectedRoute({ authUser, availableRoles, requiredRole, fallbackPath, isAuthLoading = false, children }) {
+  if (isAuthLoading) {
+    return <RouteLoadingFallback />;
+  }
+
   if (!authUser) {
     return <Navigate to={fallbackPath} replace />;
   }
@@ -761,6 +765,18 @@ export default function App() {
     };
   }, [featuredListings, store.bookingDraft]);
 
+  const getAccessToken = useCallback(async () => {
+    if (!isSupabaseConfigured || !supabase) {
+      return '';
+    }
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    return session?.access_token || '';
+  }, []);
+
   useEffect(() => {
     if (location.pathname !== APP_PATHS.bookingSuccess || !bookingSuccessSessionId) {
       return;
@@ -784,8 +800,13 @@ export default function App() {
       setStripeVerificationError('');
 
       try {
+        const accessToken = await getAccessToken();
         const response = await fetch(
           `/api/verify-checkout-session?session_id=${encodeURIComponent(bookingSuccessSessionId)}`,
+          {
+            method: 'GET',
+            headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+          },
         );
         const payload = await response.json();
 
@@ -846,7 +867,7 @@ export default function App() {
     return () => {
       isActive = false;
     };
-  }, [bookingSuccessSessionId, location.pathname, recordAnalytics]);
+  }, [bookingSuccessSessionId, getAccessToken, location.pathname, recordAnalytics]);
 
   useEffect(() => {
     if (location.pathname !== APP_PATHS.booking || bookingCheckoutState !== 'cancelled') {
@@ -867,7 +888,6 @@ export default function App() {
 
   function handleProceedToPayment(event) {
     event.preventDefault();
-    console.log('[booking] Proceed to Payment: start');
     setIsOpeningPayment(true);
     const result = validateWithSchema(bookingSchema, store.bookingDraft);
 
@@ -875,7 +895,6 @@ export default function App() {
       setBookingErrors(result.errors);
       pushToast('Fix the highlighted booking fields before continuing.', 'warning', 'calendar');
       setIsOpeningPayment(false);
-      console.log('[booking] Proceed to Payment: end (validation_failed)');
       return;
     }
 
@@ -883,7 +902,6 @@ export default function App() {
       setBookingErrors({ checkout: ['Check-out must be after check-in.'] });
       pushToast('Select valid dates to continue to payment.', 'warning', 'calendar');
       setIsOpeningPayment(false);
-      console.log('[booking] Proceed to Payment: end (summary_incomplete)');
       return;
     }
 
@@ -893,7 +911,6 @@ export default function App() {
       setBookingErrors({ checkin: ['Selected dates are unavailable for this staycation.'] });
       pushToast('Selected dates are unavailable. Please choose a different stay window.', 'warning', 'calendar');
       setIsOpeningPayment(false);
-      console.log('[booking] Proceed to Payment: end (date_range_blocked)');
       return;
     }
 
@@ -901,7 +918,6 @@ export default function App() {
     setStripeVerificationError('');
     setPaymentOpen(true);
     setIsOpeningPayment(false);
-    console.log('[booking] Proceed to Payment: end (success_modal_opened)');
   }
 
   async function handlePaymentSubmit(event) {
@@ -915,10 +931,12 @@ export default function App() {
     }
 
     try {
+      const accessToken = await getAccessToken();
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         },
         body: JSON.stringify({
           bookingForm: store.bookingDraft,
@@ -1081,10 +1099,18 @@ export default function App() {
 
   async function handleBookingRefund(booking) {
     try {
+      const accessToken = await getAccessToken();
+
+      if (!accessToken) {
+        pushToast('Your session expired. Please sign in again before processing refunds.', 'warning', 'lock');
+        return;
+      }
+
       const response = await fetch('/api/refund-payment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
           paymentIntentId: booking.stripePaymentIntentId,
@@ -1280,6 +1306,7 @@ export default function App() {
                     availableRoles={safeAvailableRoles}
                     requiredRole="owner"
                     fallbackPath={buildAuthPath('owner', APP_PATHS.ownerDashboard)}
+                    isAuthLoading={isAuthLoading}
                   >
                     <OwnerDashboardPageRoute
                       ownerApplications={store.ownerApplications}
@@ -1324,11 +1351,19 @@ export default function App() {
               <Route
                 path={APP_PATHS.review}
                 element={
-                  <ReviewPageRoute
-                    onShowPage={showPage}
-                    onSubmitReview={handleReviewSubmit}
-                    isSubmitting={isSubmittingReview}
-                  />
+                  <RoleProtectedRoute
+                    authUser={authSession?.user}
+                    availableRoles={safeAvailableRoles}
+                    requiredRole="client"
+                    fallbackPath={buildAuthPath('client', APP_PATHS.review)}
+                    isAuthLoading={isAuthLoading}
+                  >
+                    <ReviewPageRoute
+                      onShowPage={showPage}
+                      onSubmitReview={handleReviewSubmit}
+                      isSubmitting={isSubmittingReview}
+                    />
+                  </RoleProtectedRoute>
                 }
               />
               <Route
@@ -1362,6 +1397,7 @@ export default function App() {
                     availableRoles={safeAvailableRoles}
                     requiredRole="management"
                     fallbackPath={buildAuthPath('management', APP_PATHS.dashboard)}
+                    isAuthLoading={isAuthLoading}
                   >
                     <DashboardPageRoute
                       listings={dashboardListings}
@@ -1391,9 +1427,10 @@ export default function App() {
                 element={
                   <RoleProtectedRoute
                     authUser={authSession?.user}
-                    availableRoles={availableRoles}
+                    availableRoles={safeAvailableRoles}
                     requiredRole="management"
                     fallbackPath={buildAuthPath('management', APP_PATHS.managementListings)}
+                    isAuthLoading={isAuthLoading}
                   >
                     <ManagementListingsPageRoute
                       listings={dashboardListings}
