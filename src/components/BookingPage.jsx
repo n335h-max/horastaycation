@@ -152,6 +152,10 @@ export function BookingPage({
   return (
     <section className="min-h-screen bg-ice-50 px-3 pb-14 pt-24 md:px-8">
       <div className="mx-auto max-w-7xl">
+        <div className="mb-3 rounded-[1.1rem] bg-[#eceef2] px-4 py-6 text-center shadow-sm md:py-8">
+          <h1 className="font-display text-4xl font-bold leading-none text-brand-950 md:text-6xl">Book With Us</h1>
+        </div>
+
         <div className="rounded-[1.25rem] bg-brand-950 px-4 py-3 text-white shadow-lg md:px-6">
           <div className="flex items-center justify-between gap-3">
             <button
