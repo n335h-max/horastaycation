@@ -1,0 +1,24 @@
+{
+  "name": "Hora Staycation",
+  "short_name": "Hora",
+  "description": "Search, save, and book premium staycation experiences with Hora.",
+  "theme_color": "#0c1a3a",
+  "background_color": "#f8fafc",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/hora-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
