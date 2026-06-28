@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FEATURED_PROPERTIES, GUEST_OPTIONS, SEARCH_LOCATIONS, SPECIAL_REQUEST_OPTIONS } from '../data/siteData';
 import { isRangeBlocked } from '../lib/guestFeatures';
 import { Icon } from './Icon';
@@ -31,12 +31,6 @@ export function BookingPage({
   const [selectedLocation, setSelectedLocation] = useState('Any location');
   const [savedOnly, setSavedOnly] = useState(false);
   const whatsappBaseUrl = 'https://wa.me/601110629990?text=';
-  const steps = [
-    { number: '01', label: 'Unified Sign-In' },
-    { number: '02', label: 'Browse Staycations' },
-    { number: '03', label: 'Guest & Stay Details' },
-    { number: '04', label: 'Payment' },
-  ];
   const wishlistIdSet = useMemo(() => new Set(wishlistIds), [wishlistIds]);
   const locationOptions = useMemo(
     () => [
@@ -113,597 +107,461 @@ export function BookingPage({
     });
   }
 
-  return (
-    <section className="min-h-screen bg-ice-50 px-4 pb-16 pt-28 md:px-8">
-      <div className="mx-auto max-w-6xl">
-        <button
-          type="button"
-          onClick={() => onShowPage('landing')}
-          className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-brand-600 hover:text-brand-800"
-        >
-          <Icon name="arrow-right" className="rotate-180" />
-          Back to Home
-        </button>
+  function handlePropertySelect(propertyId) {
+    onBookingChange({
+      target: {
+        name: 'property',
+        value: propertyId,
+      },
+    });
+  }
 
-        <div className="mb-8">
-          <h1 className="font-display text-4xl font-bold text-brand-950 md:text-5xl">Book Your Staycation</h1>
-          <p className="mt-3 text-lg text-slate-600">
-            Sign in once, switch to the client role, then browse staycations and complete the booking flow without
-            juggling separate login entry points.
-          </p>
+  const selectedProperty = useMemo(
+    () => properties.find((property) => property.id === bookingForm.property) ?? filteredProperties[0] ?? null,
+    [bookingForm.property, filteredProperties, properties],
+  );
+
+  useEffect(() => {
+    if (bookingForm.property || !filteredProperties.length) {
+      return;
+    }
+
+    onBookingChange({
+      target: {
+        name: 'property',
+        value: filteredProperties[0].id,
+      },
+    });
+  }, [bookingForm.property, filteredProperties, onBookingChange]);
+
+  const stepStates = [
+    { number: '01', label: 'Unified Sign-In', state: 'done' },
+    { number: '02', label: 'Browse Staycations', state: 'done' },
+    { number: '03', label: 'Guest & Stay Details', state: 'active' },
+    { number: '04', label: 'Payment', state: 'pending' },
+  ];
+
+  return (
+    <section className="min-h-screen bg-ice-50 px-3 pb-14 pt-24 md:px-8">
+      <div className="mx-auto max-w-7xl">
+        <div className="rounded-[1.25rem] bg-brand-950 px-4 py-3 text-white shadow-lg md:px-6">
+          <div className="flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => onShowPage('landing')}
+              className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/80"
+            >
+              <Icon name="arrow-right" className="rotate-180" />
+              Hora Staycation
+            </button>
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">Booking Flow</div>
+          </div>
         </div>
 
-        <div className="mb-8 rounded-3xl border border-brand-100 bg-white p-5 shadow-sm">
-          <div className="grid gap-4 md:grid-cols-4">
-            {steps.map((step, index) => (
-              <div key={step.number} className="flex items-center gap-3">
+        <div className="mt-3 rounded-[1.25rem] border border-brand-100 bg-white px-4 py-4 shadow-sm md:px-6">
+          <div className="grid gap-3 md:grid-cols-4">
+            {stepStates.map((step) => (
+              <div key={step.number} className="flex items-center gap-3 rounded-2xl bg-ice-50 px-3 py-3">
                 <div
-                  className={`flex h-11 w-11 items-center justify-center rounded-2xl font-display text-sm font-bold ${
-                    index < 3 ? 'bg-brand-600 text-white' : 'bg-brand-50 text-brand-700'
+                  className={`flex h-9 w-9 items-center justify-center rounded-xl text-sm font-bold ${
+                    step.state === 'done'
+                      ? 'bg-brand-600 text-white'
+                      : step.state === 'active'
+                        ? 'bg-brand-950 text-white'
+                        : 'bg-white text-slate-500'
                   }`}
                 >
-                  {step.number}
+                  {step.state === 'done' ? '✓' : step.number}
                 </div>
-                <div>
-                  <div className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Step</div>
-                  <div className="font-medium text-brand-950">{step.label}</div>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Step {step.number}</p>
+                  <p className="truncate text-sm font-semibold text-brand-950">{step.label}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="mb-8 grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-ice-200 bg-white p-4 shadow-sm">
-            <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-              <Icon name="shield" />
-            </div>
-            <div className="font-semibold text-brand-950">Secure Checkout</div>
-            <p className="mt-1 text-sm text-slate-500">Encrypted payment flow with clear totals before confirmation.</p>
-          </div>
-          <div className="rounded-2xl border border-ice-200 bg-white p-4 shadow-sm">
-            <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-              <Icon name="calendar" />
-            </div>
-            <div className="font-semibold text-brand-950">Flexible Cancellation</div>
-            <p className="mt-1 text-sm text-slate-500">
-              Most stays allow free cancellation up to 48 hours before arrival.
-            </p>
-          </div>
-          <div className="rounded-2xl border border-ice-200 bg-white p-4 shadow-sm">
-            <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-              <Icon name="star" />
-            </div>
-            <div className="font-semibold text-brand-950">Guest Preview Stays</div>
-            <p className="mt-1 text-sm text-slate-500">
-              Guests can already browse these seven staycations now, then you can swap in the real photos and final
-              details later.
-            </p>
-          </div>
+        <div className="mt-3 rounded-[1.25rem] border border-ice-200 bg-brand-50/55 px-4 py-2.5 text-xs font-medium text-brand-800 md:px-6">
+          Secure checkout, transparent pricing, and flexible cancellation support for eligible stays.
         </div>
 
-        <form
-          onSubmit={handleSearchSubmit}
-          className="mb-8 rounded-[2rem] border border-brand-100 bg-white p-6 shadow-lg"
-        >
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-brand-600">
-                <Icon name="search" />
-                Smart Search
-              </div>
-              <h2 className="mt-4 font-display text-3xl font-bold text-brand-950">Search before you decide</h2>
-              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-500">
-                Filter by keyword, location, and stay dates, then save favorites to your wishlist or book right away.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setSavedOnly((current) => !current)}
-                className={`rounded-full px-4 py-2 text-sm font-semibold ${
-                  savedOnly ? 'bg-brand-600 text-white' : 'bg-ice-50 text-brand-700'
-                }`}
-              >
-                Saved only {wishlistIds.length ? `(${wishlistIds.length})` : ''}
-              </button>
-              <button
-                type="button"
-                onClick={onOpenSupport}
-                className="rounded-full bg-ice-50 px-4 py-2 text-sm font-semibold text-brand-700"
-              >
-                Ask support
-              </button>
-              {canInstallApp ? (
-                <button
-                  type="button"
-                  onClick={onInstallApp}
-                  className="rounded-full bg-brand-950 px-4 py-2 text-sm font-semibold text-white"
-                >
-                  Install app
-                </button>
-              ) : (
-                <div className="rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
-                  Mobile-ready PWA
+        <div className="mt-6 grid gap-6 lg:grid-cols-[1.18fr_0.82fr]">
+          <div className="space-y-5">
+            <div className="rounded-[1.2rem] border border-brand-100 bg-white p-4 shadow-sm md:p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2.5">
+                <div>
+                  <h1 className="font-display text-3xl font-bold text-brand-950 md:text-4xl">Book Your Staycation</h1>
+                  <p className="mt-1.5 text-sm text-slate-500">Pick a property, choose your dates, and check out now.</p>
                 </div>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-            <div className="xl:col-span-2">
-              <label className="form-label" htmlFor="searchQuery">
-                Search staycation
-              </label>
-              <input
-                id="searchQuery"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                className="form-input"
-                placeholder="Search by property name, mood, or amenity"
-              />
-            </div>
-            <div>
-              <label className="form-label" htmlFor="searchLocation">
-                Location
-              </label>
-              <select
-                id="searchLocation"
-                value={selectedLocation}
-                onChange={(event) => setSelectedLocation(event.target.value)}
-                className="form-input"
-              >
-                {locationOptions.map((location) => (
-                  <option key={location} value={location}>
-                    {location}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="form-label" htmlFor="checkin-search">
-                Check-in
-              </label>
-              <input
-                id="checkin-search"
-                name="checkin"
-                type="date"
-                value={bookingForm.checkin}
-                onChange={onBookingChange}
-                className="form-input"
-              />
-            </div>
-            <div>
-              <label className="form-label" htmlFor="checkout-search">
-                Check-out
-              </label>
-              <input
-                id="checkout-search"
-                name="checkout"
-                type="date"
-                value={bookingForm.checkout}
-                onChange={onBookingChange}
-                className="form-input"
-              />
-            </div>
-          </div>
-
-          <div className="mt-4 grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
-            <div>
-              <label className="form-label" htmlFor="guests-search">
-                Guests
-              </label>
-              <select
-                id="guests-search"
-                name="guests"
-                value={bookingForm.guests}
-                onChange={onBookingChange}
-                className="form-input"
-              >
-                {GUEST_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button type="submit" className="btn-primary px-6 py-3 text-sm md:w-auto">
-              <span className="inline-flex items-center gap-2">
-                Search stays
-                <Icon name="arrow-right" />
-              </span>
-            </button>
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-500">
-            <span className="rounded-full bg-ice-50 px-3 py-2 font-semibold text-brand-700">
-              {filteredProperties.length} match{filteredProperties.length === 1 ? '' : 'es'}
-            </span>
-            {bookingForm.checkin && bookingForm.checkout ? (
-              <span className="rounded-full bg-ice-50 px-3 py-2">
-                Availability is filtered for {formatDate(bookingForm.checkin)} to {formatDate(bookingForm.checkout)}
-              </span>
-            ) : null}
-          </div>
-        </form>
-
-        {!googleConnected ? (
-          <div className="rounded-3xl border border-brand-100 bg-white p-8 shadow-lg">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700">
-              <Icon name="lock" />
-              Client Role
-            </div>
-            <h2 className="font-display text-3xl font-bold text-brand-950">Sign in as Client</h2>
-            <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-600">
-              Use the unified login to choose the client role. Hora remembers your session and sends you straight back
-              to listings after Google sign-in.
-            </p>
-            <div className="mt-6 grid gap-4 md:grid-cols-3">
-              {filteredProperties.map((property) => (
-                <div key={property.id} className="rounded-2xl border border-ice-200 bg-ice-50 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="text-sm font-semibold text-brand-900">{property.name}</div>
-                      <div className="mt-1 inline-flex items-center gap-1 text-xs text-amber-500">
-                        <Icon name="star" />
-                        <span className="font-semibold text-brand-900">{property.ratingLabel}</span>
-                        <span className="text-slate-400">({property.reviewCount})</span>
-                      </div>
-                    </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSavedOnly((current) => !current)}
+                    className={`rounded-full px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.14em] ${
+                      savedOnly ? 'bg-brand-600 text-white' : 'bg-ice-100 text-brand-700'
+                    }`}
+                  >
+                    Saved {wishlistIds.length ? `(${wishlistIds.length})` : ''}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onOpenSupport}
+                    className="rounded-full bg-ice-100 px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-brand-700"
+                  >
+                    Support
+                  </button>
+                  {canInstallApp ? (
                     <button
                       type="button"
-                      onClick={(event) => handleWishlistClick(event, property.id)}
-                      className={`rounded-full p-2 ${wishlistIdSet.has(property.id) ? 'bg-rose-100 text-rose-600' : 'bg-white text-slate-400'}`}
-                      aria-label={wishlistIdSet.has(property.id) ? 'Remove from wishlist' : 'Save to wishlist'}
+                      onClick={onInstallApp}
+                      className="rounded-full bg-brand-950 px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white"
                     >
-                      <Icon name="heart" />
+                      Install App
                     </button>
-                  </div>
-                  <div className="mt-1 text-sm text-slate-500">{property.location}</div>
-                  <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-brand-700">
-                    <Icon name="users" />
-                    Up to {property.guestCapacity} guests
-                  </div>
-                  <div className="mt-3 inline-flex rounded-full bg-white px-3 py-1 text-xs font-semibold text-brand-700">
-                    {property.statusNote}
-                  </div>
-                  <p className="mt-3 text-xs leading-relaxed text-slate-500">&quot;{property.reviewSnippet}&quot;</p>
-                  <div className="mt-3 text-sm font-bold text-brand-700">{formatCurrency(property.price)}/night</div>
+                  ) : null}
                 </div>
-              ))}
-            </div>
-            {!filteredProperties.length ? (
-              <div className="mt-6 rounded-2xl border border-dashed border-ice-200 bg-ice-50 px-4 py-5 text-sm text-slate-500">
-                No stays match these filters yet. Adjust the search, open support, or save a different favorite on this
-                device.
               </div>
-            ) : null}
-            {authUser?.email ? (
-              <div className="mt-6 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-                Signed in as {authUser.email}
-              </div>
-            ) : null}
-            <button
-              type="button"
-              onClick={onOpenAuth}
-              disabled={isSubmitting || isAuthLoading}
-              className="btn-primary mt-8 w-full py-4 text-base disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <span className="inline-flex items-center gap-2">
-                {isSubmitting || isAuthLoading ? 'Opening unified sign-in...' : 'Continue to Unified Sign-In'}
-                <Icon name="arrow-right" />
-              </span>
-            </button>
-          </div>
-        ) : (
-          <>
-            <div className="grid gap-8 lg:grid-cols-[1.35fr_0.8fr]">
-              <form className="space-y-6" onSubmit={onProceedToPayment}>
-                <div className="rounded-2xl border border-ice-200 bg-white p-6 shadow-md">
-                  <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-brand-900 px-4 py-2 text-sm font-semibold text-white">
-                    <Icon name="lock" />
-                    Active role: {authRole.charAt(0).toUpperCase() + authRole.slice(1)}
-                  </div>
-                  <h2 className="mb-4 font-display text-xl font-bold text-brand-900">Browse Staycation Choices</h2>
-                  <p className="mb-5 text-sm text-slate-500">
-                    These seven staycations are visible in the customer flow now, with temporary visuals ready to be
-                    replaced when your real photos arrive.
-                  </p>
-                  <div className="space-y-4">
-                    {filteredProperties.map((property) => (
-                      <label
-                        key={property.id}
-                        className={`property-option flex cursor-pointer flex-col gap-4 rounded-xl border-2 p-4 transition-colors sm:flex-row sm:items-center ${
-                          bookingForm.property === property.id
-                            ? 'border-brand-500 bg-brand-50/50'
-                            : 'border-ice-200 hover:border-brand-400'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="property"
-                          value={property.id}
-                          checked={bookingForm.property === property.id}
-                          onChange={onBookingChange}
-                          className="h-5 w-5 accent-brand-600"
-                          required
-                        />
-                        <img
-                          src={property.thumbnail}
-                          alt={property.name}
-                          width="80"
-                          height="60"
-                          loading="lazy"
-                          className="h-14 w-20 rounded-lg object-cover"
-                        />
-                        <div className="flex-1 self-start sm:self-auto">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="font-semibold text-brand-900">{property.name}</div>
-                            <button
-                              type="button"
-                              onClick={(event) => handleWishlistClick(event, property.id)}
-                              className={`rounded-full p-2 ${wishlistIdSet.has(property.id) ? 'bg-rose-100 text-rose-600' : 'bg-ice-50 text-slate-400'}`}
-                              aria-label={wishlistIdSet.has(property.id) ? 'Remove from wishlist' : 'Save to wishlist'}
-                            >
-                              <Icon name="heart" />
-                            </button>
-                          </div>
-                          <div className="text-sm text-slate-500">{property.location}</div>
-                          <div className="mt-1 inline-flex items-center gap-1 text-xs text-amber-500">
-                            <Icon name="star" />
-                            <span className="font-semibold text-brand-900">{property.ratingLabel}</span>
-                            <span className="text-slate-400">({property.reviewCount})</span>
-                          </div>
-                          <div className="mt-1 text-xs font-semibold text-brand-600">{property.statusNote}</div>
-                          <div className="mt-1 text-xs text-brand-700">Up to {property.guestCapacity} guests</div>
-                          {property.schedule ? (
-                            <div className="mt-1 text-xs text-slate-400">{property.schedule}</div>
-                          ) : null}
-                          {property.videoUrl ? (
-                            <div className="mt-1 text-xs text-brand-500">Video walkthrough available</div>
-                          ) : null}
-                          <p className="mt-2 text-xs leading-relaxed text-slate-500">&quot;{property.reviewSnippet}&quot;</p>
-                        </div>
-                        <div className="self-start text-left sm:self-auto sm:text-right">
-                          <div className="font-bold text-brand-700">{formatCurrency(property.price)}</div>
-                          <div className="text-xs text-slate-400">/night</div>
-                          <button
-                            type="button"
-                            onClick={(event) => handleQuickEnquiryClick(event, property)}
-                            className="mt-3 rounded-full bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800"
-                          >
-                            Quick Enquiry
-                          </button>
-                        </div>
-                      </label>
+
+              <form onSubmit={handleSearchSubmit} className="mt-4 grid gap-3 md:grid-cols-[1.2fr_0.8fr_0.5fr_auto] md:items-end">
+                <div>
+                  <label className="form-label" htmlFor="searchQuery">
+                    Search by name or mood
+                  </label>
+                  <input
+                    id="searchQuery"
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    className="form-input"
+                    placeholder="Search by property name, mood, or amenity"
+                  />
+                </div>
+                <div>
+                  <label className="form-label" htmlFor="searchLocation">
+                    Location
+                  </label>
+                  <select
+                    id="searchLocation"
+                    value={selectedLocation}
+                    onChange={(event) => setSelectedLocation(event.target.value)}
+                    className="form-input"
+                  >
+                    {locationOptions.map((location) => (
+                      <option key={location} value={location}>
+                        {location}
+                      </option>
                     ))}
-                  </div>
-                  {!filteredProperties.length ? (
-                    <div className="mt-4 rounded-2xl border border-dashed border-ice-200 bg-ice-50 px-4 py-5 text-sm text-slate-500">
-                      No published properties match this search. Try a different location, remove the saved-only filter,
-                      or ask support for help choosing a stay.
-                    </div>
-                  ) : null}
-                  {bookingErrors?.property ? (
-                    <p className="mt-3 text-sm text-rose-600">{bookingErrors.property[0]}</p>
-                  ) : null}
+                  </select>
                 </div>
-
-                <div className="rounded-2xl border border-ice-200 bg-white p-6 shadow-md">
-                  <h2 className="mb-4 font-display text-xl font-bold text-brand-900">Date of Staying</h2>
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <div>
-                      <label className="form-label" htmlFor="checkin">
-                        Check-in Date
-                      </label>
-                      <input
-                        id="checkin"
-                        name="checkin"
-                        type="date"
-                        value={bookingForm.checkin}
-                        onChange={onBookingChange}
-                        className={`form-input ${bookingErrors?.checkin ? 'border-rose-400 ring-rose-100' : ''}`}
-                        required
-                      />
-                      <p className="mt-2 text-xs text-slate-400">Typical check-in starts at 3:00 PM.</p>
-                      {bookingErrors?.checkin ? (
-                        <p className="mt-2 text-sm text-rose-600">{bookingErrors.checkin[0]}</p>
-                      ) : null}
-                    </div>
-                    <div>
-                      <label className="form-label" htmlFor="checkout">
-                        Check-out Date
-                      </label>
-                      <input
-                        id="checkout"
-                        name="checkout"
-                        type="date"
-                        value={bookingForm.checkout}
-                        onChange={onBookingChange}
-                        className={`form-input ${bookingErrors?.checkout ? 'border-rose-400 ring-rose-100' : ''}`}
-                        required
-                      />
-                      <p className="mt-2 text-xs text-slate-400">
-                        Choose a later date to unlock the full price summary.
-                      </p>
-                      {bookingErrors?.checkout ? (
-                        <p className="mt-2 text-sm text-rose-600">{bookingErrors.checkout[0]}</p>
-                      ) : null}
-                    </div>
-                    <div>
-                      <label className="form-label" htmlFor="guests">
-                        Guests
-                      </label>
-                      <select
-                        id="guests"
-                        name="guests"
-                        value={bookingForm.guests}
-                        onChange={onBookingChange}
-                        className={`form-input ${bookingErrors?.guests ? 'border-rose-400 ring-rose-100' : ''}`}
-                        required
-                      >
-                        {GUEST_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                      {bookingErrors?.guests ? (
-                        <p className="mt-2 text-sm text-rose-600">{bookingErrors.guests[0]}</p>
-                      ) : null}
-                    </div>
-                  </div>
+                <div>
+                  <label className="form-label" htmlFor="guests-search">
+                    Guests
+                  </label>
+                  <select
+                    id="guests-search"
+                    name="guests"
+                    value={bookingForm.guests}
+                    onChange={onBookingChange}
+                    className="form-input"
+                  >
+                    {GUEST_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-
-                <div className="rounded-2xl border border-ice-200 bg-white p-6 shadow-md">
-                  <h2 className="mb-4 font-display text-xl font-bold text-brand-900">Client Details</h2>
-                  <p className="mb-4 text-sm text-slate-500">
-                    This form keeps typing light on mobile by using quick-select options wherever possible.
-                  </p>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                      <label className="form-label" htmlFor="guestName">
-                        Full Name
-                      </label>
-                      <input
-                        id="guestName"
-                        name="guestName"
-                        type="text"
-                        value={bookingForm.guestName}
-                        onChange={onBookingChange}
-                        autoComplete="name"
-                        className={`form-input ${bookingErrors?.guestName ? 'border-rose-400 ring-rose-100' : ''}`}
-                        placeholder="Jane Smith"
-                        required
-                      />
-                      {bookingErrors?.guestName ? (
-                        <p className="mt-2 text-sm text-rose-600">{bookingErrors.guestName[0]}</p>
-                      ) : null}
-                    </div>
-                    <div>
-                      <label className="form-label" htmlFor="guestEmail">
-                        Email
-                      </label>
-                      <input
-                        id="guestEmail"
-                        name="guestEmail"
-                        type="email"
-                        value={bookingForm.guestEmail}
-                        onChange={onBookingChange}
-                        autoComplete="email"
-                        className={`form-input ${bookingErrors?.guestEmail ? 'border-rose-400 ring-rose-100' : ''}`}
-                        placeholder="jane@example.com"
-                        required
-                      />
-                      {bookingErrors?.guestEmail ? (
-                        <p className="mt-2 text-sm text-rose-600">{bookingErrors.guestEmail[0]}</p>
-                      ) : null}
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="form-label" htmlFor="specialRequests">
-                        Special Requests
-                      </label>
-                      <select
-                        id="specialRequests"
-                        name="specialRequests"
-                        value={bookingForm.specialRequests}
-                        onChange={onBookingChange}
-                        className="form-input"
-                      >
-                        {SPECIAL_REQUEST_OPTIONS.map((option) => (
-                          <option key={option.label} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                      <p className="mt-2 text-xs text-slate-400">
-                        Choose a common request without needing to type on mobile.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="btn-primary w-full py-4 text-lg disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <span>{isSubmitting ? 'Opening secure checkout…' : 'Proceed to Payment'}</span>
+                <button type="submit" className="btn-outline px-4 py-2.5 text-sm">
+                  Apply
                 </button>
               </form>
 
-              <aside className="h-fit rounded-2xl border border-ice-200 bg-white p-6 shadow-md lg:sticky lg:top-28">
-                <h2 className="mb-4 font-display text-xl font-bold text-brand-900">Booking Summary</h2>
-                {bookingSummary ? (
-                  <div>
-                    <img
-                      src={bookingSummary.image}
-                      alt={bookingSummary.name}
-                      width="400"
-                      height="200"
-                      loading="lazy"
-                      className="mb-4 h-32 w-full rounded-xl object-cover"
-                    />
-                    <h3 className="font-semibold text-brand-900">{bookingSummary.name}</h3>
-                    <p className="mb-4 text-sm text-slate-500">
-                      {formatDate(bookingSummary.checkin)} — {formatDate(bookingSummary.checkout)}
-                    </p>
-                    <div className="mb-4 rounded-xl bg-ice-50 px-4 py-3 text-sm text-slate-600">
-                      <span className="font-semibold text-brand-900">
-                        {bookingSummary.nights} night{bookingSummary.nights > 1 ? 's' : ''}
-                      </span>{' '}
-                      selected with current preview pricing and booking details shown below.
-                    </div>
-                    <div className="space-y-2 border-t border-ice-200 pt-4 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-slate-500">
-                          {formatCurrency(bookingSummary.price)} x {bookingSummary.nights} night(s)
+              <div className="mt-3 text-xs font-medium text-slate-500">
+                {filteredProperties.length} active stay option{filteredProperties.length === 1 ? '' : 's'}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {filteredProperties.map((property) => {
+                const isSelected = bookingForm.property === property.id;
+
+                return (
+                  <article
+                    key={property.id}
+                    className={`rounded-[1.2rem] border bg-white shadow-sm transition ${
+                      isSelected ? 'border-brand-500 ring-2 ring-brand-100' : 'border-ice-200 hover:border-brand-300'
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handlePropertySelect(property.id)}
+                      className="grid w-full gap-4 p-4 text-left md:grid-cols-[160px_minmax(0,1fr)_auto]"
+                    >
+                      <div className="overflow-hidden rounded-xl bg-ice-100">
+                        <img
+                          src={property.thumbnail || property.image}
+                          alt={property.name}
+                          width="320"
+                          height="220"
+                          loading="lazy"
+                          className="h-28 w-full object-cover"
+                        />
+                      </div>
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
+                            <Icon name="star" className="mr-1 inline" />
+                            {property.ratingLabel} ({property.reviewCount})
+                          </span>
+                          <span className="rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700">
+                            <Icon name="users" className="mr-1 inline" />
+                            {property.guestCapacity} guests
+                          </span>
+                        </div>
+                        <h3 className="mt-2 text-lg font-semibold text-brand-950">{property.name}</h3>
+                        <p className="text-sm text-slate-500">{property.location}</p>
+                        <p className="mt-2 text-sm text-slate-600">&quot;{property.reviewSnippet}&quot;</p>
+                      </div>
+                      <div className="flex flex-col items-start gap-2 md:items-end">
+                        <div className="text-right">
+                          <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Per night</p>
+                          <p className="text-2xl font-bold text-brand-900">{formatCurrency(property.price)}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={(event) => handleWishlistClick(event, property.id)}
+                            className={`rounded-full p-2 ${wishlistIdSet.has(property.id) ? 'bg-rose-100 text-rose-600' : 'bg-ice-100 text-slate-400'}`}
+                            aria-label={wishlistIdSet.has(property.id) ? 'Remove from wishlist' : 'Save to wishlist'}
+                          >
+                            <Icon name="heart" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(event) => handleQuickEnquiryClick(event, property)}
+                            className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700"
+                          >
+                            Enquire
+                          </button>
+                        </div>
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                            isSelected ? 'bg-brand-600 text-white' : 'bg-ice-100 text-slate-500'
+                          }`}
+                        >
+                          {isSelected ? 'Selected' : 'Choose'}
                         </span>
-                        <span className="font-medium">{formatCurrency(bookingSummary.subtotal)}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-500">Service fee</span>
-                        <span className="font-medium">{formatCurrency(bookingSummary.serviceFee)}</span>
+                    </button>
+                  </article>
+                );
+              })}
+              {!filteredProperties.length ? (
+                <div className="rounded-2xl border border-dashed border-ice-200 bg-white px-4 py-5 text-sm text-slate-500">
+                  No stays match this filter set. Try another location or disable saved-only mode.
+                </div>
+              ) : null}
+              {bookingErrors?.property ? <p className="text-sm text-rose-600">{bookingErrors.property[0]}</p> : null}
+            </div>
+          </div>
+
+          <aside className="h-fit rounded-[1.2rem] border border-ice-200 bg-white p-5 shadow-lg lg:sticky lg:top-24">
+            <form onSubmit={onProceedToPayment} className="space-y-5">
+              <div className="rounded-2xl bg-brand-950 p-4 text-white">
+                <div className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">Booking Summary</div>
+                {selectedProperty ? (
+                  <>
+                    <div className="mt-2 flex items-center justify-between gap-3">
+                      <div>
+                        <h2 className="font-display text-2xl font-bold">{selectedProperty.name}</h2>
+                        <p className="text-sm text-white/70">{selectedProperty.location}</p>
                       </div>
-                      <div className="flex justify-between border-t border-ice-200 pt-2">
-                        <span className="font-bold text-brand-900">Total</span>
-                        <span className="text-lg font-bold text-brand-700">{formatCurrency(bookingSummary.total)}</span>
+                      <div className="text-right">
+                        <p className="text-xs uppercase tracking-[0.15em] text-white/60">Rate</p>
+                        <p className="text-lg font-bold">{formatCurrency(selectedProperty.price)}</p>
                       </div>
                     </div>
-                    <div className="mt-4 flex items-center gap-2 rounded-xl bg-brand-50 p-3 text-sm text-brand-700">
-                      <Icon name="shield" />
-                      <span>Free cancellation up to 48h before check-in</span>
+                    <img
+                      src={selectedProperty.summaryImage || selectedProperty.image}
+                      alt={selectedProperty.name}
+                      width="360"
+                      height="220"
+                      loading="lazy"
+                      className="mt-3 h-36 w-full rounded-xl object-cover"
+                    />
+                  </>
+                ) : (
+                  <p className="mt-2 text-sm text-white/75">Select a property from the left to start your booking.</p>
+                )}
+              </div>
+
+              <input type="hidden" name="property" value={bookingForm.property} onChange={onBookingChange} />
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="form-label" htmlFor="checkin">
+                    Check-in
+                  </label>
+                  <input
+                    id="checkin"
+                    name="checkin"
+                    type="date"
+                    value={bookingForm.checkin}
+                    onChange={onBookingChange}
+                    className={`form-input ${bookingErrors?.checkin ? 'border-rose-400 ring-rose-100' : ''}`}
+                    required
+                  />
+                  {bookingErrors?.checkin ? <p className="mt-1 text-sm text-rose-600">{bookingErrors.checkin[0]}</p> : null}
+                </div>
+                <div>
+                  <label className="form-label" htmlFor="checkout">
+                    Check-out
+                  </label>
+                  <input
+                    id="checkout"
+                    name="checkout"
+                    type="date"
+                    value={bookingForm.checkout}
+                    onChange={onBookingChange}
+                    className={`form-input ${bookingErrors?.checkout ? 'border-rose-400 ring-rose-100' : ''}`}
+                    required
+                  />
+                  {bookingErrors?.checkout ? (
+                    <p className="mt-1 text-sm text-rose-600">{bookingErrors.checkout[0]}</p>
+                  ) : null}
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label" htmlFor="guests">
+                  Guests
+                </label>
+                <select
+                  id="guests"
+                  name="guests"
+                  value={bookingForm.guests}
+                  onChange={onBookingChange}
+                  className={`form-input ${bookingErrors?.guests ? 'border-rose-400 ring-rose-100' : ''}`}
+                  required
+                >
+                  {GUEST_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                {bookingErrors?.guests ? <p className="mt-1 text-sm text-rose-600">{bookingErrors.guests[0]}</p> : null}
+              </div>
+
+              <div className="rounded-2xl border border-ice-200 bg-ice-50 p-4">
+                {bookingSummary ? (
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between text-slate-600">
+                      <span>
+                        {bookingSummary.nights} night{bookingSummary.nights > 1 ? 's' : ''} x{' '}
+                        {formatCurrency(bookingSummary.price)}
+                      </span>
+                      <span className="font-semibold text-brand-900">{formatCurrency(bookingSummary.subtotal)}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-600">
+                      <span>Service fee</span>
+                      <span className="font-semibold text-brand-900">{formatCurrency(bookingSummary.serviceFee)}</span>
+                    </div>
+                    <div className="flex justify-between border-t border-ice-200 pt-2 text-base font-bold text-brand-950">
+                      <span>Total</span>
+                      <span>{formatCurrency(bookingSummary.total)}</span>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-slate-500">Select a property and dates to see your summary.</p>
+                  <p className="text-sm text-slate-500">
+                    Select valid stay dates to generate your live total breakdown.
+                  </p>
                 )}
-              </aside>
-            </div>
+              </div>
 
-            {bookingSummary ? (
-              <div className="fixed inset-x-4 bottom-4 z-30 rounded-2xl border border-brand-200 bg-white/96 p-4 shadow-2xl backdrop-blur-sm lg:hidden">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Current total</div>
-                    <div className="text-lg font-bold text-brand-900">{formatCurrency(bookingSummary.total)}</div>
-                    <div className="text-sm text-slate-500">
-                      {bookingSummary.nights} night{bookingSummary.nights > 1 ? 's' : ''} · {bookingSummary.name}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={onProceedToPayment}
-                    disabled={isSubmitting}
-                    className="btn-primary px-5 py-3 text-sm disabled:opacity-60"
+              <div className="space-y-4 rounded-2xl border border-ice-200 bg-white p-4">
+                <h3 className="font-semibold text-brand-950">Guest Details</h3>
+                <div>
+                  <label className="form-label" htmlFor="guestName">
+                    Full Name
+                  </label>
+                  <input
+                    id="guestName"
+                    name="guestName"
+                    type="text"
+                    value={bookingForm.guestName}
+                    onChange={onBookingChange}
+                    autoComplete="name"
+                    className={`form-input ${bookingErrors?.guestName ? 'border-rose-400 ring-rose-100' : ''}`}
+                    placeholder="Jane Smith"
+                    required
+                  />
+                  {bookingErrors?.guestName ? <p className="mt-1 text-sm text-rose-600">{bookingErrors.guestName[0]}</p> : null}
+                </div>
+                <div>
+                  <label className="form-label" htmlFor="guestEmail">
+                    Email
+                  </label>
+                  <input
+                    id="guestEmail"
+                    name="guestEmail"
+                    type="email"
+                    value={bookingForm.guestEmail}
+                    onChange={onBookingChange}
+                    autoComplete="email"
+                    className={`form-input ${bookingErrors?.guestEmail ? 'border-rose-400 ring-rose-100' : ''}`}
+                    placeholder="jane@example.com"
+                    required
+                  />
+                  {bookingErrors?.guestEmail ? (
+                    <p className="mt-1 text-sm text-rose-600">{bookingErrors.guestEmail[0]}</p>
+                  ) : null}
+                </div>
+                <div>
+                  <label className="form-label" htmlFor="specialRequests">
+                    Special Requests
+                  </label>
+                  <select
+                    id="specialRequests"
+                    name="specialRequests"
+                    value={bookingForm.specialRequests}
+                    onChange={onBookingChange}
+                    className="form-input"
                   >
-                    <span>{isSubmitting ? 'Please wait…' : 'Continue'}</span>
-                  </button>
+                    {SPECIAL_REQUEST_OPTIONS.map((option) => (
+                      <option key={option.label} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
-            ) : null}
-          </>
-        )}
+
+              {!googleConnected ? (
+                <button
+                  type="button"
+                  onClick={onOpenAuth}
+                  disabled={isSubmitting || isAuthLoading}
+                  className="btn-outline w-full py-3 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Sign in as Client to Continue
+                </button>
+              ) : (
+                <div className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
+                  Signed in as {authUser?.email || authRole}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isSubmitting || !googleConnected}
+                className="btn-primary w-full py-3.5 text-base disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <span>{isSubmitting ? 'Opening secure checkout...' : 'Proceed to Payment'}</span>
+              </button>
+            </form>
+          </aside>
+        </div>
       </div>
     </section>
   );
