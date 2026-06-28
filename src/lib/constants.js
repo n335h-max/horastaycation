@@ -37,6 +37,16 @@ export const STRIPE_ENDPOINTS = {
 };
 
 // ──────────────────────────────────────────────
+// Resend (Email)
+// ──────────────────────────────────────────────
+
+export const RESEND_API_BASE = '/api';
+
+export const RESEND_ENDPOINTS = {
+  sendEmail: `${RESEND_API_BASE}/send-email`,
+};
+
+// ──────────────────────────────────────────────
 // Role Management
 // ──────────────────────────────────────────────
 

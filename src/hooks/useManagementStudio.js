@@ -125,8 +125,23 @@ function buildDefaultListing() {
 }
 
 export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
-  const availableListings = listings?.length ? listings : FEATURED_PROPERTIES;
+  const sourceListings = Array.isArray(listings) ? listings : FEATURED_PROPERTIES;
+  const availableListings = useMemo(
+    () => sourceListings.filter((listing) => !listing?.isDeleted),
+    [sourceListings],
+  );
   const [selectedListingId, setSelectedListingId] = useState(availableListings[0]?.id ?? '');
+  const [originalFormSnapshot, setOriginalFormSnapshot] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  useEffect(() => {
+    setSelectedListingId((current) => {
+      if (current && availableListings.some((listing) => listing.id === current)) {
+        return current;
+      }
+      return availableListings[0]?.id ?? '';
+    });
+  }, [availableListings]);
   const [listingSearch, setListingSearch] = useState('');
   const [draftListing, setDraftListing] = useState(null);
   const [isSavingListing, setIsSavingListing] = useState(false);
@@ -138,8 +153,6 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
   const [bulkListingIds, setBulkListingIds] = useState(new Set());
   const [isBulkUploading, setIsBulkUploading] = useState(false);
   const [pendingMediaFiles, setPendingMediaFiles] = useState({});
-  const [originalFormSnapshot, setOriginalFormSnapshot] = useState(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const selectedListing =
     draftListing || availableListings.find((item) => item.id === selectedListingId) || availableListings[0];
@@ -198,7 +211,10 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
 
   const handleListingFieldChange = useCallback((event) => {
     const { name, value } = event.target;
-    setListingForm((current) => ({ ...current, [name]: value }));
+    setListingForm((current) => ({
+      ...current,
+      [name]: name === 'price' ? Number(value || 0) : value,
+    }));
   }, []);
 
   const handlePresetApply = useCallback((presetId) => {
@@ -278,6 +294,26 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
     });
   }, []);
 
+  const toggleBulkListings = useCallback((listingIds = []) => {
+    setBulkListingIds((current) => {
+      const scopedIds = Array.from(new Set(listingIds)).filter(Boolean);
+      if (!scopedIds.length) {
+        return current;
+      }
+
+      const everySelected = scopedIds.every((id) => current.has(id));
+      const next = new Set(current);
+
+      if (everySelected) {
+        scopedIds.forEach((id) => next.delete(id));
+      } else {
+        scopedIds.forEach((id) => next.add(id));
+      }
+
+      return next;
+    });
+  }, []);
+
   const toggleAllBulkListings = useCallback(() => {
     setBulkListingIds((current) => {
       if (current.size === availableListings.length) return new Set();
@@ -287,6 +323,18 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
 
   const handleBulkUpload = useCallback(async () => {
     const field = bulkUploadField;
+    const targets = selectedBulkListings;
+
+    if (typeof onSaveListing !== 'function') {
+      setUploadError('Bulk upload requires an active listing save handler.');
+      return;
+    }
+
+    if (!targets.length) {
+      setUploadError('No listings selected for bulk upload.');
+      return;
+    }
+
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = MEDIA_FIELD_CONFIG[field]?.accept || 'image/*';
@@ -294,13 +342,30 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
 
     fileInput.onchange = async () => {
       const files = Array.from(fileInput.files || []);
-      if (!files.length) return;
+      if (!files.length) {
+        setIsBulkUploading(false);
+        fileInput.remove();
+        return;
+      }
+
       setIsBulkUploading(true);
+      setUploadError('');
       try {
-        for (const file of files) {
-          await saveMediaFile(file, field);
+        for (let index = 0; index < targets.length; index += 1) {
+          const listing = targets[index];
+          const file = files.length === 1 ? files[0] : files[index] || files[files.length - 1];
+          const mediaRef = await saveMediaFile(file, field);
+          if (!mediaRef) {
+            throw new Error('Bulk media save failed.');
+          }
+          await onSaveListing({
+            ...listing,
+            mediaFiles: {
+              [field]: mediaRef,
+            },
+          });
         }
-        setStudioMessage(`Bulk upload complete: ${files.length} file(s) saved.`);
+        setStudioMessage(`Bulk upload complete for ${targets.length} listing(s) using ${files.length} file(s).`);
       } catch {
         setUploadError('Bulk upload failed.');
       } finally {
@@ -311,14 +376,16 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
     };
 
     fileInput.click();
-  }, [bulkUploadField]);
+  }, [bulkUploadField, onSaveListing, selectedBulkListings]);
 
-  const handleListingSubmit = useCallback(async () => {
+  const handleListingSubmit = useCallback(async (event) => {
+    event?.preventDefault?.();
     setIsSavingListing(true);
     try {
       await onSaveListing({
         ...selectedListing,
         ...listingForm,
+        price: Number(listingForm.price || 0),
         mediaFiles: pendingMediaFiles,
       });
       setDraftListing(null);
@@ -401,6 +468,7 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
     handleMediaDrop,
     handlePresetApply,
     toggleBulkListing,
+    toggleBulkListings,
     toggleAllBulkListings,
     handleBulkUpload,
     handleListingSubmit,

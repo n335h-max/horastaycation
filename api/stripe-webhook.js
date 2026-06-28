@@ -1,9 +1,49 @@
 import { mapWebhookMetadataToBookingRecord, updateBookingTransactionAdmin, upsertBookingTransactionAdmin, hasProcessedStripeEvent, recordProcessedStripeEvent } from './_lib/supabaseAdmin.js';
 import { getStripeClient, readRawRequestBody } from './_lib/stripeServer.js';
+import { getResendClient, getFromEmail, getManagementEmail } from './_lib/resendServer.js';
+import {
+  bookingConfirmationTemplate,
+  ownerBookingAlertTemplate,
+  managementBookingAlertTemplate,
+} from './_lib/emailTemplates.js';
 
 function getHeader(req, name) {
   const value = req.headers[name];
   return Array.isArray(value) ? value[0] : value;
+}
+
+async function sendEmailViaResend(type, data, to = null) {
+  const resend = getResendClient();
+  const fromEmail = getFromEmail();
+  const managementEmail = getManagementEmail();
+
+  const TEMPLATE_MAP = {
+    booking_confirmation: {
+      subject: `Booking Confirmed — ${data.propertyName} with Hora Staycation`,
+      html: bookingConfirmationTemplate(data),
+      to: data.guestEmail,
+    },
+    owner_booking_alert: {
+      subject: `New Booking Alert — ${data.propertyName}`,
+      html: ownerBookingAlertTemplate(data),
+      to: to,
+    },
+    management_booking_alert: {
+      subject: `[Management] New Booking — ${data.propertyName}`,
+      html: managementBookingAlertTemplate(data),
+      to: managementEmail,
+    },
+  };
+
+  const config = TEMPLATE_MAP[type];
+  if (!config || !config.to) return;
+
+  await resend.emails.send({
+    from: fromEmail,
+    to: config.to,
+    subject: config.subject,
+    html: config.html,
+  });
 }
 
 export default async function handler(req, res) {
@@ -53,6 +93,61 @@ export default async function handler(req, res) {
           statusNote: session.payment_status === 'paid' ? 'Confirmed by Stripe webhook.' : 'Stripe checkout completed.',
         }),
       );
+
+      // Send emails via Resend and wait for settlement before acknowledging webhook.
+      if (session.metadata) {
+        const m = session.metadata;
+        const emailData = {
+          guestName: m.guestName || 'Guest',
+          guestEmail: m.guestEmail || session.customer_details?.email || '',
+          guestPhone: m.guestPhone || '',
+          propertyName: m.propertyName || 'Property',
+          propertyLocation: m.propertyLocation || '',
+          checkinDate: m.checkinDate || '',
+          checkoutDate: m.checkoutDate || '',
+          guests: m.guests || '1',
+          nights: m.nights || '1',
+          subtotal: m.subtotal || '0',
+          serviceFee: m.serviceFee || '0',
+          total: m.total || '0',
+          statusNote: session.payment_status === 'paid' ? 'Payment successful.' : 'Payment pending.',
+          bookingId: session.id,
+        };
+
+        const emailTasks = [];
+
+        if (emailData.guestEmail) {
+          emailTasks.push(sendEmailViaResend('booking_confirmation', emailData));
+        }
+
+        if (m.ownerEmail) {
+          emailTasks.push(sendEmailViaResend('owner_booking_alert', emailData, m.ownerEmail));
+        }
+
+        emailTasks.push(sendEmailViaResend('management_booking_alert', emailData));
+
+        const withTimeout = async (promise, ms) => {
+          let timeoutId;
+          const timeoutPromise = new Promise((_, reject) => {
+            timeoutId = setTimeout(() => reject(new Error(`Webhook email timed out after ${ms}ms`)), ms);
+          });
+
+          try {
+            return await Promise.race([promise, timeoutPromise]);
+          } finally {
+            clearTimeout(timeoutId);
+          }
+        };
+
+        if (emailTasks.length) {
+          const results = await Promise.allSettled(emailTasks.map((task) => withTimeout(task, 3000)));
+          results.forEach((result, index) => {
+            if (result.status === 'rejected') {
+              console.warn(`Failed to send webhook email #${index + 1}:`, result.reason);
+            }
+          });
+        }
+      }
     }
 
     if (event.type === 'checkout.session.async_payment_failed' || event.type === 'checkout.session.expired') {

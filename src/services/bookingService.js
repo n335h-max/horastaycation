@@ -1,6 +1,7 @@
 import { loadStore, saveStore, clone, initialBookingDraft } from './localStore';
 import { getAuthenticatedUser, insertRemote, updateRemote } from './supabaseClient';
 import { MAX_DASHBOARD_PREVIEW_ITEMS } from '../lib/constants';
+import { sendBookingConfirmation, sendManagementBookingAlert, sendOwnerBookingAlert } from './emailService';
 
 function formatBookingStatusLabel(status = 'confirmed') {
   return String(status)
@@ -136,6 +137,38 @@ export async function submitBooking({ bookingForm, bookingSummary, paymentForm =
       buildLegacyRemoteBookingPayload({ currentUser, bookingForm, bookingSummary, paymentForm }),
     );
   }
+
+  const isStripeFlow = paymentMeta.provider === 'stripe' || Boolean(stripeSessionId);
+  if (!isStripeFlow) {
+    // Send emails via Resend (fire-and-forget — non-blocking)
+    const emailData = {
+      guestName: bookingForm.guestName || 'Guest',
+      guestEmail: customerReceiptEmail,
+      guestPhone: bookingForm.guestPhone || '',
+      propertyName: bookingSummary.name || 'Property',
+      propertyLocation: bookingSummary.location || '',
+      checkinDate: bookingForm.checkin || '',
+      checkoutDate: bookingForm.checkout || '',
+      guests: String(bookingForm.guests || '1'),
+      nights: String(bookingSummary.nights || '1'),
+      subtotal: String(bookingSummary.subtotal || '0'),
+      serviceFee: String(bookingSummary.serviceFee || '0'),
+      total: String(bookingSummary.total || '0'),
+      statusNote: statusNote || 'Booking confirmed.',
+      bookingId: store.bookingTransactions[0]?.id || '',
+    };
+
+    if (customerReceiptEmail) {
+      sendBookingConfirmation(emailData).catch((err) =>
+        console.warn('Failed to send booking confirmation email:', err),
+      );
+    }
+
+    sendManagementBookingAlert(emailData).catch((err) =>
+      console.warn('Failed to send management booking alert:', err),
+    );
+  }
+
   return { store, remote };
 }
 

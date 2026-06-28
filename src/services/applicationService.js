@@ -1,6 +1,7 @@
 import { loadStore, saveStore } from './localStore';
 import { getAuthenticatedUser, insertRemote } from './supabaseClient';
 import { MAX_DASHBOARD_PREVIEW_ITEMS } from '../lib/constants';
+import { sendOwnerLeadAlert, sendEvaluationRequestAlert } from './emailService';
 
 export async function submitOwnerApplication(application) {
   const store = loadStore();
@@ -29,6 +30,16 @@ export async function submitOwnerApplication(application) {
     max_guests: application.unitCount,
     amenities: [`Budget ${application.budget}`],
   });
+
+  // Send owner lead alert to management (fire-and-forget)
+  sendOwnerLeadAlert({
+    ownerName: application.ownerName || 'Owner',
+    ownerEmail: application.ownerEmail || '',
+    ownerAddress: application.ownerAddress || '',
+    unitCount: String(application.unitCount || '1'),
+    budget: application.budget || '',
+  }).catch((err) => console.warn('Failed to send owner lead email:', err));
+
   return { store, remote };
 }
 
@@ -53,5 +64,14 @@ export async function submitReview(review) {
     value: 'Pending review',
     review_text: `Evaluation request from ${review.evaluatorName}. Email: ${review.evaluatorEmail}. Address: ${review.evaluatorAddress}. Units: ${review.unitCount}.`,
   });
+
+  // Send evaluation request alert to management (fire-and-forget)
+  sendEvaluationRequestAlert({
+    evaluatorName: review.evaluatorName || 'Evaluator',
+    evaluatorEmail: review.evaluatorEmail || '',
+    evaluatorAddress: review.evaluatorAddress || '',
+    unitCount: String(review.unitCount || '1'),
+  }).catch((err) => console.warn('Failed to send evaluation request email:', err));
+
   return { store, remote };
 }
