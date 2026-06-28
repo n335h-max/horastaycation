@@ -73,6 +73,15 @@ const STUDIO_SECTIONS = [
 export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onShowPage, formatCurrency }) {
   const studio = useManagementStudio(listings, onSaveListing, onDeleteListing);
   const [sectionState, setSectionState] = useState({ basic: true, media: true, schedule: true, copy: true });
+  const selectedBulkCount =
+    studio.bulkListingIds instanceof Set ? studio.bulkListingIds.size : studio.bulkListingIds?.length ?? 0;
+
+  const isBulkSelected = (listingId) =>
+    studio.bulkListingIds instanceof Set
+      ? studio.bulkListingIds.has(listingId)
+      : Array.isArray(studio.bulkListingIds)
+        ? studio.bulkListingIds.includes(listingId)
+        : false;
 
   function toggleSection(sectionId) {
     setSectionState((current) => ({ ...current, [sectionId]: !current[sectionId] }));
@@ -193,7 +202,7 @@ export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onSho
                   onClick={studio.toggleAllBulkListings}
                   className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600"
                 >
-                  {studio.bulkListingIds.length === studio.availableListings.length ? 'Clear all' : 'Select all'}
+                  {selectedBulkCount === studio.availableListings.length ? 'Clear all' : 'Select all'}
                 </button>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
@@ -204,7 +213,7 @@ export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onSho
                   >
                     <input
                       type="checkbox"
-                      checked={studio.bulkListingIds.includes(listing.id)}
+                      checked={isBulkSelected(listing.id)}
                       onChange={() => studio.toggleBulkListing(listing.id)}
                       className="mt-1 h-4 w-4 rounded border-ice-300"
                     />
