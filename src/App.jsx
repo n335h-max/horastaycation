@@ -226,7 +226,9 @@ export default function App() {
   const handledRequestedRoleRef = useRef('');
 
   const { formatCurrency, formatCompactNumber, formatDate } = useFormatters();
-  const sourceListings = store.managementListings?.length ? store.managementListings : FEATURED_PROPERTIES;
+  const sourceListings = Array.isArray(store.managementListings) && store.managementListings.length
+    ? store.managementListings
+    : FEATURED_PROPERTIES;
   const dashboardListings = resolvedListings.length ? resolvedListings : sourceListings;
   const featuredListings = dashboardListings.filter(
     (listing) => listing.publishStatus !== 'draft' && !listing.isDeleted,

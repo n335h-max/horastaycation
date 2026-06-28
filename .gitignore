@@ -7,3 +7,4 @@ tmp_pdf_pages/
 .vercel
 
 .env*
+.vercel

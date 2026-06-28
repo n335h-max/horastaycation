@@ -70,15 +70,17 @@ export function LandingPage({
   onInstallApp,
 }) {
   const [selectedFeaturedLocation, setSelectedFeaturedLocation] = useState('All locations');
+  const safeFeaturedProperties = Array.isArray(featuredProperties) ? featuredProperties : [];
+  const startingPackageIncludes = Array.isArray(STARTING_PACKAGE?.includes) ? STARTING_PACKAGE.includes : [];
   const whatsappBaseUrl = 'https://wa.me/601110629990?text=';
   const featuredLocationOptions = [
     'All locations',
-    ...new Set(featuredProperties.map((property) => property.location)),
+    ...new Set(safeFeaturedProperties.map((property) => property.location)),
   ];
   const visibleFeaturedProperties =
     selectedFeaturedLocation === 'All locations'
-      ? featuredProperties
-      : featuredProperties.filter((property) => property.location === selectedFeaturedLocation);
+      ? safeFeaturedProperties
+      : safeFeaturedProperties.filter((property) => property.location === selectedFeaturedLocation);
 
   function handleBuildWithUsReveal() {
     window.setTimeout(() => {
@@ -90,7 +92,7 @@ export function LandingPage({
     <div className="page-shell">
       <HeroSection
         onShowPage={onShowPage}
-        featuredProperties={featuredProperties}
+        featuredProperties={safeFeaturedProperties}
         formatCompactNumber={formatCompactNumber}
       />
 
@@ -100,7 +102,7 @@ export function LandingPage({
 
       <DeferredSection fallbackClassName="min-h-[42rem] bg-white">
         <LazyGuestToolsSection
-          featuredProperties={featuredProperties}
+          featuredProperties={safeFeaturedProperties}
           analyticsSummary={analyticsSummary}
           onShowPage={onShowPage}
           onOpenSupport={onOpenSupport}
@@ -122,9 +124,11 @@ export function LandingPage({
             <div className="mx-auto max-w-3xl rounded-[3rem] bg-gradient-to-br from-brand-950 via-brand-900 to-brand-700 px-8 py-16 text-white shadow-2xl">
               <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-accent-400">Start Building</p>
               <h2 className="font-display text-4xl font-bold md:text-5xl">{STARTING_PACKAGE.title}</h2>
-              <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/70">{STARTING_PACKAGE.summary}</p>
+              <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/70">
+                {STARTING_PACKAGE.summary || STARTING_PACKAGE.description}
+              </p>
               <div className="mt-8 flex flex-wrap items-center justify-center gap-8">
-                {STARTING_PACKAGE.includes.map((item) => (
+                {startingPackageIncludes.map((item) => (
                   <span
                     key={item}
                     className="inline-flex items-center gap-2 rounded-full bg-white/10 px-5 py-3 text-sm font-semibold"

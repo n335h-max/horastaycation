@@ -2,7 +2,7 @@ import { startTransition, useEffect, useId, useRef, useState } from 'react';
 import { NAV_ITEMS, SOCIAL_LINKS } from '../data/siteData';
 import { Icon } from './Icon';
 
-export function ToastStack({ toasts }) {
+export function ToastStack({ toasts = [] }) {
   return (
     <div className="toast-stack" aria-live="polite" aria-atomic="true">
       {toasts.map((toast) => (
@@ -83,7 +83,7 @@ function UserAvatarIndicator({ authUser, authRole, isLanding = false }) {
 function UserProfileMenu({
   authUser,
   authRole,
-  availableRoles,
+  availableRoles = ['client'],
   onRoleSwitch,
   onGoToDashboard,
   onSignOut,
