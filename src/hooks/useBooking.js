@@ -7,6 +7,7 @@ import { isRangeBlocked } from '../lib/guestFeatures';
 import { SERVICE_FEE_RATE } from '../lib/constants';
 import { APP_PATHS } from '../lib/routes';
 import { createCheckoutSessionWithRetry } from '../lib/apiRetry';
+import { isSupabaseConfigured } from '../lib/supabase';
 
 export function useBooking({ featuredListings, store, setStore = () => {}, pushToast, recordAnalytics }) {
   const location = useLocation();
@@ -119,7 +120,7 @@ export function useBooking({ featuredListings, store, setStore = () => {}, pushT
         pushToast('Stripe payment confirmed. Booking saved successfully.', 'success', 'lock');
         await recordAnalytics('stripe_payment_success', { sessionId: bookingSuccessSessionId });
 
-        if (!bookingResult.remote.saved && !bookingResult.remote.alreadyProcessed) {
+        if (isSupabaseConfigured && !bookingResult.remote.saved && !bookingResult.remote.alreadyProcessed) {
           pushToast(
             'Payment is confirmed, but the booking only saved locally because remote sync is not fully configured.',
             'warning',

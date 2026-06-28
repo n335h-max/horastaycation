@@ -39,35 +39,87 @@ import {
   syncUserProfile,
 } from './services/authApi';
 
+const CHUNK_RELOAD_KEY = 'hora:chunk-reload-attempted:';
+
+function importWithChunkRecovery(importer, importerKey = 'global') {
+  const storageKey = `${CHUNK_RELOAD_KEY}${importerKey}`;
+
+  return importer()
+    .then((module) => {
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.removeItem(storageKey);
+      }
+      return module;
+    })
+    .catch((error) => {
+      const message = String(error?.message || error || '');
+      const isChunkError =
+        message.includes('Failed to fetch dynamically imported module') ||
+        message.includes('Importing a module script failed');
+
+      if (!isChunkError || typeof window === 'undefined') {
+        throw error;
+      }
+
+      const alreadyReloaded = window.sessionStorage.getItem(storageKey) === '1';
+      if (!alreadyReloaded) {
+        window.sessionStorage.setItem(storageKey, '1');
+        window.location.reload();
+      }
+
+      throw error;
+    });
+}
+
 const LandingPageRoute = lazy(() =>
-  import('./pages/LandingPageRoute').then((module) => ({ default: module.LandingPageRoute })),
+  importWithChunkRecovery(() => import('./pages/LandingPageRoute'), 'LandingPageRoute').then((module) => ({
+    default: module.LandingPageRoute,
+  })),
 );
 const OwnerSignupPageRoute = lazy(() =>
-  import('./pages/OwnerSignupPageRoute').then((module) => ({ default: module.OwnerSignupPageRoute })),
+  importWithChunkRecovery(() => import('./pages/OwnerSignupPageRoute'), 'OwnerSignupPageRoute').then((module) => ({
+    default: module.OwnerSignupPageRoute,
+  })),
 );
 const OwnerDashboardPageRoute = lazy(() =>
-  import('./pages/OwnerDashboardPageRoute').then((module) => ({ default: module.OwnerDashboardPageRoute })),
+  importWithChunkRecovery(() => import('./pages/OwnerDashboardPageRoute'), 'OwnerDashboardPageRoute').then((module) => ({
+    default: module.OwnerDashboardPageRoute,
+  })),
 );
 const BookingPageRoute = lazy(() =>
-  import('./pages/BookingPageRoute').then((module) => ({ default: module.BookingPageRoute })),
+  importWithChunkRecovery(() => import('./pages/BookingPageRoute'), 'BookingPageRoute').then((module) => ({
+    default: module.BookingPageRoute,
+  })),
 );
 const ReviewPageRoute = lazy(() =>
-  import('./pages/ReviewPageRoute').then((module) => ({ default: module.ReviewPageRoute })),
+  importWithChunkRecovery(() => import('./pages/ReviewPageRoute'), 'ReviewPageRoute').then((module) => ({
+    default: module.ReviewPageRoute,
+  })),
 );
 const DashboardPageRoute = lazy(() =>
-  import('./pages/DashboardPageRoute').then((module) => ({ default: module.DashboardPageRoute })),
+  importWithChunkRecovery(() => import('./pages/DashboardPageRoute'), 'DashboardPageRoute').then((module) => ({
+    default: module.DashboardPageRoute,
+  })),
 );
 const ManagementListingsPageRoute = lazy(() =>
-  import('./pages/ManagementListingsPageRoute').then((module) => ({ default: module.ManagementListingsPageRoute })),
+  importWithChunkRecovery(() => import('./pages/ManagementListingsPageRoute'), 'ManagementListingsPageRoute').then((module) => ({
+    default: module.ManagementListingsPageRoute,
+  })),
 );
 const SuccessPageRoute = lazy(() =>
-  import('./pages/SuccessPageRoute').then((module) => ({ default: module.SuccessPageRoute })),
+  importWithChunkRecovery(() => import('./pages/SuccessPageRoute'), 'SuccessPageRoute').then((module) => ({
+    default: module.SuccessPageRoute,
+  })),
 );
 const PrivacyPolicyPageRoute = lazy(() =>
-  import('./pages/PrivacyPolicyPageRoute').then((module) => ({ default: module.PrivacyPolicyPageRoute })),
+  importWithChunkRecovery(() => import('./pages/PrivacyPolicyPageRoute'), 'PrivacyPolicyPageRoute').then((module) => ({
+    default: module.PrivacyPolicyPageRoute,
+  })),
 );
 const PaymentModal = lazy(() =>
-  import('./components/PaymentModal').then((module) => ({ default: module.PaymentModal })),
+  importWithChunkRecovery(() => import('./components/PaymentModal'), 'PaymentModal').then((module) => ({
+    default: module.PaymentModal,
+  })),
 );
 
 function RouteLoadingFallback() {
@@ -769,7 +821,7 @@ export default function App() {
         pushToast('Stripe payment confirmed. Booking saved successfully.', 'success', 'lock');
         await recordAnalytics('stripe_payment_success', { sessionId: bookingSuccessSessionId });
 
-        if (!bookingResult.remote.saved && !bookingResult.remote.alreadyProcessed) {
+        if (isSupabaseConfigured && !bookingResult.remote.saved && !bookingResult.remote.alreadyProcessed) {
           pushToast(
             'Payment is confirmed, but the booking only saved locally because remote sync is not fully configured.',
             'warning',
