@@ -117,19 +117,27 @@ export function BookingPage({
   }
 
   const selectedProperty = useMemo(
-    () => properties.find((property) => property.id === bookingForm.property) ?? filteredProperties[0] ?? null,
-    [bookingForm.property, filteredProperties, properties],
+    () => filteredProperties.find((property) => property.id === bookingForm.property) ?? null,
+    [bookingForm.property, filteredProperties],
   );
 
   useEffect(() => {
-    if (bookingForm.property || !filteredProperties.length) {
+    const isCurrentEligible = filteredProperties.some((property) => property.id === bookingForm.property);
+
+    if (isCurrentEligible) {
+      return;
+    }
+
+    const nextPropertyId = filteredProperties[0]?.id ?? '';
+
+    if ((bookingForm.property || '') === nextPropertyId) {
       return;
     }
 
     onBookingChange({
       target: {
         name: 'property',
-        value: filteredProperties[0].id,
+        value: nextPropertyId,
       },
     });
   }, [bookingForm.property, filteredProperties, onBookingChange]);
@@ -292,12 +300,13 @@ export function BookingPage({
                       isSelected ? 'border-brand-500 ring-2 ring-brand-100' : 'border-ice-200 hover:border-brand-300'
                     }`}
                   >
-                    <button
-                      type="button"
-                      onClick={() => handlePropertySelect(property.id)}
-                      className="grid w-full gap-4 p-4 text-left md:grid-cols-[160px_minmax(0,1fr)_auto]"
-                    >
-                      <div className="overflow-hidden rounded-xl bg-ice-100">
+                    <div className="grid gap-4 p-4 text-left md:grid-cols-[160px_minmax(0,1fr)_auto]">
+                      <button
+                        type="button"
+                        onClick={() => handlePropertySelect(property.id)}
+                        className="overflow-hidden rounded-xl bg-ice-100"
+                        aria-label={`Select ${property.name}`}
+                      >
                         <img
                           src={property.thumbnail || property.image}
                           alt={property.name}
@@ -306,8 +315,13 @@ export function BookingPage({
                           loading="lazy"
                           className="h-28 w-full object-cover"
                         />
-                      </div>
-                      <div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handlePropertySelect(property.id)}
+                        className="text-left"
+                        aria-label={`Select ${property.name}`}
+                      >
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
                             <Icon name="star" className="mr-1 inline" />
@@ -321,7 +335,7 @@ export function BookingPage({
                         <h3 className="mt-2 text-lg font-semibold text-brand-950">{property.name}</h3>
                         <p className="text-sm text-slate-500">{property.location}</p>
                         <p className="mt-2 text-sm text-slate-600">&quot;{property.reviewSnippet}&quot;</p>
-                      </div>
+                      </button>
                       <div className="flex flex-col items-start gap-2 md:items-end">
                         <div className="text-right">
                           <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Per night</p>
@@ -352,7 +366,7 @@ export function BookingPage({
                           {isSelected ? 'Selected' : 'Choose'}
                         </span>
                       </div>
-                    </button>
+                    </div>
                   </article>
                 );
               })}
