@@ -75,7 +75,7 @@ export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onSho
 
   return (
     <div className="space-y-6">
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-2">
         <article className="rounded-3xl border border-ice-200 bg-white p-5 shadow-sm">
           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Listings Live</div>
           <div className="mt-2 text-5xl font-bold text-brand-900">{liveListingsCount}</div>
@@ -85,16 +85,6 @@ export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onSho
           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Average Nightly</div>
           <div className="mt-2 text-4xl font-bold text-brand-700">{averageNightly}</div>
           <p className="mt-2 text-sm text-slate-500">Across management listings</p>
-        </article>
-        <article className="rounded-3xl border border-ice-200 bg-white p-5 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Bookings Connected</div>
-          <div className="mt-2 text-5xl font-bold text-brand-900">0</div>
-          <p className="mt-2 text-sm text-slate-500">Studio syncs guest bookings</p>
-        </article>
-        <article className="rounded-3xl border border-ice-200 bg-white p-5 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Lead Pipeline</div>
-          <div className="mt-2 text-5xl font-bold text-brand-900">1</div>
-          <p className="mt-2 text-sm text-slate-500">Owner and evaluation demand</p>
         </article>
       </section>
 
@@ -271,7 +261,7 @@ export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onSho
               </span>
             </button>
 
-            {showAdvancedEditor ? (
+            {showAdvancedEditor ? selectedListing ? (
               <form onSubmit={studio.handleListingSubmit} className="mt-5 space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
@@ -337,6 +327,10 @@ export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onSho
                   </div>
                 ) : null}
               </form>
+            ) : (
+              <div className="mt-5 rounded-xl border border-ice-200 bg-ice-50 px-4 py-3 text-sm text-slate-600">
+                Add a listing to enable advanced controls.
+              </div>
             ) : null}
           </section>
 

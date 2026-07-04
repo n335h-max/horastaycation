@@ -18,13 +18,19 @@ export async function sendEmail(type, data, to = null) {
     });
 
     const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result?.error || `Email request failed with status ${response.status}.`);
+    }
+
+    if (!result?.sent) {
+      throw new Error(result?.error || result?.skipped || 'Email send was not successful.');
+    }
+
     return result;
   } catch (error) {
     console.error('Email service error:', error);
-    return {
-      sent: false,
-      error: error instanceof Error ? error.message : 'Failed to send email request.',
-    };
+    throw (error instanceof Error ? error : new Error('Failed to send email request.'));
   }
 }
 
@@ -39,7 +45,7 @@ export async function sendBookingConfirmation(data) {
  * Send booking alert to the property owner.
  */
 export async function sendOwnerBookingAlert(data, ownerEmail) {
-  return sendEmail('owner_booking_alert', data, ownerEmail);
+  return sendEmail('owner_booking_alert', { ...data, ownerEmail }, ownerEmail);
 }
 
 /**

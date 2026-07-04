@@ -1053,19 +1053,19 @@ export default function App() {
     setStore(result.store);
     pushToast('Management listing updated successfully.', 'success', 'upload');
 
-    if (result.remote.saved) {
+    if (result.remote.error) {
+      pushToast(
+        'Listing saved locally. Run the Supabase schema and configure env vars to enable shared uploads.',
+        'warning',
+        'calendar',
+      );
+    } else if (result.remote.saved) {
       pushToast(
         result.remote.uploadedMediaCount
           ? `Listing synced to Supabase with ${result.remote.uploadedMediaCount} uploaded media file(s).`
           : 'Listing synced to Supabase successfully.',
         'info',
         'lock',
-      );
-    } else {
-      pushToast(
-        'Listing saved locally. Run the Supabase schema and configure env vars to enable shared uploads.',
-        'warning',
-        'calendar',
       );
     }
   }

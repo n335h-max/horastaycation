@@ -1,6 +1,6 @@
 import { mapWebhookMetadataToBookingRecord, updateBookingTransactionAdmin, upsertBookingTransactionAdmin, hasProcessedStripeEvent, recordProcessedStripeEvent } from './_lib/supabaseAdmin.js';
 import { getStripeClient, readRawRequestBody } from './_lib/stripeServer.js';
-import { getResendClient, getFromEmail, getManagementEmail } from './_lib/resendServer.js';
+import { getResendClient, getFromEmail } from './_lib/resendServer.js';
 import {
   bookingConfirmationTemplate,
   ownerBookingAlertTemplate,
@@ -15,7 +15,6 @@ function getHeader(req, name) {
 async function sendEmailViaResend(type, data, to = null) {
   const resend = getResendClient();
   const fromEmail = getFromEmail();
-  const managementEmail = getManagementEmail();
 
   const TEMPLATE_MAP = {
     booking_confirmation: {
@@ -31,7 +30,7 @@ async function sendEmailViaResend(type, data, to = null) {
     management_booking_alert: {
       subject: `[Management] New Booking — ${data.propertyName}`,
       html: managementBookingAlertTemplate(data),
-      to: managementEmail,
+      to: to,
     },
   };
 
@@ -66,6 +65,7 @@ export default async function handler(req, res) {
     const stripe = getStripeClient();
     const rawBody = await readRawRequestBody(req);
     const event = stripe.webhooks.constructEvent(rawBody, signature, process.env.STRIPE_WEBHOOK_SECRET);
+    let eventRecorded = false;
 
     // Idempotency: skip already-processed events
     try {
@@ -94,9 +94,19 @@ export default async function handler(req, res) {
         }),
       );
 
+      const checkoutRecordResult = await recordProcessedStripeEvent(event.id, event.type);
+      eventRecorded = Boolean(checkoutRecordResult?.recorded);
+      if (!eventRecorded) {
+        console.warn(
+          'Skipping webhook emails because event could not be recorded before dispatch:',
+          checkoutRecordResult?.reason || 'stripe_event_record_failed',
+        );
+      }
+
       // Send emails via Resend and wait for settlement before acknowledging webhook.
-      if (session.metadata) {
+      if (session.metadata && eventRecorded) {
         const m = session.metadata;
+        const managementEmail = (process.env.MANAGEMENT_EMAIL || '').trim();
         const emailData = {
           guestName: m.guestName || 'Guest',
           guestEmail: m.guestEmail || session.customer_details?.email || '',
@@ -124,7 +134,11 @@ export default async function handler(req, res) {
           emailTasks.push(sendEmailViaResend('owner_booking_alert', emailData, m.ownerEmail));
         }
 
-        emailTasks.push(sendEmailViaResend('management_booking_alert', emailData));
+        if (managementEmail) {
+          emailTasks.push(sendEmailViaResend('management_booking_alert', emailData, managementEmail));
+        } else {
+          console.warn('MANAGEMENT_EMAIL is not configured; skipping management booking alert email.');
+        }
 
         const withTimeout = async (promise, ms) => {
           let timeoutId;
@@ -179,11 +193,12 @@ export default async function handler(req, res) {
         status_note: charge.refunded ? 'Stripe refund completed.' : 'Stripe refund update received.',
       });
     }
-    // Record that we've processed this Stripe event to avoid duplicates
-    try {
-      await recordProcessedStripeEvent(event.id, event.type);
-    } catch (err) {
-      console.warn('Failed to record processed stripe event', err);
+    // Record that we've processed this Stripe event to avoid duplicates.
+    if (!eventRecorded) {
+      const result = await recordProcessedStripeEvent(event.id, event.type);
+      if (!result?.recorded) {
+        console.warn('Failed to record processed stripe event', result?.reason || 'stripe_event_record_failed');
+      }
     }
 
     return res.status(200).json({ received: true });

@@ -133,15 +133,6 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
   const [selectedListingId, setSelectedListingId] = useState(availableListings[0]?.id ?? '');
   const [originalFormSnapshot, setOriginalFormSnapshot] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  useEffect(() => {
-    setSelectedListingId((current) => {
-      if (current && availableListings.some((listing) => listing.id === current)) {
-        return current;
-      }
-      return availableListings[0]?.id ?? '';
-    });
-  }, [availableListings]);
   const [listingSearch, setListingSearch] = useState('');
   const [draftListing, setDraftListing] = useState(null);
   const [isSavingListing, setIsSavingListing] = useState(false);
@@ -153,6 +144,25 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
   const [bulkListingIds, setBulkListingIds] = useState(new Set());
   const [isBulkUploading, setIsBulkUploading] = useState(false);
   const [pendingMediaFiles, setPendingMediaFiles] = useState({});
+  const [prevAvailableListings, setPrevAvailableListings] = useState(availableListings);
+
+  // Synchronize state during rendering when availableListings changes
+  if (availableListings !== prevAvailableListings) {
+    setPrevAvailableListings(availableListings);
+
+    // Sync selectedListingId
+    if (selectedListingId && !availableListings.some((listing) => listing.id === selectedListingId)) {
+      setSelectedListingId(availableListings[0]?.id ?? '');
+    }
+
+    // Sync bulkListingIds
+    const validIds = new Set(availableListings.map((listing) => listing.id));
+    const currentSet = bulkListingIds instanceof Set ? bulkListingIds : new Set(Array.isArray(bulkListingIds) ? bulkListingIds : []);
+    const next = new Set(Array.from(currentSet).filter((id) => validIds.has(id)));
+    if (next.size !== currentSet.size) {
+      setBulkListingIds(next);
+    }
+  }
 
   const selectedListing =
     draftListing || availableListings.find((item) => item.id === selectedListingId) || availableListings[0];
@@ -195,7 +205,7 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
         facilitiesText: (selectedListing.facilities || []).join(', '),
       });
     });
-  }, [selectedListingId, draftListing]);
+  }, [selectedListingId, draftListing, selectedListing]);
 
   const mediaCards = selectedListing
     ? MEDIA_FIELD_ORDER.map((field) => {
@@ -292,7 +302,7 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
       else next.add(listingId);
       return next;
     });
-  }, []);
+  }, [setBulkListingIds]);
 
   const toggleBulkListings = useCallback((listingIds = []) => {
     setBulkListingIds((current) => {
@@ -312,14 +322,14 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
 
       return next;
     });
-  }, []);
+  }, [setBulkListingIds]);
 
   const toggleAllBulkListings = useCallback(() => {
     setBulkListingIds((current) => {
       if (current.size === availableListings.length) return new Set();
       return new Set(availableListings.map((l) => l.id));
     });
-  }, [availableListings]);
+  }, [availableListings, setBulkListingIds]);
 
   const handleBulkUpload = useCallback(async () => {
     const field = bulkUploadField;
@@ -348,12 +358,19 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
         return;
       }
 
+      if (files.length > 1 && files.length !== targets.length) {
+        setUploadError(`Select either 1 file for all targets or exactly ${targets.length} files.`);
+        setIsBulkUploading(false);
+        fileInput.remove();
+        return;
+      }
+
       setIsBulkUploading(true);
       setUploadError('');
       try {
         for (let index = 0; index < targets.length; index += 1) {
           const listing = targets[index];
-          const file = files.length === 1 ? files[0] : files[index] || files[files.length - 1];
+          const file = files.length === 1 ? files[0] : files[index];
           const mediaRef = await saveMediaFile(file, field);
           if (!mediaRef) {
             throw new Error('Bulk media save failed.');
@@ -397,6 +414,11 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
   }, [selectedListing, listingForm, pendingMediaFiles, onSaveListing]);
 
   const handleDeleteListing = useCallback(async () => {
+    if (!selectedListing?.id) {
+      setShowDeleteConfirm(false);
+      return;
+    }
+
     if (draftListing?.id === selectedListing.id) {
       setDraftListing(null);
       setSelectedListingId(availableListings[0]?.id ?? '');

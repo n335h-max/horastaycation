@@ -1,10 +1,71 @@
 import { getJsonBody, getStripeClient } from './_lib/stripeServer.js';
 import { resolveAuthenticatedUser } from './_lib/auth.js';
+import { FEATURED_PROPERTIES } from '../src/data/siteData.js';
+
+const SERVICE_FEE_RATE = 0.12;
+
+function normalizeOrigin(value) {
+  const input = String(value || '').trim();
+  if (!input) {
+    return '';
+  }
+
+  try {
+    return new URL(input.includes('://') ? input : `https://${input}`).origin;
+  } catch {
+    return '';
+  }
+}
 
 function getOrigin(req) {
-  const protocol = req.headers['x-forwarded-proto'] || 'https';
-  const host = req.headers.host;
-  return `${protocol}://${host}`;
+  const configuredOrigin = normalizeOrigin(process.env.APP_BASE_URL || process.env.VERCEL_URL || '');
+  if (configuredOrigin) {
+    return configuredOrigin;
+  }
+
+  const protocol = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim() || 'https';
+  const host = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim();
+  return host ? normalizeOrigin(`${protocol}://${host}`) : '';
+}
+
+function getPropertyPricing(propertyId) {
+  const property = FEATURED_PROPERTIES.find((item) => item.id === String(propertyId || '').trim());
+  if (!property) {
+    return null;
+  }
+
+  const nightlyRate = Number(property.price);
+  if (!Number.isFinite(nightlyRate) || nightlyRate <= 0) {
+    return null;
+  }
+
+  return property;
+}
+
+function calculateBookingAmounts(bookingForm) {
+  const property = getPropertyPricing(bookingForm?.property);
+  if (!property) {
+    return null;
+  }
+
+  const checkinDate = new Date(bookingForm.checkin);
+  const checkoutDate = new Date(bookingForm.checkout);
+  const nights = Math.ceil((checkoutDate - checkinDate) / (1000 * 60 * 60 * 24));
+
+  if (!Number.isFinite(nights) || nights <= 0) {
+    return null;
+  }
+
+  const subtotal = nights * Number(property.price);
+  const serviceFee = Math.round(subtotal * SERVICE_FEE_RATE);
+
+  return {
+    property,
+    nights,
+    subtotal,
+    serviceFee,
+    total: subtotal + serviceFee,
+  };
 }
 
 function getHeader(req, name) {
@@ -52,16 +113,21 @@ export default async function handler(req, res) {
   const stripe = getStripeClient();
   const { bookingForm, bookingSummary } = getJsonBody(req);
   const requestIdempotencyKey = String(getHeader(req, 'idempotency-key')).trim();
+  const pricing = calculateBookingAmounts(bookingForm);
 
-  if (!bookingForm?.property || !bookingSummary?.total || !bookingSummary?.name) {
+  if (!bookingForm?.property || !bookingForm?.checkin || !bookingForm?.checkout || !bookingForm?.guestEmail || !pricing) {
     return res.status(400).json({ error: 'Booking details are incomplete.' });
   }
 
   try {
     const origin = getOrigin(req);
+    if (!origin) {
+      return res.status(500).json({ error: 'Unable to determine checkout origin.' });
+    }
+
     const scopedHeaderIdempotencyKey = scopeIdempotencyKey(auth.user.id, requestIdempotencyKey);
     const idempotencyKey =
-      scopedHeaderIdempotencyKey || buildFallbackIdempotencyKey(auth.user.id, bookingForm, bookingSummary);
+      scopedHeaderIdempotencyKey || buildFallbackIdempotencyKey(auth.user.id, bookingForm, pricing);
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       success_url: `${origin}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -73,10 +139,10 @@ export default async function handler(req, res) {
           quantity: 1,
           price_data: {
             currency: process.env.STRIPE_CURRENCY || 'myr',
-            unit_amount: Math.round(Number(bookingSummary.total) * 100),
+            unit_amount: Math.round(pricing.total * 100),
             product_data: {
-              name: `${bookingSummary.name} staycation booking`,
-              description: `${bookingSummary.nights} night(s) · ${bookingSummary.location}`,
+              name: `${pricing.property.name} staycation booking`,
+              description: `${pricing.nights} night(s) · ${pricing.property.location}`,
             },
           },
         },
@@ -85,18 +151,18 @@ export default async function handler(req, res) {
         clientUserId: String(auth.user.id || ''),
         clientUserEmail: String(auth.user.email || ''),
         propertyId: String(bookingForm.property),
-        propertyName: String(bookingSummary.name),
-        propertyLocation: String(bookingSummary.location),
+        propertyName: String(pricing.property.name),
+        propertyLocation: String(pricing.property.location),
         guestName: String(bookingForm.guestName || ''),
         guestEmail: String(bookingForm.guestEmail || ''),
         guestPhone: String(bookingForm.guestPhone || ''),
         checkinDate: String(bookingForm.checkin || ''),
         checkoutDate: String(bookingForm.checkout || ''),
         guests: String(bookingForm.guests || ''),
-        nights: String(bookingSummary.nights || ''),
-        subtotal: String(bookingSummary.subtotal || 0),
-        serviceFee: String(bookingSummary.serviceFee || 0),
-        total: String(bookingSummary.total || 0),
+        nights: String(pricing.nights || ''),
+        subtotal: String(pricing.subtotal || 0),
+        serviceFee: String(pricing.serviceFee || 0),
+        total: String(pricing.total || 0),
         specialRequests: String(bookingForm.specialRequests || ''),
       },
       payment_intent_data: {
@@ -105,7 +171,7 @@ export default async function handler(req, res) {
           clientUserId: String(auth.user.id || ''),
           clientUserEmail: String(auth.user.email || ''),
           propertyId: String(bookingForm.property),
-          propertyName: String(bookingSummary.name),
+          propertyName: String(pricing.property.name),
         },
       },
     }, { idempotencyKey });

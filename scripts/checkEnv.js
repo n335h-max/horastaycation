@@ -6,6 +6,7 @@ const required = [
 ];
 
 const optional = [
+  'APP_BASE_URL',
   'SUPABASE_URL',
   'SUPABASE_SERVICE_ROLE_KEY',
   'STRIPE_WEBHOOK_SECRET',
