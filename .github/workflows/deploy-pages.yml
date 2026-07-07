@@ -18,6 +18,7 @@ jobs:
           node-version: '20'
       - run: npm ci
       - run: npm run build
+      - run: cp vercel.json dist/
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
