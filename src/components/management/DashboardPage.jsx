@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { FEATURED_PROPERTIES } from '../../data/siteData';
 import { getWindowConfig, isInWindow } from '../../hooks/useManagementStudio';
+import { Icon } from '../Icon';
 
 const WINDOW_OPTIONS = [
   { id: '7d', label: '7D', description: 'Last 7 days', days: 7, buckets: 7 },
@@ -87,7 +88,7 @@ export function DashboardPage({
   const liveListingsCount = listings.filter((l) => l.publishStatus !== 'draft' && !l.isDeleted).length;
   const draftListingsCount = listings.filter((l) => l.publishStatus === 'draft' && !l.isDeleted).length;
   const confirmedBookings = bookingTransactions.filter((b) => (b.bookingStatus || 'confirmed') === 'confirmed').length;
-  const queuePreview = bookingTransactions.slice(0, 3);
+  const queuePreview = bookingTransactions.slice(0, 5);
   const userName = authUser?.user_metadata?.full_name || authUser?.email || 'Hora Admin';
   const initial = String(userName).trim().charAt(0).toUpperCase() || 'H';
 
@@ -148,382 +149,195 @@ export function DashboardPage({
     ];
   }, [emails]);
 
-  const snapItems = [
-    { id: 'bookings', label: 'Bookings', value: bookings.length, sub: 'This month' },
-    { id: 'revenue', label: 'Revenue', value: formatCurrency(revenue), sub: 'Confirmed only' },
-    { id: 'emails', label: 'Emails Sent', value: emails.length, sub: 'All triggers active' },
-    {
-      id: 'listings',
-      label: 'Listings Live',
-      value: liveListingsCount,
-      sub: draftListingsCount ? `${draftListingsCount} draft` : 'All published',
-    },
-  ];
   const statCards = [
     {
       id: 'confirmed',
-      label: 'Confirmed bookings',
+      label: 'Confirmed Bookings',
       value: confirmedBookings,
       caption: confirmedBookings ? 'Ready to host' : 'No bookings yet',
+      color: 'brand',
     },
-    { id: 'compact-revenue', label: 'Revenue', value: formatCurrency(revenue), caption: 'This month' },
+    {
+      id: 'revenue',
+      label: 'Revenue',
+      value: formatCurrency(revenue),
+      caption: 'This month',
+      color: 'green',
+    },
     {
       id: 'owners',
-      label: 'Owner leads',
+      label: 'Owner Leads',
       value: ownerApplications.length,
       caption: ownerApplications.length ? 'Needs review' : 'Awaiting follow-up',
+      color: 'amber',
     },
     {
       id: 'evaluations',
-      label: 'Evaluate leads',
+      label: 'Evaluate Leads',
       value: reviewSubmissions.length,
       caption: reviewSubmissions.length ? 'Needs review' : 'Pending review',
+      color: 'purple',
+    },
+    {
+      id: 'listings-live',
+      label: 'Listings Live',
+      value: liveListingsCount,
+      caption: draftListingsCount ? `${draftListingsCount} in draft` : 'All published',
+      color: 'cyan',
+    },
+    {
+      id: 'emails-sent',
+      label: 'Emails Sent',
+      value: emails.length,
+      caption: 'All triggers active',
+      color: 'slate',
     },
   ];
 
-  return (
-    <div
-      className="flex h-screen overflow-hidden bg-[#f0f2f7] text-sm text-[#0F1F3D]"
-      style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}
-    >
-      {/* Sidebar */}
-      <aside className="flex h-full w-[220px] min-w-[220px] flex-shrink-0 flex-col bg-[#0D1B3E]">
-        <div className="flex items-center gap-2.5 border-b border-white/10 px-[18px] py-5">
-          <div className="flex h-[30px] w-[30px] flex-shrink-0 items-center justify-center rounded-lg bg-white/95 text-sm font-bold text-[#0D1B3E]">
-            H
-          </div>
-          <div>
-            <div className="text-sm font-semibold text-white">HORA Staycation</div>
-          </div>
-        </div>
-        <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2.5 py-3.5">
-          {[
-            {
-              title: 'Overview',
-              items: [
-                { id: 'dashboard', label: 'Dashboard', href: '#portal-dashboard' },
-                { id: 'bookings', label: 'Bookings', href: '#portal-queue', badge: bookingTransactions.length || null },
-                { id: 'analytics', label: 'Analytics', href: '#portal-analytics' },
-              ],
-            },
-            {
-              title: 'Listings',
-              items: [
-                { id: 'manage-listings', label: 'Manage listings', onClick: () => onShowPage('management-listings') },
-                { id: 'upload-studio', label: 'Upload studio', onClick: () => onShowPage('management-listings') },
-              ],
-            },
-            {
-              title: 'Clients',
-              items: [
-                { id: 'owner-leads', label: 'Owner leads', href: '#portal-activity' },
-                { id: 'evaluate-leads', label: 'Evaluate leads', href: '#portal-activity' },
-                { id: 'email-activity', label: 'Email activity', href: '#portal-email-triggers' },
-              ],
-            },
-          ].map((group) => (
-            <div key={group.title}>
-              <div className="px-2 pb-1 pt-2.5 text-[10px] font-medium uppercase tracking-[0.06em] text-white/35">
-                {group.title}
-              </div>
-              {group.items.map((item) => {
-                const content = (
-                  <>
-                    <svg
-                      viewBox="0 0 24 24"
-                      className="h-4 w-4 flex-shrink-0"
-                      style={{
-                        stroke: 'currentColor',
-                        fill: 'none',
-                        strokeWidth: 1.8,
-                        strokeLinecap: 'round',
-                        strokeLinejoin: 'round',
-                      }}
-                    >
-                      {item.id === 'dashboard' ? (
-                        <>
-                          <rect x="3" y="3" width="7" height="7" rx="1" />
-                          <rect x="14" y="3" width="7" height="7" rx="1" />
-                          <rect x="3" y="14" width="7" height="7" rx="1" />
-                          <rect x="14" y="14" width="7" height="7" rx="1" />
-                        </>
-                      ) : item.id === 'bookings' ? (
-                        <>
-                          <rect x="3" y="4" width="18" height="18" rx="2" />
-                          <line x1="16" y1="2" x2="16" y2="6" />
-                          <line x1="8" y1="2" x2="8" y2="6" />
-                          <line x1="3" y1="10" x2="21" y2="10" />
-                        </>
-                      ) : item.id === 'analytics' ? (
-                        <>
-                          <line x1="18" y1="20" x2="18" y2="10" />
-                          <line x1="12" y1="20" x2="12" y2="4" />
-                          <line x1="6" y1="20" x2="6" y2="14" />
-                        </>
-                      ) : item.id === 'manage-listings' ? (
-                        <>
-                          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                          <polyline points="9 22 9 12 15 12 15 22" />
-                        </>
-                      ) : item.id === 'upload-studio' ? (
-                        <>
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                          <polyline points="17 8 12 3 7 8" />
-                          <line x1="12" y1="3" x2="12" y2="15" />
-                        </>
-                      ) : item.id === 'owner-leads' ? (
-                        <>
-                          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                          <circle cx="9" cy="7" r="4" />
-                          <line x1="19" y1="8" x2="19" y2="14" />
-                          <line x1="22" y1="11" x2="16" y2="11" />
-                        </>
-                      ) : (
-                        <>
-                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                          <polyline points="22,6 12,13 2,6" />
-                        </>
-                      )}
-                    </svg>
-                    <span className="flex-1">{item.label}</span>
-                    {item.badge ? (
-                      <span className="ml-auto rounded-full bg-[#1D9E75] px-1.5 py-0.5 text-[10px] font-semibold text-white">
-                        {item.badge}
-                      </span>
-                    ) : null}
-                  </>
-                );
-                if (item.href) {
-                  return (
-                    <a
-                      key={item.id}
-                      href={item.href}
-                      className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] text-white/55 no-underline"
-                      style={{ background: item.active ? '#1E3560' : 'transparent' }}
-                    >
-                      {content}
-                    </a>
-                  );
-                }
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={item.onClick}
-                    className="flex w-full items-center gap-2.5 rounded-md border-none px-2.5 py-2 text-left text-[13px] text-white/55"
-                    style={{ background: item.active ? '#1E3560' : 'transparent' }}
-                  >
-                    {content}
-                  </button>
-                );
-              })}
-            </div>
-          ))}
-        </nav>
-        <div className="flex flex-shrink-0 items-center gap-2.5 border-t border-white/10 px-4 py-3.5">
-          <div className="flex h-[30px] w-[30px] flex-shrink-0 items-center justify-center rounded-full border-[1.5px] border-[#2A4578] bg-[#1E3560] text-xs font-semibold text-white">
-            {initial}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-xs font-medium text-white">
-              {authUser?.email || 'management@horastaycation.com'}
-            </div>
-            <div className="text-[10px] text-white/55">Admin</div>
-          </div>
-          <button type="button" onClick={onSignOut} className="flex items-center rounded border-none p-1 text-white/35">
-            <svg
-              viewBox="0 0 24 24"
-              className="h-4 w-4"
-              style={{
-                stroke: 'currentColor',
-                fill: 'none',
-                strokeWidth: 1.8,
-                strokeLinecap: 'round',
-                strokeLinejoin: 'round',
-              }}
-            >
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <polyline points="16 17 21 12 16 7" />
-              <line x1="21" y1="12" x2="9" y2="12" />
-            </svg>
-          </button>
-        </div>
-      </aside>
+  const colorMap = {
+    brand: 'bg-brand-50 text-brand-700',
+    green: 'bg-emerald-50 text-emerald-700',
+    amber: 'bg-amber-50 text-amber-700',
+    purple: 'bg-purple-50 text-purple-700',
+    cyan: 'bg-cyan-50 text-cyan-700',
+    slate: 'bg-slate-100 text-slate-600',
+  };
 
-      {/* Main Content */}
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden" style={{ height: '100%' }}>
-        <div className="flex h-[56px] flex-shrink-0 items-center gap-3.5 border-b border-white/10 bg-[#0D1B3E] px-6 text-white">
-          {snapItems.map((item, index) => (
-            <span
-              key={item.id}
-              className={`rounded-md px-3 py-1.5 text-xs ${index === 0 ? 'bg-white/10 font-semibold text-white' : 'text-white/70'}`}
-            >
-              {index === 0 ? 'This month' : item.sub}
-            </span>
-          ))}
-          <div className="ml-auto flex items-center gap-2.5">
+  return (
+    <section className="min-h-screen bg-white px-4 pb-16 pt-28 md:px-8">
+      <div className="mx-auto max-w-7xl">
+
+        {/* Page Header */}
+        <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">
+              Management
+            </div>
+            <h1 className="font-display text-4xl font-bold text-brand-950 md:text-5xl">Dashboard</h1>
+            <p className="mt-2 text-lg text-slate-500">
+              Welcome back,{' '}
+              <span className="font-semibold text-brand-800">
+                {authUser?.user_metadata?.full_name || authUser?.email || 'Admin'}
+              </span>
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={() => onShowPage('management-listings')}
-              className="rounded-md border-none bg-[#1B6FEB] px-4 py-1.5 text-xs font-semibold text-white"
+              className="btn-primary px-5 py-2.5 text-sm"
             >
-              + New listing
+              + New Listing
             </button>
             <button
               type="button"
               onClick={() => onShowPage('booking')}
-              className="rounded-md border border-[#2DD4BF] bg-[#2DD4BF] px-4 py-1.5 text-xs font-semibold text-[#0D1B3E]"
+              className="rounded-full border border-brand-200 bg-white px-5 py-2.5 text-sm font-semibold text-brand-700 transition hover:bg-brand-50"
             >
-              Book Now
+              View Booking Page
+            </button>
+            <button
+              type="button"
+              onClick={onSignOut}
+              className="rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+            >
+              Sign Out
             </button>
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col gap-[18px] overflow-y-auto p-6">
-          {/* Stat grid */}
-          <div className="grid grid-cols-4 gap-3">
-            {statCards.map((card) => (
-              <div key={card.id} className="rounded-xl border border-[rgba(15,31,61,0.12)] bg-white p-4">
-                <div className="mb-1.5 flex items-center gap-1.5 text-[11px] text-[#5A6A84]">
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="h-[13px] w-[13px]"
-                    style={{
-                      stroke: 'currentColor',
-                      fill: 'none',
-                      strokeWidth: 1.8,
-                      strokeLinecap: 'round',
-                      strokeLinejoin: 'round',
-                    }}
-                  >
-                    <path d="M9 11l3 3L22 4" />
-                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-                  </svg>
-                  {card.label}
-                </div>
-                <div className="text-[26px] font-semibold text-[#0F1F3D]">{card.value}</div>
-                <div className="mt-1 text-[11px] text-[#8FA0B8]">{card.caption}</div>
+        {/* Stat Cards */}
+        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {statCards.map((card) => (
+            <div
+              key={card.id}
+              className="rounded-[1.2rem] border border-brand-100 bg-white p-6 shadow-sm"
+            >
+              <div className={`mb-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${colorMap[card.color]}`}>
+                {card.label}
               </div>
-            ))}
-          </div>
-
-          {/* Analytics */}
-          <div
-            id="portal-analytics"
-            className="flex items-center gap-3.5 rounded-xl border border-[rgba(15,31,61,0.12)] bg-white px-[18px] py-3.5"
-          >
-            <div className="flex h-[34px] w-[34px] flex-shrink-0 items-center justify-center rounded-md border border-[rgba(15,31,61,0.12)] bg-[#F5F7FA]">
-              <svg
-                viewBox="0 0 24 24"
-                className="h-4 w-4"
-                style={{
-                  stroke: '#0F1F3D',
-                  fill: 'none',
-                  strokeWidth: 1.8,
-                  strokeLinecap: 'round',
-                  strokeLinejoin: 'round',
-                }}
-              >
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-              </svg>
+              <div className="font-display text-4xl font-bold text-brand-950">{card.value}</div>
+              <div className="mt-1.5 text-sm text-slate-500">{card.caption}</div>
             </div>
-            <div className="flex-1">
-              <div className="text-[13px] font-medium text-[#0F1F3D]">
-                Analytics — {analyticsWindowLabel.toLowerCase()}
-              </div>
-              <div className="mt-0.5 text-[11px] text-[#5A6A84]">
-                {analyticsSummary.pageViews} page views · {analyticsSummary.bookings} bookings ·{' '}
-                {analyticsSummary.conversionRate}% conversion ·{' '}
+          ))}
+        </div>
+
+        {/* Analytics Bar */}
+        <div id="portal-analytics" className="mb-8 rounded-[1.2rem] border border-brand-100 bg-ice-50 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-base font-semibold text-brand-950">
+                Analytics —{' '}
+                <span className="font-normal text-slate-500">{analyticsWindowLabel}</span>
+              </p>
+              <p className="mt-1 text-sm text-slate-500">
+                {analyticsSummary.pageViews} page views &middot; {analyticsSummary.bookings} bookings &middot;{' '}
+                {analyticsSummary.conversionRate}% conversion &middot;{' '}
                 {analyticsSummary.searches
                   ? `${analyticsSummary.searches} tracked searches`
                   : 'no tracked searches yet'}
-              </div>
+              </p>
             </div>
-            <div className="ml-auto flex flex-shrink-0 items-center gap-2">
-              <div className="flex overflow-hidden rounded-md border border-[rgba(15,31,61,0.12)]">
+            <div className="flex items-center gap-2">
+              <div className="flex overflow-hidden rounded-full border border-brand-100 bg-white">
                 {WINDOW_OPTIONS.map((option) => (
                   <button
                     key={option.id}
                     type="button"
                     onClick={() => setAnalyticsWindow(option.id)}
-                    className={`border-none px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.04em] cursor-pointer ${
-                      analyticsWindow === option.id ? 'bg-[#0F1F3D] text-white' : 'bg-transparent text-[#5A6A84]'
+                    className={`px-4 py-2 text-xs font-semibold uppercase tracking-[0.1em] transition ${
+                      analyticsWindow === option.id
+                        ? 'bg-brand-950 text-white'
+                        : 'text-slate-500 hover:text-brand-800'
                     }`}
                   >
                     {option.label}
                   </button>
                 ))}
               </div>
-              <a
-                href="#portal-queue"
-                className="flex items-center gap-1 whitespace-nowrap text-xs text-[#8FA0B8] no-underline"
-              >
-                View full analytics
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-3.5 w-3.5"
-                  style={{
-                    stroke: 'currentColor',
-                    fill: 'none',
-                    strokeWidth: 1.8,
-                    strokeLinecap: 'round',
-                    strokeLinejoin: 'round',
-                  }}
-                >
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </a>
             </div>
           </div>
+        </div>
 
-          {/* Booking queue + activity */}
-          <div className="grid grid-cols-[1.6fr_1fr] gap-4">
-            <div id="portal-queue" className="rounded-xl border border-[rgba(15,31,61,0.12)] bg-white p-[18px]">
-              <div className="mb-3.5 flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-[13px] font-semibold text-[#0F1F3D]">
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="h-[15px] w-[15px]"
-                    style={{
-                      stroke: '#5A6A84',
-                      fill: 'none',
-                      strokeWidth: 1.8,
-                      strokeLinecap: 'round',
-                      strokeLinejoin: 'round',
-                    }}
-                  >
-                    <path d="M9 11l3 3L22 4" />
-                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-                  </svg>
-                  Live booking queue
-                </span>
-                <button type="button" onClick={() => onShowPage('booking')} className="border-none bg-transparent text-xs font-medium text-[#1B6FEB]">
-                  View all
-                </button>
-              </div>
-              {queuePreview.length ? (
-                queuePreview.map((booking) => (
+        {/* Main Grid */}
+        <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
+
+          {/* Booking Queue */}
+          <div id="portal-queue" className="rounded-[1.2rem] border border-brand-100 bg-white p-6 shadow-sm">
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-brand-950">Live Booking Queue</h2>
+              <button
+                type="button"
+                onClick={() => onShowPage('booking')}
+                className="text-sm font-semibold text-brand-600 hover:text-brand-800"
+              >
+                View all →
+              </button>
+            </div>
+            {queuePreview.length ? (
+              <div className="space-y-3">
+                {queuePreview.map((booking) => (
                   <div
                     key={booking.id}
-                    className="flex items-center gap-2.5 border-b border-[rgba(15,31,61,0.12)] py-2.5"
+                    className="flex items-center gap-4 rounded-2xl border border-ice-100 bg-ice-50 p-4"
                   >
-                    <div className="flex h-[34px] w-[34px] flex-shrink-0 items-center justify-center rounded-md border border-[rgba(15,31,61,0.12)] bg-[#EEF2F7] text-[10px] font-bold text-[#0F1F3D]">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-sm font-bold text-brand-800">
                       {getInitials(booking.bookingSummary?.name)}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-xs font-semibold text-[#0F1F3D]">
+                      <p className="font-semibold text-brand-950">
                         {booking.bookingSummary?.name || 'Staycation'}
-                      </div>
-                      <div className="mt-0.5 text-[11px] text-[#8FA0B8]">
-                        {booking.bookingForm?.checkin} – {booking.bookingForm?.checkout} ·{' '}
+                      </p>
+                      <p className="mt-0.5 text-sm text-slate-500">
+                        {booking.bookingForm?.checkin} – {booking.bookingForm?.checkout} &middot;{' '}
                         {booking.bookingSummary?.nights || 0} night
-                        {(booking.bookingSummary?.nights || 0) > 1 ? 's' : ''} · {booking.bookingForm?.guests || '?'}{' '}
-                        pax
-                      </div>
+                        {(booking.bookingSummary?.nights || 0) > 1 ? 's' : ''} &middot;{' '}
+                        {booking.bookingForm?.guests || '?'} pax
+                      </p>
                     </div>
-                    <div className="flex flex-col items-end gap-1">
+                    <div className="flex flex-col items-end gap-1.5">
                       <span
-                        className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
                           (booking.bookingStatus || 'confirmed') === 'confirmed'
                             ? 'bg-emerald-50 text-emerald-700'
                             : 'bg-amber-50 text-amber-700'
@@ -531,131 +345,82 @@ export function DashboardPage({
                       >
                         {formatStatusCopy(booking.bookingStatus || 'confirmed')}
                       </span>
-                      <span className="text-[13px] font-semibold text-[#0F1F3D]">
+                      <span className="text-base font-bold text-brand-950">
                         {formatCurrency(booking.bookingSummary?.total || 0)}
                       </span>
                     </div>
                   </div>
-                ))
-              ) : (
-                <div className="py-2.5 text-xs text-[#8FA0B8]">
-                  No bookings yet. Share your booking link to activate the queue and email triggers.
-                </div>
-              )}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-brand-200 bg-ice-50 px-6 py-10 text-center">
+                <p className="font-semibold text-brand-950">No bookings yet</p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Share your booking link to activate the queue and email triggers.
+                </p>
+              </div>
+            )}
+          </div>
 
-            {/* Right column */}
-            <div className="flex flex-col gap-4">
-              <div id="portal-activity" className="rounded-xl border border-[rgba(15,31,61,0.12)] bg-white p-[18px]">
-                <div className="mb-3.5 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 text-[13px] font-semibold text-[#0F1F3D]">
-                    <svg
-                      viewBox="0 0 24 24"
-                      className="h-[15px] w-[15px]"
-                      style={{
-                        stroke: '#5A6A84',
-                        fill: 'none',
-                        strokeWidth: 1.8,
-                        strokeLinecap: 'round',
-                        strokeLinejoin: 'round',
-                      }}
-                    >
-                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                    </svg>
-                    Recent activity
-                  </span>
-                </div>
+          {/* Right Column */}
+          <div className="flex flex-col gap-6">
+
+            {/* Recent Activity */}
+            <div id="portal-activity" className="rounded-[1.2rem] border border-brand-100 bg-white p-6 shadow-sm">
+              <h2 className="mb-5 text-lg font-bold text-brand-950">Recent Activity</h2>
+              <div className="space-y-3">
                 {recentActivity.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-start gap-2.5 border-b border-[rgba(15,31,61,0.12)] py-[9px]"
+                    className="flex items-start gap-3 rounded-2xl border border-ice-100 bg-ice-50 p-4"
                   >
                     <div
-                      className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${item.tone === 'accent' ? 'bg-amber-50' : item.tone === 'brand' ? 'bg-emerald-50' : 'bg-ice-50'}`}
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+                        item.tone === 'accent'
+                          ? 'bg-amber-50'
+                          : item.tone === 'brand'
+                            ? 'bg-emerald-50'
+                            : 'bg-brand-50'
+                      }`}
                     >
-                      <svg
-                        viewBox="0 0 24 24"
-                        className="h-[13px] w-[13px]"
-                        style={{
-                          stroke: item.tone === 'accent' ? '#633806' : '#085041',
-                          fill: 'none',
-                          strokeWidth: 2,
-                          strokeLinecap: 'round',
-                          strokeLinejoin: 'round',
-                        }}
-                      >
-                        {item.icon === 'calendar-check' ? (
-                          <>
-                            <path d="M9 11l3 3L22 4" />
-                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-                          </>
-                        ) : item.icon === 'home' ? (
-                          <>
-                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                            <polyline points="9 22 9 12 15 12 15 22" />
-                          </>
-                        ) : (
-                          <>
-                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                          </>
-                        )}
-                      </svg>
+                      <Icon
+                        name={item.icon === 'calendar-check' ? 'check' : item.icon === 'home' ? 'home' : 'chart'}
+                        className={`text-sm ${
+                          item.tone === 'accent'
+                            ? 'text-amber-700'
+                            : item.tone === 'brand'
+                              ? 'text-emerald-700'
+                              : 'text-brand-600'
+                        }`}
+                      />
                     </div>
-                    <div>
-                      <div className="text-xs font-medium text-[#0F1F3D]">{item.title}</div>
-                      <div className="mt-0.5 text-[11px] text-[#8FA0B8]">{item.detail}</div>
-                      <div className="mt-0.5 text-[11px] text-[#5A6A84]">{item.meta}</div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-brand-950">{item.title}</p>
+                      <p className="mt-0.5 text-sm text-slate-500">{item.detail}</p>
+                      <p className="mt-0.5 text-xs text-slate-400">{item.meta}</p>
                     </div>
                   </div>
                 ))}
               </div>
+            </div>
 
-              <div id="portal-email-triggers" className="rounded-xl border border-[rgba(15,31,61,0.12)] bg-white p-[18px]">
-                <div className="mb-3.5 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 text-[13px] font-semibold text-[#0F1F3D]">
-                    <svg
-                      viewBox="0 0 24 24"
-                      className="h-[15px] w-[15px]"
-                      style={{
-                        stroke: '#5A6A84',
-                        fill: 'none',
-                        strokeWidth: 1.8,
-                        strokeLinecap: 'round',
-                        strokeLinejoin: 'round',
-                      }}
-                    >
-                      <line x1="22" y1="2" x2="11" y2="13" />
-                      <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                    </svg>
-                    Email triggers
-                  </span>
-                </div>
+            {/* Email Triggers */}
+            <div id="portal-email-triggers" className="rounded-[1.2rem] border border-brand-100 bg-white p-6 shadow-sm">
+              <h2 className="mb-5 text-lg font-bold text-brand-950">Email Triggers</h2>
+              <div className="space-y-3">
                 {emailTriggers.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-start gap-2.5 border-b border-[rgba(15,31,61,0.12)] py-[9px]"
+                    className="flex items-start gap-3 rounded-2xl border border-ice-100 bg-ice-50 p-4"
                   >
-                    <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-emerald-50">
-                      <svg
-                        viewBox="0 0 24 24"
-                        className="h-[13px] w-[13px]"
-                        style={{
-                          stroke: '#085041',
-                          fill: 'none',
-                          strokeWidth: 2,
-                          strokeLinecap: 'round',
-                          strokeLinejoin: 'round',
-                        }}
-                      >
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50">
+                      <Icon name="check" className="text-sm text-emerald-700" />
                     </div>
-                    <div>
-                      <div className="text-xs font-medium text-[#0F1F3D]">{item.title}</div>
-                      <div className="mt-0.5 text-[11px] text-[#8FA0B8]">{item.detail}</div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-brand-950">{item.title}</p>
+                      <p className="mt-0.5 text-sm text-slate-500">{item.detail}</p>
                       {item.id !== 'email-empty' ? (
-                        <span className="mt-1 inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                        <span className="mt-1.5 inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                           Active
                         </span>
                       ) : null}
@@ -664,9 +429,31 @@ export function DashboardPage({
                 ))}
               </div>
             </div>
+
           </div>
         </div>
+
+        {/* Quick Nav */}
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { label: 'Manage Listings', desc: 'Add, edit, or remove properties', page: 'management-listings' },
+            { label: 'Upload Studio', desc: 'Upload images and media assets', page: 'management-listings' },
+            { label: 'Owner Leads', desc: `${ownerApplications.length} pending review`, page: 'management-listings' },
+            { label: 'Booking Page', desc: 'View the live booking interface', page: 'booking' },
+          ].map((nav) => (
+            <button
+              key={nav.label}
+              type="button"
+              onClick={() => onShowPage(nav.page)}
+              className="rounded-[1.2rem] border border-brand-100 bg-white p-5 text-left shadow-sm transition hover:border-brand-300 hover:bg-brand-50"
+            >
+              <p className="font-semibold text-brand-950">{nav.label}</p>
+              <p className="mt-1 text-sm text-slate-500">{nav.desc}</p>
+            </button>
+          ))}
+        </div>
+
       </div>
-    </div>
+    </section>
   );
 }
