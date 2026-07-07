@@ -587,8 +587,8 @@ export function SiteFooter({ onShowPage, onManageCookies }) {
               >
                 Cookie Preferences
               </button>
-              <a href="mailto:hijau.spirit@gmail.com" className="block transition-colors hover:text-accent-400">
-                hijau.spirit@gmail.com
+               <a href="mailto:n33sh07@gmail.com" className="block transition-colors hover:text-accent-400">
+                n33sh07@gmail.com
               </a>
             </div>
           </div>
