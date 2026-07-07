@@ -142,60 +142,22 @@ export function BookingPage({
     });
   }, [bookingForm.property, filteredProperties, onBookingChange]);
 
-  const stepStates = [
-    { number: '01', label: 'Unified Sign-In', state: 'done' },
-    { number: '02', label: 'Browse Staycations', state: 'done' },
-    { number: '03', label: 'Guest & Stay Details', state: 'active' },
-    { number: '04', label: 'Payment', state: 'pending' },
-  ];
-
   return (
-    <section className="min-h-screen bg-ice-50 px-3 pb-14 pt-24 md:px-8">
+    <section className="min-h-screen bg-white px-4 pb-16 pt-28 md:px-8">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-3 rounded-[1.1rem] bg-[#eceef2] px-4 py-6 text-center shadow-sm md:py-8">
-          <h1 className="font-display text-4xl font-bold leading-none text-brand-950 md:text-6xl">Book With Us</h1>
-        </div>
-
-        <div className="rounded-[1.25rem] bg-brand-950 px-4 py-3 text-white shadow-lg md:px-6">
-          <div className="flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => onShowPage('landing')}
-              className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/80"
-            >
-              <Icon name="arrow-right" className="rotate-180" />
-              Hora Staycation
-            </button>
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">Booking Flow</div>
-          </div>
-        </div>
-
-        <div className="mt-3 rounded-[1.25rem] border border-brand-100 bg-white px-4 py-4 shadow-sm md:px-6">
-          <div className="grid gap-3 md:grid-cols-4">
-            {stepStates.map((step) => (
-              <div key={step.number} className="flex items-center gap-3 rounded-2xl bg-ice-50 px-3 py-3">
-                <div
-                  className={`flex h-9 w-9 items-center justify-center rounded-xl text-sm font-bold ${
-                    step.state === 'done'
-                      ? 'bg-brand-600 text-white'
-                      : step.state === 'active'
-                        ? 'bg-brand-950 text-white'
-                        : 'bg-white text-slate-500'
-                  }`}
-                >
-                  {step.state === 'done' ? '✓' : step.number}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Step {step.number}</p>
-                  <p className="truncate text-sm font-semibold text-brand-950">{step.label}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-3 rounded-[1.25rem] border border-ice-200 bg-brand-50/55 px-4 py-2.5 text-xs font-medium text-brand-800 md:px-6">
-          Secure checkout, transparent pricing, and flexible cancellation support for eligible stays.
+        <button
+          type="button"
+          onClick={() => onShowPage('landing')}
+          className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-brand-600 hover:text-brand-800"
+        >
+          <Icon name="arrow-right" className="rotate-180" />
+          Back to Home
+        </button>
+        <div className="mb-8 text-center">
+          <h1 className="font-display text-4xl font-bold text-brand-950 md:text-5xl">Book a Staycation</h1>
+          <p className="mt-3 text-lg text-slate-600">
+            Pick your perfect escape, choose your dates, and book your stay in minutes.
+          </p>
         </div>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1.18fr_0.82fr]">
@@ -203,7 +165,7 @@ export function BookingPage({
             <div className="rounded-[1.2rem] border border-brand-100 bg-white p-4 shadow-sm md:p-5">
               <div className="flex flex-wrap items-center justify-between gap-2.5">
                 <div>
-                  <h1 className="font-display text-3xl font-bold text-brand-950 md:text-4xl">Book Your Staycation</h1>
+                  <h2 className="font-display text-3xl font-bold text-brand-950 md:text-4xl">Book Your Staycation</h2>
                   <p className="mt-1.5 text-sm text-slate-500">Pick a property, choose your dates, and check out now.</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
