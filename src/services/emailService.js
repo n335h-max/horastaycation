@@ -75,3 +75,10 @@ export async function sendOwnerLeadAlert(data) {
 export async function sendEvaluationRequestAlert(data) {
   return sendEmail('evaluation_request', data);
 }
+
+/**
+ * Send approval email to an owner or evaluator applicant.
+ */
+export async function sendApplicationApproval(data) {
+  return sendEmail('application_approval', data, data.applicantEmail);
+}

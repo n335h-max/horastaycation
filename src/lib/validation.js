@@ -35,6 +35,7 @@ export const paymentSchema = z.object({
 export const ownerSchema = z.object({
   ownerName: z.string().trim().min(2, 'Enter the owner name.'),
   ownerEmail: z.string().trim().email('Enter a valid email address.'),
+  ownerPhone: phoneSchema,
   ownerAddress: z.string().trim().min(8, 'Enter the house address.'),
   unitCount: z.coerce.number().int().min(1, 'Units must be at least 1.').max(4, 'Units must be 4 or below.'),
   budget: z.string().trim().min(2, 'Enter the budget.'),
@@ -43,6 +44,7 @@ export const ownerSchema = z.object({
 export const reviewSchema = z.object({
   evaluatorName: z.string().trim().min(2, 'Enter your name.'),
   evaluatorEmail: z.string().trim().email('Enter a valid email address.'),
+  evaluatorPhone: phoneSchema,
   evaluatorAddress: z.string().trim().min(8, 'Enter the staycation address.'),
   unitCount: z.coerce.number().int().min(1, 'Units must be at least 1.').max(4, 'Units must be 4 or below.'),
   exclusivityAgreement: z.boolean().refine((value) => value, 'You must confirm exclusive partnership to continue.'),

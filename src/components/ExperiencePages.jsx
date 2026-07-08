@@ -7,6 +7,7 @@ import { Icon } from './Icon';
 const INITIAL_OWNER_FORM = {
   ownerName: '',
   ownerEmail: '',
+  ownerPhone: '',
   ownerAddress: '',
   unitCount: '1',
   budget: '',
@@ -15,6 +16,7 @@ const INITIAL_OWNER_FORM = {
 const INITIAL_REVIEW_FORM = {
   evaluatorName: '',
   evaluatorEmail: '',
+  evaluatorPhone: '',
   evaluatorAddress: '',
   unitCount: '1',
   exclusivityAgreement: false,
@@ -190,6 +192,22 @@ export function OwnerSignupPage({
               </div>
             </div>
             <div>
+              <label className="form-label" htmlFor="ownerPhone">
+                Phone Number
+              </label>
+              <input
+                id="ownerPhone"
+                name="ownerPhone"
+                type="tel"
+                value={form.ownerPhone}
+                onChange={handleChange}
+                className="form-input"
+                autoComplete="tel"
+                placeholder="+60 12-345 6789"
+              />
+              <FieldError errors={errors} name="ownerPhone" />
+            </div>
+            <div>
               <label className="form-label" htmlFor="ownerAddress">
                 House Address
               </label>
@@ -337,6 +355,22 @@ export function ReviewPage({ onShowPage, onSubmitReview, isSubmitting }) {
               />
               <FieldError errors={errors} name="evaluatorEmail" />
             </div>
+          </div>
+          <div>
+            <label className="form-label" htmlFor="evaluatorPhone">
+              Phone Number
+            </label>
+            <input
+              id="evaluatorPhone"
+              name="evaluatorPhone"
+              type="tel"
+              value={form.evaluatorPhone}
+              onChange={handleChange}
+              className="form-input"
+              autoComplete="tel"
+              placeholder="+60 12-345 6789"
+            />
+            <FieldError errors={errors} name="evaluatorPhone" />
           </div>
           <div>
             <label className="form-label" htmlFor="evaluatorAddress">
@@ -612,12 +646,14 @@ export function OwnerDashboardPage({
         {
           title: 'Management Review',
           detail: `${latestOwner.unitCount} unit(s) · Budget ${latestOwner.budget}`,
-          status: 'active',
+          status: latestOwner.approved ? 'done' : 'active',
         },
         {
           title: 'Listing Preparation',
-          detail: 'Photos, facilities, and schedule are prepared after approval.',
-          status: 'upcoming',
+          detail: latestOwner.approved
+            ? 'Application approved — the team will be in contact shortly.'
+            : 'Photos, facilities, and schedule are prepared after approval.',
+          status: latestOwner.approved ? 'active' : 'upcoming',
         },
       ]
     : [];

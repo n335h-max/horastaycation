@@ -78,8 +78,11 @@ export function DashboardPage({
   formatCurrency,
   analyticsEvents = [],
   supportRequests = [],
+  onApproveOwner,
+  onApproveEvaluation,
 }) {
   const [analyticsWindow, setAnalyticsWindow] = useState('30d');
+  const [pendingApprovalId, setPendingApprovalId] = useState(null);
   const analyticsSummary = useMemo(
     () => summarizeWindowedAnalytics(analyticsEvents, bookingTransactions, supportRequests, analyticsWindow),
     [analyticsEvents, analyticsWindow, bookingTransactions, supportRequests],
@@ -403,6 +406,30 @@ export function DashboardPage({
                           <span>🏢 {app.unitCount} unit(s)</span>
                           <span>💰 Budget: {app.budget}</span>
                         </div>
+                        <div className="mt-3 flex items-center gap-2">
+                          {app.approved ? (
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                              Approved
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled={pendingApprovalId === app.id}
+                              onClick={async () => {
+                                setPendingApprovalId(app.id);
+                                try {
+                                  await onApproveOwner?.(app.id);
+                                } finally {
+                                  setPendingApprovalId(null);
+                                }
+                              }}
+                              className="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {pendingApprovalId === app.id ? 'Approving…' : 'Approve'}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -431,6 +458,30 @@ export function DashboardPage({
                         <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-brand-700 font-medium">
                           <span>📧 {rev.evaluatorEmail}</span>
                           <span>🏢 {rev.unitCount} unit(s)</span>
+                        </div>
+                        <div className="mt-3 flex items-center gap-2">
+                          {rev.approved ? (
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                              Approved
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled={pendingApprovalId === rev.id}
+                              onClick={async () => {
+                                setPendingApprovalId(rev.id);
+                                try {
+                                  await onApproveEvaluation?.(rev.id);
+                                } finally {
+                                  setPendingApprovalId(null);
+                                }
+                              }}
+                              className="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {pendingApprovalId === rev.id ? 'Approving…' : 'Approve'}
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))}

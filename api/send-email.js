@@ -6,6 +6,7 @@ import {
   supportRequestTemplate,
   ownerLeadTemplate,
   evaluationRequestTemplate,
+  applicationApprovalTemplate,
 } from './_lib/emailTemplates.js';
 
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
@@ -117,6 +118,11 @@ const EMAIL_TYPES = {
     subject: (d) => `New Evaluation Request — ${d.evaluatorName}`,
     template: evaluationRequestTemplate,
     defaultTo: getManagementEmail,
+  },
+  application_approval: {
+    subject: (d) => `Your Hora Application is Approved — ${d.applicantName}`,
+    template: applicationApprovalTemplate,
+    defaultTo: (d) => d.applicantEmail || null,
   },
 };
 

@@ -1,7 +1,7 @@
 import { loadStore, saveStore } from './localStore';
 import { getAuthenticatedUser, insertRemote } from './supabaseClient';
 import { MAX_DASHBOARD_PREVIEW_ITEMS } from '../lib/constants';
-import { sendOwnerLeadAlert, sendEvaluationRequestAlert } from './emailService';
+import { sendOwnerLeadAlert, sendEvaluationRequestAlert, sendApplicationApproval } from './emailService';
 
 export async function submitOwnerApplication(application) {
   const store = loadStore();
@@ -23,7 +23,7 @@ export async function submitOwnerApplication(application) {
       owner_first_name: nameParts[0] || application.ownerName,
       owner_last_name: nameParts.slice(1).join(' ') || 'Owner',
       owner_email: application.ownerEmail,
-      owner_phone: '',
+      owner_phone: application.ownerPhone || ''
       property_name: 'Build / Refurbish Request',
       property_type: 'Owner Lead',
       property_location: application.ownerAddress,
@@ -35,6 +35,7 @@ export async function submitOwnerApplication(application) {
     sendOwnerLeadAlert({
       ownerName: application.ownerName || 'Owner',
       ownerEmail: application.ownerEmail || '',
+      ownerPhone: application.ownerPhone || '',
       ownerAddress: application.ownerAddress || '',
       unitCount: String(application.unitCount || '1'),
       budget: application.budget || '',
@@ -70,10 +71,74 @@ export async function submitReview(review) {
     sendEvaluationRequestAlert({
       evaluatorName: review.evaluatorName || 'Evaluator',
       evaluatorEmail: review.evaluatorEmail || '',
+      evaluatorPhone: review.evaluatorPhone || '',
       evaluatorAddress: review.evaluatorAddress || '',
       unitCount: String(review.unitCount || '1'),
     }).catch((err) => console.warn('Failed to send evaluation request email:', err)),
   ]);
 
   return { store, remote };
+}
+
+export async function approveApplication(applicationId, applicationType) {
+  const store = loadStore();
+
+  let applicantName = '';
+  let applicantEmail = '';
+  let propertyAddress = '';
+  let unitCount = '';
+  let found = false;
+
+  if (applicationType === 'owner') {
+    store.ownerApplications = store.ownerApplications.map((app) => {
+      if (app.id !== applicationId) return app;
+      found = true;
+      applicantName = app.ownerName || 'Owner';
+      applicantEmail = app.ownerEmail || '';
+      propertyAddress = app.ownerAddress || '';
+      unitCount = String(app.unitCount || '');
+      return { ...app, approved: true, approvedAt: new Date().toISOString() };
+    });
+  } else {
+    store.reviewSubmissions = store.reviewSubmissions.map((rev) => {
+      if (rev.id !== applicationId) return rev;
+      found = true;
+      applicantName = rev.evaluatorName || 'Evaluator';
+      applicantEmail = rev.evaluatorEmail || '';
+      propertyAddress = rev.evaluatorAddress || '';
+      unitCount = String(rev.unitCount || '');
+      return { ...rev, approved: true, approvedAt: new Date().toISOString() };
+    });
+  }
+
+  if (!found) {
+    return { store: loadStore(), emailSent: false, found: false };
+  }
+
+  store.dashboardEmails = [
+    {
+      title: `Application Approved`,
+      detail: `Approval sent to ${applicantEmail}`,
+      tone: 'brand',
+    },
+    ...store.dashboardEmails,
+  ].slice(0, MAX_DASHBOARD_PREVIEW_ITEMS);
+
+  saveStore(store);
+
+  let emailSent = false;
+  try {
+    await sendApplicationApproval({
+      applicantName,
+      applicantEmail,
+      applicationType,
+      propertyAddress,
+      unitCount,
+    });
+    emailSent = true;
+  } catch (err) {
+    console.warn('Failed to send approval email:', err);
+  }
+
+  return { store, emailSent, found: true };
 }

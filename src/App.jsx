@@ -19,6 +19,7 @@ import {
   submitBooking,
   submitOwnerApplication,
   submitReview,
+  approveApplication,
   submitSupportRequest,
   syncRemoteData,
   toggleWishlistProperty,
@@ -1082,6 +1083,26 @@ export default function App() {
     pushToast(`Booking marked as ${bookingStatus}.`, 'success', 'calendar');
   }
 
+  async function handleApproveOwner(applicationId) {
+    const result = await approveApplication(applicationId, 'owner');
+    setStore(result.store);
+    if (result.emailSent) {
+      pushToast('Application approved. Approval email sent to applicant.', 'success', 'send');
+    } else {
+      pushToast('Application approved. Email delivery failed — check your email config.', 'warning', 'send');
+    }
+  }
+
+  async function handleApproveEvaluation(applicationId) {
+    const result = await approveApplication(applicationId, 'evaluation');
+    setStore(result.store);
+    if (result.emailSent) {
+      pushToast('Evaluation approved. Approval email sent to applicant.', 'success', 'send');
+    } else {
+      pushToast('Evaluation approved. Email delivery failed — check your email config.', 'warning', 'send');
+    }
+  }
+
   async function handleBookingCancellation(booking) {
     const result = await updateBookingTransactionDetails(booking.id, {
       bookingStatus: 'cancelled',
@@ -1412,6 +1433,8 @@ export default function App() {
                       onUpdateBookingStatus={handleBookingStatusChange}
                       onRefundBooking={handleBookingRefund}
                       onCancelBooking={handleBookingCancellation}
+                      onApproveOwner={handleApproveOwner}
+                      onApproveEvaluation={handleApproveEvaluation}
                       onShowPage={showPage}
                       onSignOut={handleSignOut}
                       authUser={authSession?.user}
