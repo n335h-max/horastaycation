@@ -248,18 +248,26 @@ export function DashboardPage({
 
         {/* Stat Cards */}
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {statCards.map((card) => (
-            <div
-              key={card.id}
-              className="rounded-[1.2rem] border border-brand-100 bg-white p-6 shadow-sm"
-            >
-              <div className={`mb-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${colorMap[card.color]}`}>
-                {card.label}
+          {statCards.map((card) => {
+            const isLeadCard = card.id === 'owners' || card.id === 'evaluations';
+            return (
+              <div
+                key={card.id}
+                onClick={isLeadCard ? () => {
+                  document.getElementById('portal-leads')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } : undefined}
+                className={`rounded-[1.2rem] border border-brand-100 bg-white p-6 shadow-sm ${
+                  isLeadCard ? 'cursor-pointer hover:border-brand-300 transition-all duration-200' : ''
+                }`}
+              >
+                <div className={`mb-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${colorMap[card.color]}`}>
+                  {card.label}
+                </div>
+                <div className="font-display text-4xl font-bold text-brand-950">{card.value}</div>
+                <div className="mt-1.5 text-sm text-slate-500">{card.caption}</div>
               </div>
-              <div className="font-display text-4xl font-bold text-brand-950">{card.value}</div>
-              <div className="mt-1.5 text-sm text-slate-500">{card.caption}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Analytics Bar */}
@@ -302,8 +310,11 @@ export function DashboardPage({
         {/* Main Grid */}
         <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
 
-          {/* Booking Queue */}
-          <div id="portal-queue" className="rounded-[1.2rem] border border-brand-100 bg-white p-6 shadow-sm">
+          {/* Left Column (Queue & Leads) */}
+          <div className="flex flex-col gap-6">
+
+            {/* Booking Queue */}
+            <div id="portal-queue" className="rounded-[1.2rem] border border-brand-100 bg-white p-6 shadow-sm">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-lg font-bold text-brand-950">Live Booking Queue</h2>
               <button
@@ -360,6 +371,76 @@ export function DashboardPage({
                 </p>
               </div>
             )}
+          </div>
+
+          {/* Owner Leads & Evaluations Section */}
+          <div id="portal-leads" className="rounded-[1.2rem] border border-brand-100 bg-white p-6 shadow-sm">
+            <div className="mb-5">
+              <h2 className="text-lg font-bold text-brand-950">Owner Leads & Evaluation Requests</h2>
+              <p className="text-sm text-slate-500 mt-1">Review partnership and staycation evaluation proposals from property owners.</p>
+            </div>
+            
+            <div className="space-y-6">
+              {/* Owner Leads Subsection */}
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-[0.1em] text-amber-750 mb-3 flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-amber-500"></span>
+                  Owner Applications ({ownerApplications.length})
+                </h3>
+                {ownerApplications.length ? (
+                  <div className="grid gap-3">
+                    {ownerApplications.map((app) => (
+                      <div key={app.id} className="rounded-2xl border border-ice-100 bg-ice-50 p-4">
+                        <div className="flex justify-between items-start">
+                          <h4 className="font-semibold text-brand-950">{app.ownerName}</h4>
+                          <span className="text-xs text-slate-400">
+                            {app.submittedAt ? new Date(app.submittedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Pending'}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-sm text-slate-600">Location: {app.ownerAddress}</p>
+                        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-brand-700 font-medium">
+                          <span>📧 {app.ownerEmail}</span>
+                          <span>🏢 {app.unitCount} unit(s)</span>
+                          <span>💰 Budget: {app.budget}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-400 italic bg-slate-50 rounded-2xl p-4 border border-dashed border-slate-200">No owner leads submitted yet.</p>
+                )}
+              </div>
+
+              {/* Evaluation Requests Subsection */}
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-[0.1em] text-purple-750 mb-3 flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-purple-500"></span>
+                  Evaluation Requests ({reviewSubmissions.length})
+                </h3>
+                {reviewSubmissions.length ? (
+                  <div className="grid gap-3">
+                    {reviewSubmissions.map((rev) => (
+                      <div key={rev.id} className="rounded-2xl border border-ice-100 bg-ice-50 p-4">
+                        <div className="flex justify-between items-start">
+                          <h4 className="font-semibold text-brand-950">{rev.evaluatorName}</h4>
+                          <span className="text-xs text-slate-400">
+                            {rev.submittedAt ? new Date(rev.submittedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Pending'}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-sm text-slate-600">Location: {rev.evaluatorAddress}</p>
+                        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-brand-700 font-medium">
+                          <span>📧 {rev.evaluatorEmail}</span>
+                          <span>🏢 {rev.unitCount} unit(s)</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-400 italic bg-slate-50 rounded-2xl p-4 border border-dashed border-slate-200">No evaluation requests submitted yet.</p>
+                )}
+              </div>
+            </div>
+          </div>
           </div>
 
           {/* Right Column */}
@@ -438,13 +519,19 @@ export function DashboardPage({
           {[
             { label: 'Manage Listings', desc: 'Add, edit, or remove properties', page: 'management-listings' },
             { label: 'Upload Studio', desc: 'Upload images and media assets', page: 'management-listings' },
-            { label: 'Owner Leads', desc: `${ownerApplications.length} pending review`, page: 'management-listings' },
+            { 
+              label: 'Owner & Evaluate Leads', 
+              desc: `${ownerApplications.length + reviewSubmissions.length} pending review`, 
+              action: () => {
+                document.getElementById('portal-leads')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              } 
+            },
             { label: 'Booking Page', desc: 'View the live booking interface', page: 'booking' },
           ].map((nav) => (
             <button
               key={nav.label}
               type="button"
-              onClick={() => onShowPage(nav.page)}
+              onClick={nav.action || (() => onShowPage(nav.page))}
               className="rounded-[1.2rem] border border-brand-100 bg-white p-5 text-left shadow-sm transition hover:border-brand-300 hover:bg-brand-50"
             >
               <p className="font-semibold text-brand-950">{nav.label}</p>
