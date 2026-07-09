@@ -2,9 +2,14 @@ node_modules/
 dist/
 .env
 .env.local
-tmp_pdf_pages/
-
-.vercel
-
 .env*
 .vercel
+
+.agents/
+skills-lock.json
+
+tmp_pdf_pages/
+tmp_video_frames_*.jpg
+
+# Large assets that shouldn't be in git
+*.pdf

@@ -1,17 +1,15 @@
-import { startTransition, useState, useMemo, useCallback, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { clearPendingStripeCheckout, getPendingStripeCheckout, savePendingStripeCheckout } from '../lib/stripeCheckout';
 import { submitBooking, saveBookingDraft as persistBookingDraft } from '../services/horaApi';
 import { validateWithSchema, bookingSchema } from '../lib/validation';
 import { isRangeBlocked } from '../lib/guestFeatures';
 import { SERVICE_FEE_RATE } from '../lib/constants';
 import { APP_PATHS } from '../lib/routes';
-import { createCheckoutSessionWithRetry, verifyCheckoutSessionWithRetry } from '../lib/apiRetry';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
 
-export function useBooking({ featuredListings, store, setStore = () => {}, pushToast, recordAnalytics }) {
+export function useBooking({ featuredListings, store, setStore, pushToast, recordAnalytics }) {
   const location = useLocation();
-  const navigate = useNavigate();
 
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [bookingErrors, setBookingErrors] = useState({});
@@ -99,12 +97,16 @@ export function useBooking({ featuredListings, store, setStore = () => {}, pushT
 
       try {
         const accessToken = await getAccessToken();
-        const payload = await verifyCheckoutSessionWithRetry(bookingSuccessSessionId, accessToken, {
-          maxRetries: 3,
-          initialDelayMs: 1000,
-        });
+        const response = await fetch(
+          `/api/verify-checkout-session?session_id=${encodeURIComponent(bookingSuccessSessionId)}`,
+          {
+            method: 'GET',
+            headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+          },
+        );
+        const payload = await response.json();
 
-        if (!payload?.paid) {
+        if (!response.ok || !payload?.paid) {
           throw new Error(payload?.error || 'Stripe has not marked this checkout as paid yet.');
         }
 
@@ -125,8 +127,11 @@ export function useBooking({ featuredListings, store, setStore = () => {}, pushT
           },
         });
 
-        if (!isActive) return;
+        if (!isActive) {
+          return;
+        }
 
+        setStore(bookingResult.store);
         clearPendingStripeCheckout(bookingSuccessSessionId);
         setPaymentOpen(false);
         setBookingErrors({});
@@ -140,31 +145,38 @@ export function useBooking({ featuredListings, store, setStore = () => {}, pushT
             'calendar',
           );
         }
-
-        return bookingResult;
       } catch (error) {
-        if (!isActive) return;
+        if (!isActive) {
+          return;
+        }
+
         setStripeVerificationError(error instanceof Error ? error.message : 'Stripe payment verification failed.');
       } finally {
-        if (isActive) setIsVerifyingStripePayment(false);
+        if (isActive) {
+          setIsVerifyingStripePayment(false);
+        }
       }
     }
 
     verifyStripePayment();
+
     return () => {
       isActive = false;
     };
-  }, [bookingSuccessSessionId, location.pathname, getAccessToken, pushToast, recordAnalytics]);
+  }, [bookingSuccessSessionId, getAccessToken, location.pathname, pushToast, recordAnalytics, setStore]);
 
   // Handle cancelled checkout
   useEffect(() => {
-    if (location.pathname !== APP_PATHS.booking || bookingCheckoutState !== 'cancelled') return;
+    if (location.pathname !== APP_PATHS.booking || bookingCheckoutState !== 'cancelled') {
+      return;
+    }
 
     pushToast(
       'Stripe checkout was cancelled. Your booking details are still here if you want to try again.',
       'warning',
       'lock',
     );
+
     void recordAnalytics('stripe_checkout_cancelled', {
       propertyId: store.bookingDraft.property || '',
     });
@@ -185,15 +197,14 @@ export function useBooking({ featuredListings, store, setStore = () => {}, pushT
         setBookingErrors((current) => ({ ...current, [name]: undefined }));
       }
     },
-    [bookingErrors],
+    [bookingErrors, setStore],
   );
 
-  // We need setStore here, which complicates things. Let's just handle booking state separately.
   const handleProceedToPayment = useCallback(
-    (event, currentStore) => {
+    (event) => {
       event.preventDefault();
       setIsOpeningPayment(true);
-      const result = validateWithSchema(bookingSchema, currentStore.bookingDraft);
+      const result = validateWithSchema(bookingSchema, store.bookingDraft);
 
       if (!result.success) {
         setBookingErrors(result.errors);
@@ -202,9 +213,16 @@ export function useBooking({ featuredListings, store, setStore = () => {}, pushT
         return;
       }
 
-      const selectedProperty = featuredListings.find((item) => item.id === currentStore.bookingDraft.property);
+      if (!bookingSummary) {
+        setBookingErrors({ checkout: ['Check-out must be after check-in.'] });
+        pushToast('Select valid dates to continue to payment.', 'warning', 'calendar');
+        setIsOpeningPayment(false);
+        return;
+      }
 
-      if (isRangeBlocked(selectedProperty, currentStore.bookingDraft.checkin, currentStore.bookingDraft.checkout)) {
+      const selectedProperty = featuredListings.find((item) => item.id === store.bookingDraft.property);
+
+      if (isRangeBlocked(selectedProperty, store.bookingDraft.checkin, store.bookingDraft.checkout)) {
         setBookingErrors({ checkin: ['Selected dates are unavailable for this staycation.'] });
         pushToast('Selected dates are unavailable. Please choose a different stay window.', 'warning', 'calendar');
         setIsOpeningPayment(false);
@@ -216,11 +234,11 @@ export function useBooking({ featuredListings, store, setStore = () => {}, pushT
       setPaymentOpen(true);
       setIsOpeningPayment(false);
     },
-    [featuredListings, pushToast],
+    [store.bookingDraft, bookingSummary, featuredListings, pushToast],
   );
 
   const handlePaymentSubmit = useCallback(
-    async (event, currentStore) => {
+    async (event) => {
       event.preventDefault();
       setIsSubmittingPayment(true);
 
@@ -232,33 +250,38 @@ export function useBooking({ featuredListings, store, setStore = () => {}, pushT
 
       try {
         const accessToken = await getAccessToken();
-        const payload = await createCheckoutSessionWithRetry(
-          {
-            bookingForm: currentStore.bookingDraft,
-            bookingSummary,
+        const response = await fetch('/api/create-checkout-session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
           },
-          accessToken,
-          { maxRetries: 3, initialDelayMs: 1000 },
-        );
+          body: JSON.stringify({
+            bookingForm: store.bookingDraft,
+            bookingSummary,
+          }),
+        });
+        const payload = await response.json();
+
+        if (!response.ok || !payload?.url || !payload?.sessionId) {
+          throw new Error(payload?.error || 'Unable to start Stripe checkout.');
+        }
 
         savePendingStripeCheckout(payload.sessionId, {
-          bookingForm: currentStore.bookingDraft,
+          bookingForm: store.bookingDraft,
           bookingSummary,
         });
         await recordAnalytics('stripe_checkout_started', {
-          propertyId: currentStore.bookingDraft.property,
+          propertyId: store.bookingDraft.property,
           sessionId: payload.sessionId,
         });
         window.location.assign(payload.url);
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unable to start Stripe checkout. Please try again.';
-        pushToast(message, 'warning', 'lock');
-        console.error('[useBooking] Payment submission failed:', error);
-      } finally {
+        pushToast(error instanceof Error ? error.message : 'Unable to start Stripe checkout.', 'warning', 'lock');
         setIsSubmittingPayment(false);
       }
     },
-    [bookingSummary, getAccessToken, recordAnalytics, pushToast],
+    [bookingSummary, getAccessToken, pushToast, recordAnalytics, store.bookingDraft],
   );
 
   return {

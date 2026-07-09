@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   getCurrentSession,
@@ -10,7 +10,7 @@ import {
   syncUserProfile,
 } from '../services/authApi';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
-import { APP_PATHS, getPathFromPage } from '../lib/routes';
+import { APP_PATHS } from '../lib/routes';
 
 const ROLE_DEFAULT_PATHS = {
   owner: APP_PATHS.ownerSignup,
@@ -49,7 +49,20 @@ function getRouteRole(pathname) {
   return null;
 }
 
-export function useAuth() {
+export function normalizeAvailableRoles(roles) {
+  if (!Array.isArray(roles)) {
+    return ['client'];
+  }
+
+  const normalizedRoles = roles
+    .filter((role) => typeof role === 'string')
+    .map((role) => role.trim())
+    .filter(Boolean);
+
+  return normalizedRoles.length ? Array.from(new Set(normalizedRoles)) : ['client'];
+}
+
+export function useAuth(pushToast) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -59,6 +72,7 @@ export function useAuth() {
   const [availableRoles, setAvailableRoles] = useState(['client']);
   const [isAuthLoading, setIsAuthLoading] = useState(Boolean(isSupabaseConfigured));
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const handledRequestedRoleRef = useRef('');
 
   // Initial session hydration & auth state listener
   useEffect(() => {
@@ -88,7 +102,7 @@ export function useAuth() {
       setAuthProfile(profile);
       const authState = getResolvedAuthState(session, profile);
       setAuthRole(authState.activeRole);
-      setAvailableRoles(authState.availableRoles);
+      setAvailableRoles(normalizeAvailableRoles(authState.availableRoles));
       setIsAuthLoading(false);
     }
 
@@ -113,7 +127,7 @@ export function useAuth() {
       setAuthProfile(profile);
       const authState = getResolvedAuthState(session, profile);
       setAuthRole(authState.activeRole);
-      setAvailableRoles(authState.availableRoles);
+      setAvailableRoles(normalizeAvailableRoles(authState.availableRoles));
     });
 
     return () => {
@@ -127,22 +141,58 @@ export function useAuth() {
     let isActive = true;
 
     async function applyRequestedRole() {
-      if (!authSession?.user) return;
+      if (!authSession?.user) {
+        handledRequestedRoleRef.current = '';
+        return;
+      }
+
+      const requestKey = `${authSession.user.id}:${authSession.access_token || ''}:${location.pathname}:${location.search}`;
+
+      if (handledRequestedRoleRef.current === requestKey) {
+        return;
+      }
 
       const params = new URLSearchParams(location.search);
       const requestedRole = params.get('auth_role');
       const nextPath = params.get('next');
 
-      if (!requestedRole) return;
+      if (!requestedRole) {
+        return;
+      }
 
-      const authState = await syncUserProfile(authSession, requestedRole);
-      if (!isActive || !authState) return;
+      handledRequestedRoleRef.current = requestKey;
 
-      setAuthProfile(authState.profile);
+      const authState = getResolvedAuthState(authSession, authProfile, requestedRole);
+
+      if (!isActive) {
+        return;
+      }
+
       setAuthRole(authState.activeRole);
-      setAvailableRoles(authState.availableRoles);
+      setAvailableRoles(normalizeAvailableRoles(authState.availableRoles));
       navigate(getSafeNextPath(nextPath, authState.activeRole), { replace: true });
-      // Toast messaging is handled by the caller layer (App) to keep hook side effects focused on auth state.
+
+      pushToast?.(
+        requestedRole === 'management'
+          ? 'Google sign-in complete. Management access is now checked against the allowed email list.'
+          : `Signed in successfully as ${requestedRole}.`,
+        'success',
+        'lock',
+      );
+
+      void syncUserProfile(authSession, requestedRole)
+        .then((nextAuthState) => {
+          if (!isActive || !nextAuthState) {
+            return;
+          }
+
+          setAuthProfile(nextAuthState.profile);
+          setAuthRole(nextAuthState.activeRole);
+          setAvailableRoles(normalizeAvailableRoles(nextAuthState.availableRoles));
+        })
+        .catch(() => {
+          /* noop */
+        });
     }
 
     applyRequestedRole();
@@ -150,7 +200,7 @@ export function useAuth() {
     return () => {
       isActive = false;
     };
-  }, [authSession, location.pathname, location.search, navigate]);
+  }, [authSession, authProfile, location.pathname, location.search, navigate, pushToast]);
 
   // Sync role with route
   useEffect(() => {
@@ -167,7 +217,7 @@ export function useAuth() {
 
       setAuthProfile(nextAuthState.profile);
       setAuthRole(nextAuthState.activeRole);
-      setAvailableRoles(nextAuthState.availableRoles);
+      setAvailableRoles(normalizeAvailableRoles(nextAuthState.availableRoles));
     }
 
     syncRoleToRoute();
@@ -187,26 +237,31 @@ export function useAuth() {
     setIsLoggingIn(true);
     const result = await signInWithGoogle(role, buildAuthPath(role, nextPath));
     if (!result?.started) {
-      setIsLoggingIn(false);
+      pushToast?.('Google sign-in is unavailable until Supabase is configured.', 'warning', 'lock');
     }
+    setIsLoggingIn(false);
     return result;
-  }, []);
+  }, [pushToast]);
 
   const handleRoleSelect = useCallback(
-    async (role, nextPath, options = {}, pushToast) => {
+    async (role, nextPath, options = {}) => {
       if (!authSession?.user) {
         await handleGoogleSignIn(role, nextPath);
         return;
       }
 
       const nextAuthState = await switchUserRole(authSession, role);
-      if (!nextAuthState) return;
+
+      if (!nextAuthState) {
+        return;
+      }
 
       setAuthProfile(nextAuthState.profile);
       setAuthRole(nextAuthState.activeRole);
-      setAvailableRoles(nextAuthState.availableRoles);
+      const nextRoles = normalizeAvailableRoles(nextAuthState.availableRoles);
+      setAvailableRoles(nextRoles);
 
-      if (!nextAuthState.availableRoles.includes(role) || nextAuthState.activeRole !== role) {
+      if (!nextRoles.includes(role) || nextAuthState.activeRole !== role) {
         pushToast?.(
           role === 'management' ? 'Management access is limited to allowed emails.' : `Unable to switch to ${role}.`,
           'warning',
@@ -224,16 +279,16 @@ export function useAuth() {
         navigate(targetPath);
       }
     },
-    [authSession, handleGoogleSignIn, navigate, location.pathname],
+    [authSession, handleGoogleSignIn, navigate, location.pathname, pushToast],
   );
 
   const handleSignOut = useCallback(
-    async (pushToast) => {
+    async () => {
       await signOutCurrentUser();
       pushToast?.('Signed out successfully.', 'info', 'lock');
       navigate(APP_PATHS.landing);
     },
-    [navigate],
+    [navigate, pushToast],
   );
 
   return {

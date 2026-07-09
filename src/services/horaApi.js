@@ -17,4 +17,4 @@ export { submitBooking, updateBookingTransactionStatus, updateBookingTransaction
 export { saveManagementListing, deleteManagementListing, syncRemoteData } from './listingService';
 export { submitSupportRequest } from './supportService';
 export { trackAnalyticsEvent } from './analyticsService';
-export { submitOwnerApplication, submitReview } from './applicationService';
+export { submitOwnerApplication, submitReview, approveApplication } from './applicationService';

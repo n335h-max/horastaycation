@@ -1,10 +1,10 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, startTransition } from 'react';
 import { trackAnalyticsEvent } from '../services/horaApi';
 import { summarizeAnalytics } from '../lib/guestFeatures';
 
-export function useAnalytics(cookiePreferences, activePage, locationPathname) {
+export function useAnalytics(cookiePreferences, activePage, locationPathname, setStore) {
   const recordAnalytics = useCallback(
-    async (type, payload = {}, setStore) => {
+    async (type, payload = {}) => {
       if (!cookiePreferences?.analytics) {
         return null;
       }
@@ -22,12 +22,14 @@ export function useAnalytics(cookiePreferences, activePage, locationPathname) {
 
       return result;
     },
-    [cookiePreferences?.analytics, activePage, locationPathname],
+    [cookiePreferences?.analytics, activePage, locationPathname, setStore],
   );
 
   useEffect(() => {
-    void recordAnalytics('page_view');
-  }, [cookiePreferences?.analytics, locationPathname]);
+    startTransition(() => {
+      void recordAnalytics('page_view');
+    });
+  }, [cookiePreferences?.analytics, locationPathname, recordAnalytics]);
 
   const analyticsSummary = useCallback(
     (store) =>
