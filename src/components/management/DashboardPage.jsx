@@ -82,7 +82,7 @@ export function DashboardPage({
   onApproveEvaluation,
 }) {
   const [analyticsWindow, setAnalyticsWindow] = useState('30d');
-  const [pendingApprovalId, setPendingApprovalId] = useState(null);
+  const [pendingApprovalIds, setPendingApprovalIds] = useState(new Set());
   const analyticsSummary = useMemo(
     () => summarizeWindowedAnalytics(analyticsEvents, bookingTransactions, supportRequests, analyticsWindow),
     [analyticsEvents, analyticsWindow, bookingTransactions, supportRequests],
@@ -415,18 +415,22 @@ export function DashboardPage({
                           ) : (
                             <button
                               type="button"
-                              disabled={pendingApprovalId === app.id}
+                              disabled={pendingApprovalIds.has(app.id)}
                               onClick={async () => {
-                                setPendingApprovalId(app.id);
+                                setPendingApprovalIds((prev) => new Set(prev).add(app.id));
                                 try {
                                   await onApproveOwner?.(app.id);
                                 } finally {
-                                  setPendingApprovalId(null);
+                                  setPendingApprovalIds((prev) => {
+                                    const next = new Set(prev);
+                                    next.delete(app.id);
+                                    return next;
+                                  });
                                 }
                               }}
                               className="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                              {pendingApprovalId === app.id ? 'Approving…' : 'Approve'}
+                              {pendingApprovalIds.has(app.id) ? 'Approving…' : 'Approve'}
                             </button>
                           )}
                         </div>
@@ -468,18 +472,22 @@ export function DashboardPage({
                           ) : (
                             <button
                               type="button"
-                              disabled={pendingApprovalId === rev.id}
+                              disabled={pendingApprovalIds.has(rev.id)}
                               onClick={async () => {
-                                setPendingApprovalId(rev.id);
+                                setPendingApprovalIds((prev) => new Set(prev).add(rev.id));
                                 try {
                                   await onApproveEvaluation?.(rev.id);
                                 } finally {
-                                  setPendingApprovalId(null);
+                                  setPendingApprovalIds((prev) => {
+                                    const next = new Set(prev);
+                                    next.delete(rev.id);
+                                    return next;
+                                  });
                                 }
                               }}
                               className="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                              {pendingApprovalId === rev.id ? 'Approving…' : 'Approve'}
+                              {pendingApprovalIds.has(rev.id) ? 'Approving…' : 'Approve'}
                             </button>
                           )}
                         </div>

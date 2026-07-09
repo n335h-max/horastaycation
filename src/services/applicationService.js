@@ -23,7 +23,7 @@ export async function submitOwnerApplication(application) {
       owner_first_name: nameParts[0] || application.ownerName,
       owner_last_name: nameParts.slice(1).join(' ') || 'Owner',
       owner_email: application.ownerEmail,
-      owner_phone: application.ownerPhone || ''
+      owner_phone: application.ownerPhone || '',
       property_name: 'Build / Refurbish Request',
       property_type: 'Owner Lead',
       property_location: application.ownerAddress,

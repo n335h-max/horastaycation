@@ -449,6 +449,7 @@ export function evaluationRequestTemplate(input = {}) {
 
 export function applicationApprovalTemplate(input = {}) {
   const { applicantName, applicantEmail, applicationType, propertyAddress, unitCount } = sanitizeTemplateData(input);
+  const safeApplicantName = applicantName || '—';
   const typeLabel = applicationType === 'evaluation' ? 'Evaluate With Us' : 'Build / Refurbish With Us';
   const replyTo = sanitizeMailto(input.applicantEmail);
 
@@ -469,7 +470,7 @@ export function applicationApprovalTemplate(input = {}) {
           </tr>
           <tr>
             <td style="padding: 32px 32px 16px;">
-              <p style="font-size: 16px; color: #1e293b; margin: 0;">Hi <strong>${applicantName}</strong>,</p>
+              <p style="font-size: 16px; color: #1e293b; margin: 0;">Hi <strong>${safeApplicantName}</strong>,</p>
               <p style="font-size: 15px; color: #1e293b; line-height: 1.7; margin-top: 12px;">
                 Congratulations! Your application for <strong>${typeLabel}</strong> with Hora Staycation has been <strong style="color: #059669;">approved</strong>.
               </p>
@@ -487,7 +488,7 @@ export function applicationApprovalTemplate(input = {}) {
                 </tr>
                 <tr>
                   <td style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em;">Applicant</td>
-                  <td style="font-size: 14px; color: #1e293b; text-align: right;">${applicantName}</td>
+                  <td style="font-size: 14px; color: #1e293b; text-align: right;">${safeApplicantName}</td>
                 </tr>
                 ${propertyAddress ? `<tr>
                   <td style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em;">Property</td>
