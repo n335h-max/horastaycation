@@ -1,1 +1,0 @@
-import{t as e}from"./react-vendor-COv8wcnU.js";import{t}from"./ManagementPortal-7yQ5DTrS.js";var n=e();function r(e){return(0,n.jsx)(t,{...e})}export{r as ManagementListingsPageRoute};
