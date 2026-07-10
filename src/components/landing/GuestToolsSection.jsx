@@ -38,14 +38,20 @@ export function GuestToolsSection({ featuredProperties, analyticsSummary, onShow
               count before choosing a staycation.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              {featuredProperties.slice(0, 3).map((property) => (
-                <span
-                  key={property.id}
-                  className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white/85"
-                >
-                  {property.location}
+              {featuredProperties.length > 0 ? (
+                featuredProperties.slice(0, 3).map((property) => (
+                  <span
+                    key={property.id}
+                    className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white/85"
+                  >
+                    {property.location}
+                  </span>
+                ))
+              ) : (
+                <span className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white/60">
+                  New locations coming soon
                 </span>
-              ))}
+              )}
             </div>
             <div className="mt-8 grid gap-4 sm:grid-cols-3">
               <div className="rounded-3xl bg-white/10 p-5">

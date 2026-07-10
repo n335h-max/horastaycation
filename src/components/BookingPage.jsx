@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FEATURED_PROPERTIES, GUEST_OPTIONS, SEARCH_LOCATIONS, SPECIAL_REQUEST_OPTIONS } from '../data/siteData';
+import { GUEST_OPTIONS, SEARCH_LOCATIONS, SPECIAL_REQUEST_OPTIONS } from '../data/siteData';
 import { isRangeBlocked } from '../lib/guestFeatures';
 import { Icon } from './Icon';
 
 export function BookingPage({
-  properties = FEATURED_PROPERTIES,
+  properties = [],
   bookingForm,
   bookingErrors,
   isSubmitting,
@@ -256,7 +256,26 @@ export function BookingPage({
             </div>
 
             <div className="space-y-3">
-              {filteredProperties.map((property) => {
+              {filteredProperties.length === 0 ? (
+                <div className="rounded-[1.2rem] border border-ice-200 bg-white p-10 text-center shadow-sm">
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-ice-100">
+                    <Icon name="home" className="text-2xl text-slate-400" />
+                  </div>
+                  <h3 className="font-display text-xl font-bold text-brand-950">No staycations available yet</h3>
+                  <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
+                    Our team is preparing new listings. Check back soon or contact support for early enquiries.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={onOpenSupport}
+                    className="mt-5 inline-flex items-center gap-2 rounded-full bg-brand-950 px-5 py-2.5 text-sm font-semibold text-white"
+                  >
+                    <Icon name="chat" />
+                    Contact Support
+                  </button>
+                </div>
+              ) : (
+                filteredProperties.map((property) => {
                 const isSelected = bookingForm.property === property.id;
 
                 return (
@@ -335,12 +354,7 @@ export function BookingPage({
                     </div>
                   </article>
                 );
-              })}
-              {!filteredProperties.length ? (
-                <div className="rounded-2xl border border-dashed border-ice-200 bg-white px-4 py-5 text-sm text-slate-500">
-                  No stays match this filter set. Try another location or disable saved-only mode.
-                </div>
-              ) : null}
+              }))}
               {bookingErrors?.property ? <p className="text-sm text-rose-600">{bookingErrors.property[0]}</p> : null}
             </div>
           </div>

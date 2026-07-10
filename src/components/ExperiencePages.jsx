@@ -1,5 +1,5 @@
 import { startTransition, useEffect, useMemo, useState } from 'react';
-import { BUDGET_OPTIONS, FEATURED_PROPERTIES } from '../data/siteData';
+import { BUDGET_OPTIONS } from '../data/siteData';
 import { deleteMediaFile, saveMediaFile } from '../lib/mediaStorage';
 import { validateWithSchema, ownerSchema, reviewSchema } from '../lib/validation';
 import { Icon } from './Icon';
@@ -1023,7 +1023,7 @@ function getMediaPreviewValue(fieldName, mediaPreviews, selectedListing) {
 }
 
 export function DashboardPage({
-  listings = FEATURED_PROPERTIES,
+  listings = [],
   bookings,
   bookingTransactions,
   emails,
@@ -1073,7 +1073,7 @@ export function DashboardPage({
   ];
 
   const [selectedListingId, setSelectedListingId] = useState(listings[0]?.id ?? '');
-  const [listingForm, setListingForm] = useState(() => getListingFormState(listings[0] ?? FEATURED_PROPERTIES[0]));
+  const [listingForm, setListingForm] = useState(() => getListingFormState(listings[0] ?? null));
   const [isSavingListing, setIsSavingListing] = useState(false);
   const [isUploadingMedia, setIsUploadingMedia] = useState('');
   const [uploadError, setUploadError] = useState('');
@@ -1091,7 +1091,7 @@ export function DashboardPage({
     () =>
       availableListings.find((listing) => listing.id === selectedListingId) ??
       availableListings[0] ??
-      FEATURED_PROPERTIES[0],
+      null,
     [availableListings, selectedListingId],
   );
   const mediaCards = useMemo(

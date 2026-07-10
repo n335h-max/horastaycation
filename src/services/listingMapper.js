@@ -1,11 +1,4 @@
-import { FEATURED_PROPERTIES } from '../data/siteData';
-
 function buildListingDefaults(listingId = '') {
-  const fromFeatured = FEATURED_PROPERTIES.find((listing) => listing.id === listingId);
-  if (fromFeatured) {
-    return fromFeatured;
-  }
-
   return {
     id: listingId,
     name: 'Untitled Stay',
@@ -81,17 +74,7 @@ export function normalizeListingPayload(listing) {
 }
 
 export function mergeManagementListings(listings = []) {
-  const listingMap = new Map(listings.map((listing) => [listing.id, normalizeListingPayload(listing)]));
-
-  const mergedDefaults = FEATURED_PROPERTIES.map((listing) =>
-    normalizeListingPayload({ ...listing, ...(listingMap.get(listing.id) || {}) }),
-  ).filter((listing) => !listing.isDeleted);
-
-  const extras = listings
-    .filter((listing) => !FEATURED_PROPERTIES.some((featured) => featured.id === listing.id) && !listing.isDeleted)
-    .map((listing) => normalizeListingPayload(listing));
-
-  return [...mergedDefaults, ...extras];
+  return listings.filter((listing) => !listing.isDeleted).map((listing) => normalizeListingPayload(listing));
 }
 
 export function fromRemoteManagementListing(record) {

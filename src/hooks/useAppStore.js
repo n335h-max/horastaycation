@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { getSnapshot } from '../services/localStore';
 import { syncRemoteData } from '../services/horaApi';
 import { APP_PATHS } from '../lib/routes';
-import { FEATURED_PROPERTIES } from '../data/siteData';
+
 
 const LISTING_SYNC_PATHS = new Set([
   APP_PATHS.landing,
@@ -53,10 +53,7 @@ export function useAppStore(pathname) {
     };
   }, [shouldSyncBookings, shouldSyncListings]);
 
-  const sourceListings =
-    Array.isArray(store.managementListings) && store.managementListings.length
-      ? store.managementListings
-      : FEATURED_PROPERTIES;
+  const sourceListings = Array.isArray(store.managementListings) ? store.managementListings : [];
 
   return { store, setStore, sourceListings };
 }

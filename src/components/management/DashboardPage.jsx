@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { FEATURED_PROPERTIES } from '../../data/siteData';
+
 import { getWindowConfig, isInWindow } from '../../hooks/useManagementStudio';
 import { Icon } from '../Icon';
 
@@ -62,7 +62,7 @@ function getInitials(name) {
 }
 
 export function DashboardPage({
-  listings = FEATURED_PROPERTIES,
+  listings = [],
   bookings = [],
   bookingTransactions = [],
   emails = [],

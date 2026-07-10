@@ -1,6 +1,6 @@
 import { startTransition, useState, useEffect, useRef } from 'react';
 import { getMediaObjectUrl, revokeMediaObjectUrls } from '../lib/mediaStorage';
-import { FEATURED_PROPERTIES } from '../data/siteData';
+
 
 export function useMediaResolver({ shouldSyncListings, sourceListings }) {
   const [resolvedListings, setResolvedListings] = useState([]);
@@ -79,7 +79,7 @@ export function useMediaResolver({ shouldSyncListings, sourceListings }) {
 }
 
 export function useFeaturedListings(storeManagementListings, resolvedListings) {
-  const sourceListings = storeManagementListings?.length ? storeManagementListings : FEATURED_PROPERTIES;
+  const sourceListings = Array.isArray(storeManagementListings) ? storeManagementListings : [];
   const dashboardListings = resolvedListings.length ? resolvedListings : sourceListings;
   const featuredListings = dashboardListings.filter(
     (listing) => listing.publishStatus !== 'draft' && !listing.isDeleted,

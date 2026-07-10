@@ -1,5 +1,5 @@
 import { startTransition, useState, useEffect, useMemo, useCallback } from 'react';
-import { FEATURED_PROPERTIES } from '../data/siteData';
+
 import { deleteMediaFile, saveMediaFile } from '../lib/mediaStorage';
 
 const WINDOW_OPTIONS = [
@@ -125,7 +125,7 @@ function buildDefaultListing() {
 }
 
 export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
-  const sourceListings = Array.isArray(listings) ? listings : FEATURED_PROPERTIES;
+  const sourceListings = Array.isArray(listings) ? listings : [];
   const availableListings = useMemo(
     () => sourceListings.filter((listing) => !listing?.isDeleted),
     [sourceListings],

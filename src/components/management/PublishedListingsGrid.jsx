@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { FEATURED_PROPERTIES } from '../../data/siteData';
 
 function getListingBadge(property) {
   if (property.publishStatus === 'draft') {

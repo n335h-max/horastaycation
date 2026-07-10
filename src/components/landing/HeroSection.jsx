@@ -43,6 +43,25 @@ function HeroCarousel({ properties, activeIndex, onStep }) {
     }
   }
 
+  if (!properties.length) {
+    return (
+      <article className="overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 shadow-2xl backdrop-blur-sm">
+        <div className="relative flex aspect-[4/5] items-center justify-center sm:aspect-[16/11] lg:aspect-[4/5]">
+          <div className="absolute inset-0 bg-gradient-to-t from-brand-950/85 via-brand-950/20 to-transparent" />
+          <div className="relative z-10 text-center text-white">
+            <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-white/15">
+              <Icon name="home" className="text-3xl text-white/70" />
+            </div>
+            <div className="font-display text-3xl font-bold">Coming Soon</div>
+            <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-white/70">
+              New staycations are being prepared by our management team. Check back soon for curated escapes.
+            </p>
+          </div>
+        </div>
+      </article>
+    );
+  }
+
   return (
     <article className="overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 shadow-2xl backdrop-blur-sm">
       <div className="relative aspect-[4/5] sm:aspect-[16/11] lg:aspect-[4/5]">

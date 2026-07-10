@@ -1,4 +1,4 @@
-import { FEATURED_PROPERTIES } from '../data/siteData';
+
 import { loadStore, saveStore } from './localStore';
 import { fromRemoteManagementListing, mergeManagementListings, normalizeListingPayload } from './listingMapper';
 import {
@@ -93,9 +93,7 @@ export async function deleteManagementListing(listingId) {
     toRemoteManagementListing({ ...existing, isDeleted: true, updatedBy: currentUser?.id || null }),
   );
   store.managementListings = mergeManagementListings(
-    store.managementListings
-      .map((l) => (l.id === listingId ? { ...l, isDeleted: true } : l))
-      .filter((l) => l.id !== listingId || FEATURED_PROPERTIES.some((d) => d.id === listingId)),
+    store.managementListings.map((l) => (l.id === listingId ? { ...l, isDeleted: true } : l)),
   );
   store.dashboardEmails = [
     { title: 'Listing Deleted — Management', detail: `Removed ${existing.name}`, tone: 'accent' },

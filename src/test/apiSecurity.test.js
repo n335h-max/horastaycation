@@ -25,8 +25,18 @@ vi.mock('../../api/_lib/resendServer.js', () => ({
   getManagementEmail: vi.fn(() => 'admin@example.com'),
 }));
 
-const [{ FEATURED_PROPERTIES }, createCheckoutSessionModule, sendEmailModule] = await Promise.all([
-  import('../data/siteData.js'),
+const MOCK_PROPERTY = {
+  id: 'mock-villa',
+  name: 'Mock Villa',
+  location: 'Port Dickson',
+  price: 1,
+};
+
+vi.mock('../data/siteData.js', () => ({
+  FEATURED_PROPERTIES: [MOCK_PROPERTY],
+}));
+
+const [createCheckoutSessionModule, sendEmailModule] = await Promise.all([
   import('../../api/create-checkout-session.js'),
   import('../../api/send-email.js'),
 ]);
@@ -78,7 +88,7 @@ it('calculates checkout amount from server-side property pricing', async () => {
 
   getJsonBodyMock.mockReturnValue({
     bookingForm: {
-      property: FEATURED_PROPERTIES[0].id,
+      property: MOCK_PROPERTY.id,
       checkin: '2026-07-01',
       checkout: '2026-07-03',
       guestEmail: 'guest@example.com',
@@ -86,8 +96,8 @@ it('calculates checkout amount from server-side property pricing', async () => {
       guests: '2',
     },
     bookingSummary: {
-      name: FEATURED_PROPERTIES[0].name,
-      location: FEATURED_PROPERTIES[0].location,
+      name: MOCK_PROPERTY.name,
+      location: MOCK_PROPERTY.location,
       nights: 2,
       total: 1,
     },
@@ -109,7 +119,7 @@ it('calculates checkout amount from server-side property pricing', async () => {
   const [payload] = stripeCreateMock.mock.calls[0];
   expect(payload.line_items[0].price_data.unit_amount).toBe(200);
   expect(payload.metadata.total).toBe('2');
-  expect(payload.metadata.propertyName).toBe(FEATURED_PROPERTIES[0].name);
+  expect(payload.metadata.propertyName).toBe(MOCK_PROPERTY.name);
 });
 
 it('rejects cross-origin email requests and owner relay overrides', async () => {

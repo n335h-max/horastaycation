@@ -1,5 +1,5 @@
 import { Suspense, lazy, startTransition, useEffect, useRef, useState } from 'react';
-import { FEATURED_PROPERTIES, OWNER_BENEFITS, STARTING_PACKAGE, TESTIMONIALS } from '../data/siteData';
+import { OWNER_BENEFITS, STARTING_PACKAGE, TESTIMONIALS } from '../data/siteData';
 import { Icon } from './Icon';
 import { HeroSection } from './landing/HeroSection';
 import { IntroSection } from './landing/IntroSection';
@@ -60,7 +60,7 @@ function DeferredSection({ children, fallbackClassName }) {
 export function LandingPage({
   onShowPage,
   onScrollToSection,
-  featuredProperties = FEATURED_PROPERTIES,
+  featuredProperties = [],
   formatCompactNumber,
   formatCurrency,
   wishlistCount = 0,

@@ -1,4 +1,4 @@
-import { FEATURED_PROPERTIES, INITIAL_BOOKINGS, INITIAL_EMAILS } from '../data/siteData';
+import { INITIAL_BOOKINGS, INITIAL_EMAILS } from '../data/siteData';
 import { readBookingDraft, readStorage, writeBookingDraft, writeStorage } from '../lib/storage';
 
 export const initialBookingDraft = {
@@ -20,7 +20,7 @@ const DEFAULT_STORE = {
   ownerApplications: [],
   reviewSubmissions: [],
   bookingTransactions: [],
-  managementListings: FEATURED_PROPERTIES,
+  managementListings: [],
   wishlistByUser: {},
   supportRequests: [],
   analyticsEvents: [],
@@ -31,6 +31,16 @@ const LEGACY_PLACEHOLDER_EMAIL_DETAILS = new Set([
   'Sent to sarah@example.com',
   'Sent to villa-owner@example.com',
   'Sent to admin@horastaycation.com',
+]);
+
+const LEGACY_PROPERTY_IDS = new Set([
+  'ayer-keroh',
+  'sama-sama-tido',
+  'bohejiwa',
+  'alang-villa',
+  'aviva',
+  'jalan-kebun',
+  'amana-villa',
 ]);
 
 function sanitizeLegacyPlaceholderData(store) {
@@ -44,6 +54,12 @@ function sanitizeLegacyPlaceholderData(store) {
   nextStore.dashboardEmails = (nextStore.dashboardEmails || []).filter(
     (email) => !LEGACY_PLACEHOLDER_EMAIL_DETAILS.has(String(email?.detail || '')),
   );
+
+  if (Array.isArray(nextStore.managementListings)) {
+    nextStore.managementListings = nextStore.managementListings.filter(
+      (listing) => !LEGACY_PROPERTY_IDS.has(listing?.id),
+    );
+  }
 
   if (!(nextStore.bookingTransactions || []).length && !(nextStore.dashboardBookings || []).length) {
     nextStore.dashboardRevenue = 0;
