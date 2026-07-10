@@ -127,6 +127,7 @@ export async function approveApplication(applicationId, applicationType) {
   saveStore(store);
 
   let emailSent = false;
+  let emailError = null;
   try {
     await sendApplicationApproval({
       applicantName,
@@ -137,8 +138,9 @@ export async function approveApplication(applicationId, applicationType) {
     });
     emailSent = true;
   } catch (err) {
-    console.warn('Failed to send approval email:', err);
+    emailError = err instanceof Error ? err.message : String(err);
+    console.warn('Failed to send approval email:', emailError);
   }
 
-  return { store, emailSent, found: true };
+  return { store, emailSent, emailError, found: true };
 }

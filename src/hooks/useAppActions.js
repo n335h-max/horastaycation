@@ -122,7 +122,8 @@ export function useAppActions({ setStore, pushToast, recordAnalytics }) {
       if (result.emailSent) {
         pushToast('Application approved. Approval email sent to applicant.', 'success', 'send');
       } else {
-        pushToast('Application approved. Email delivery failed — check your email config.', 'warning', 'send');
+        const reason = result.emailError || 'Email service returned an unknown error.';
+        pushToast(`Application approved. Email failed — ${reason}`, 'warning', 'send');
       }
     },
     [setStore, pushToast],
@@ -139,7 +140,8 @@ export function useAppActions({ setStore, pushToast, recordAnalytics }) {
       if (result.emailSent) {
         pushToast('Evaluation approved. Approval email sent to applicant.', 'success', 'send');
       } else {
-        pushToast('Evaluation approved. Email delivery failed — check your email config.', 'warning', 'send');
+        const reason = result.emailError || 'Email service returned an unknown error.';
+        pushToast(`Evaluation approved. Email failed — ${reason}`, 'warning', 'send');
       }
     },
     [setStore, pushToast],

@@ -161,8 +161,11 @@ export default async function handler(req, res) {
   const emailConfig = EMAIL_TYPES[type];
   const defaultRecipient =
     typeof emailConfig.defaultTo === 'function' ? emailConfig.defaultTo(data) : emailConfig.defaultTo;
+  const explicitTo = normalizeEmail(to);
   const recipientEmail =
-    type === 'owner_booking_alert' ? normalizeEmail(data.ownerEmail) : normalizeEmail(defaultRecipient);
+    type === 'owner_booking_alert'
+      ? normalizeEmail(data.ownerEmail)
+      : normalizeEmail(defaultRecipient) || explicitTo;
 
   if (type === 'owner_booking_alert' && normalizeEmail(data.ownerEmail) !== recipientEmail) {
     return res.status(400).json({ error: 'Owner booking alerts must target the owner email in the payload.' });
