@@ -146,6 +146,6 @@ it('rejects cross-origin email requests and owner relay overrides', async () => 
   await sendEmailHandler(req, res);
 
   expect(res.statusCode).toBe(403);
-  expect(res.body).toEqual({ error: 'Cross-origin email requests are not allowed.' });
+  expect(res.body.error).toMatch(/Cross-origin email requests are not allowed/);
   expect(resendSendMock).not.toHaveBeenCalled();
 });

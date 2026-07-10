@@ -52,15 +52,26 @@ function normalizeOrigin(value) {
   }
 }
 
-function getTrustedOrigin(req) {
-  const configuredOrigin = normalizeOrigin(process.env.APP_BASE_URL || process.env.VERCEL_URL || '');
-  if (configuredOrigin) {
-    return configuredOrigin;
+function getTrustedOrigins(req) {
+  const origins = new Set();
+
+  const appBase = normalizeOrigin(process.env.APP_BASE_URL || '');
+  if (appBase) {
+    origins.add(appBase);
+  }
+
+  const vercelUrl = normalizeOrigin(process.env.VERCEL_URL || '');
+  if (vercelUrl) {
+    origins.add(vercelUrl);
   }
 
   const protocol = String(getHeader(req, 'x-forwarded-proto') || 'https').split(',')[0].trim() || 'https';
   const host = String(getHeader(req, 'x-forwarded-host') || getHeader(req, 'host') || '').split(',')[0].trim();
-  return host ? normalizeOrigin(`${protocol}://${host}`) : '';
+  if (host) {
+    origins.add(normalizeOrigin(`${protocol}://${host}`));
+  }
+
+  return Array.from(origins).filter(Boolean);
 }
 
 function getRequestOrigin(req) {
@@ -139,11 +150,17 @@ export default async function handler(req, res) {
   const body = getJsonBody(req);
   const { type, data, to } = body;
 
-  const trustedOrigin = getTrustedOrigin(req);
+  const trustedOrigins = getTrustedOrigins(req);
   const requestOrigin = getRequestOrigin(req);
 
-  if (!trustedOrigin || !requestOrigin || requestOrigin !== trustedOrigin) {
-    return res.status(403).json({ error: 'Cross-origin email requests are not allowed.' });
+  if (!trustedOrigins.length || !requestOrigin) {
+    return res.status(403).json({ error: 'Cross-origin email requests are not allowed. No trusted origin configured.' });
+  }
+
+  if (!trustedOrigins.includes(requestOrigin)) {
+    return res.status(403).json({
+      error: `Cross-origin email requests are not allowed. Origin ${requestOrigin} is not in [${trustedOrigins.join(', ')}].`,
+    });
   }
 
   if (!allowRateLimit(req, type)) {
