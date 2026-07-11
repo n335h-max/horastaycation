@@ -1,17 +1,34 @@
+import { useEffect, useRef } from 'react';
 import { Icon } from './Icon';
 
 export function PaymentModal({ open, summary, isSubmitting, onClose, onSubmit, formatCurrency }) {
+  const dialogRef = useRef(null);
+
+  useEffect(() => {
+    if (open && dialogRef.current) {
+      dialogRef.current.focus();
+    }
+  }, [open]);
+
   if (!open || !summary) {
     return null;
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 px-4 backdrop-blur-sm">
+    <div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="payment-title"
+      aria-describedby="payment-desc"
+      tabIndex={-1}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 px-4 backdrop-blur-sm"
+    >
       <div className="w-full max-w-lg rounded-3xl bg-white p-8 shadow-2xl">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <h2 className="font-display text-3xl font-bold text-brand-950">Secure Payment</h2>
-            <p className="mt-2 text-slate-500">Complete your booking for {summary.name}.</p>
+            <h2 id="payment-title" className="font-display text-3xl font-bold text-brand-950">Secure Payment</h2>
+            <p id="payment-desc" className="mt-2 text-slate-500">Complete your booking for {summary.name}.</p>
           </div>
           <button
             type="button"

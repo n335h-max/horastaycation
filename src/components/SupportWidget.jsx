@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useState } from 'react';
+import { startTransition, useEffect, useRef, useState } from 'react';
 import { Icon } from './Icon';
 
 const QUICK_TOPICS = [
@@ -16,6 +16,27 @@ export function SupportWidget({ open, onOpen, onClose, onSubmit, authUser, curre
     message: QUICK_TOPICS[0].message,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const panelRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') {
+        onClose?.();
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
+
+  useEffect(() => {
+    if (open && panelRef.current) {
+      const heading = panelRef.current.querySelector('h2');
+      heading?.focus();
+    }
+  }, [open]);
 
   useEffect(() => {
     startTransition(() => {
@@ -72,6 +93,11 @@ export function SupportWidget({ open, onOpen, onClose, onSubmit, authUser, curre
 
       {open ? (
         <div
+          ref={panelRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="support-title"
+          aria-describedby="support-desc"
           className="fixed bottom-20 right-4 z-50 w-[calc(100vw-2rem)] max-w-sm overflow-y-auto rounded-[1.75rem] border border-brand-100 bg-white p-5 shadow-2xl"
           style={{ maxHeight: 'calc(100dvh - 6rem)' }}
         >
@@ -81,8 +107,10 @@ export function SupportWidget({ open, onOpen, onClose, onSubmit, authUser, curre
                 <Icon name="comment" />
                 Chat Support
               </div>
-              <h2 className="mt-3 font-display text-2xl font-bold text-brand-950">Talk to Hora</h2>
-              <p className="mt-2 text-sm leading-relaxed text-slate-500">
+              <h2 id="support-title" className="mt-3 font-display text-2xl font-bold text-brand-950" tabIndex={-1}>
+                Talk to Hora
+              </h2>
+              <p id="support-desc" className="mt-2 text-sm leading-relaxed text-slate-500">
                 Ask about availability, bookings, or owner partnerships and the team can follow up quickly.
               </p>
             </div>
@@ -194,6 +222,8 @@ export function SupportWidget({ open, onOpen, onClose, onSubmit, authUser, curre
         <button
           type="button"
           onClick={open ? onClose : onOpen}
+          aria-expanded={open}
+          aria-controls="support-title"
           className="inline-flex min-h-[3.5rem] items-center gap-3 rounded-full bg-brand-950 px-5 py-3 text-sm font-semibold text-white shadow-2xl transition hover:-translate-y-0.5"
         >
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
