@@ -8,7 +8,12 @@ export function useFormatters() {
 
   return {
     formatCurrency: (value) => currencyFormatter.format(value),
-    formatCompactNumber: (value) => compactFormatter.format(value),
+    formatCompactNumber: (value) => {
+      if (typeof value === 'string') {
+        return value;
+      }
+      return compactFormatter.format(value);
+    },
     formatDate: (value) => (value ? dateFormatter.format(new Date(value)) : 'Select dates'),
   };
 }

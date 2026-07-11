@@ -85,10 +85,10 @@ export const PLATFORM_FEATURES = [
 ];
 
 export const STATS = [
-  { label: 'Happy Guests', value: 100 },
-  { label: 'Star Rated', value: 5, suffix: '' },
-  { label: 'Featured Escapes', value: 0 },
-  { label: 'Starter Builds', value: 80, prefix: 'RM', suffix: 'K+' },
+  { label: 'Guest Happiness', value: '100%', suffix: '' },
+  { label: 'Past Projects', value: 7, suffix: '' },
+  { label: 'Design Concepts', value: 3, suffix: '' },
+  { label: 'Starter Budget', prefix: 'RM', value: 80, suffix: 'K+' },
 ];
 
 export const FEATURED_PROPERTIES = [];
@@ -341,12 +341,8 @@ export const TESTIMONIALS = [
   },
 ];
 
-export const DASHBOARD_STATS = [
-  { id: 'bookings', label: 'Total Bookings', value: 156, trend: '12%', icon: 'calendar' },
-  { id: 'revenue', label: 'Revenue', value: 48290, trend: '23%', icon: 'dollar', currency: true },
-  { id: 'properties', label: 'Active Properties', value: 24, icon: 'house' },
-  { id: 'reviews', label: 'Average Rating', value: 4.8, icon: 'star' },
-];
+// Placeholder: Management stats will be computed from real data once listings and bookings are live.
+export const DASHBOARD_STATS = [];
 
 export const INITIAL_BOOKINGS = [];
 

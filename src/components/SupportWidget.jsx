@@ -123,7 +123,7 @@ export function SupportWidget({ open, onOpen, onClose, onSubmit, authUser, curre
                   value={form.name}
                   onChange={handleChange}
                   className="form-input"
-                  placeholder="Your name"
+                  placeholder="Full name"
                 />
               </div>
               <div>
@@ -137,7 +137,7 @@ export function SupportWidget({ open, onOpen, onClose, onSubmit, authUser, curre
                   value={form.email}
                   onChange={handleChange}
                   className="form-input"
-                  placeholder="you@example.com"
+                  placeholder="your@email.com"
                 />
               </div>
             </div>

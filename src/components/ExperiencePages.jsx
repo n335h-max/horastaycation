@@ -170,7 +170,7 @@ export function OwnerSignupPage({
                   onChange={handleChange}
                   className="form-input"
                   autoComplete="name"
-                  placeholder="John Doe"
+                  placeholder="Full name"
                 />
                 <FieldError errors={errors} name="ownerName" />
               </div>
@@ -186,7 +186,7 @@ export function OwnerSignupPage({
                   onChange={handleChange}
                   className="form-input"
                   autoComplete="email"
-                  placeholder="owner@example.com"
+                  placeholder="your@email.com"
                 />
                 <FieldError errors={errors} name="ownerEmail" />
               </div>
@@ -203,7 +203,7 @@ export function OwnerSignupPage({
                 onChange={handleChange}
                 className="form-input"
                 autoComplete="tel"
-                placeholder="+60 12-345 6789"
+                placeholder="+60"
               />
               <FieldError errors={errors} name="ownerPhone" />
             </div>
@@ -335,7 +335,7 @@ export function ReviewPage({ onShowPage, onSubmitReview, isSubmitting }) {
                 onChange={handleChange}
                 className="form-input"
                 autoComplete="name"
-                placeholder="Your name"
+                placeholder="Full name"
               />
               <FieldError errors={errors} name="evaluatorName" />
             </div>
@@ -351,7 +351,7 @@ export function ReviewPage({ onShowPage, onSubmitReview, isSubmitting }) {
                 onChange={handleChange}
                 className="form-input"
                 autoComplete="email"
-                placeholder="partner@example.com"
+                placeholder="your@email.com"
               />
               <FieldError errors={errors} name="evaluatorEmail" />
             </div>
@@ -368,7 +368,7 @@ export function ReviewPage({ onShowPage, onSubmitReview, isSubmitting }) {
               onChange={handleChange}
               className="form-input"
               autoComplete="tel"
-              placeholder="+60 12-345 6789"
+              placeholder="+60"
             />
             <FieldError errors={errors} name="evaluatorPhone" />
           </div>
@@ -970,36 +970,6 @@ const MEDIA_FIELD_CONFIG = {
   },
 };
 
-const LISTING_PRESETS = [
-  {
-    id: 'beachfront-villa',
-    title: 'Beachfront Villa',
-    facilities: ['Infinity Pool', 'Private Beach Access', 'BBQ Deck', 'WiFi', 'Outdoor Shower'],
-    schedule: 'Daily check-in from 3:00 PM · Sunset concierge from 5:30 PM · Check-out before 11:00 AM',
-    statusNote: 'Beachfront highlight now live',
-    mood: 'Ocean-facing stay with breezy social spaces, polished arrival moments, and sunset-ready lounging.',
-    bestFor: 'Best for family holidays, bridal parties, and premium short escapes',
-  },
-  {
-    id: 'forest-cabin',
-    title: 'Forest Cabin',
-    facilities: ['Fire Pit', 'Mountain View Deck', 'Coffee Bar', 'WiFi', 'Private Parking'],
-    schedule: 'Self check-in from 4:00 PM · Quiet hours from 10:00 PM · Check-out before 11:00 AM',
-    statusNote: 'Forest retreat schedule refreshed',
-    mood: 'A calm woodland escape shaped for slower mornings, layered textures, and private evening gatherings.',
-    bestFor: 'Best for couples, creators, and restorative weekend stays',
-  },
-  {
-    id: 'urban-loft',
-    title: 'Urban Loft',
-    facilities: ['Rooftop Access', 'Smart Lock', 'Workspace', 'Streaming TV', 'Fast WiFi'],
-    schedule: 'Express check-in from 2:00 PM · Weekday priority stays · Check-out before 12:00 PM',
-    statusNote: 'Urban quick-stay preset active',
-    mood: 'A compact city stay with efficient flow, strong visual styling, and easy work-to-rest transitions.',
-    bestFor: 'Best for business trips, staycations, and content shoots',
-  },
-];
-
 const MEDIA_FIELD_ORDER = ['image', 'summaryImage', 'thumbnail', 'videoUrl'];
 
 function formatFileSize(size = 0) {
@@ -1264,7 +1234,7 @@ export function DashboardPage({
     setPendingMediaFiles({});
     setMediaPreviews({});
     setUploadError('');
-    setStudioMessage('New listing draft created. Apply a preset or start dropping media files into the upload studio.');
+    setStudioMessage('New listing draft created. Start dropping media files into the upload studio.');
   }
 
   function clearMediaField(fieldName) {
@@ -1315,21 +1285,6 @@ export function DashboardPage({
     if (file) {
       void uploadMediaFileToField(fieldName, file);
     }
-  }
-
-  function handlePresetApply(preset) {
-    setListingForm((current) => ({
-      ...current,
-      facilitiesText: preset.facilities.join(', '),
-      schedule: preset.schedule,
-      statusNote: preset.statusNote,
-      mood: preset.mood,
-      bestFor: preset.bestFor,
-    }));
-    setUploadError('');
-    setStudioMessage(
-      `${preset.title} preset applied. Facilities, schedule, and guest-facing copy are ready for review.`,
-    );
   }
 
   function toggleBulkListing(listingId) {
@@ -1669,50 +1624,11 @@ export function DashboardPage({
               <div className="mb-6 flex items-center justify-between">
                 <h2 className="font-display text-2xl font-bold text-brand-950">Management Upload Studio</h2>
                 <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-600">
-                  Drag-and-Drop · Bulk Upload · Presets
+                  Drag-and-Drop · Bulk Upload
                 </span>
               </div>
               <form onSubmit={handleListingSubmit} className="space-y-5">
                 <div className="grid gap-5 xl:grid-cols-[1fr_1.05fr]">
-                  <div className="rounded-3xl border border-brand-100 bg-gradient-to-br from-brand-50 to-white p-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-500">
-                          Listing Presets
-                        </div>
-                        <h3 className="mt-2 font-display text-2xl font-bold text-brand-950">
-                          Templates for fast setup
-                        </h3>
-                        <p className="mt-2 text-sm text-slate-500">
-                          Apply a ready-made facilities and schedule pack, then fine-tune the details for the selected
-                          property.
-                        </p>
-                      </div>
-                      <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-brand-600 shadow-sm">
-                        <Icon name="list-check" />
-                      </span>
-                    </div>
-                    <div className="mt-5 grid gap-3">
-                      {LISTING_PRESETS.map((preset) => (
-                        <button
-                          key={preset.id}
-                          type="button"
-                          onClick={() => handlePresetApply(preset)}
-                          className="rounded-2xl border border-brand-100 bg-white px-4 py-4 text-left transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-sm"
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="font-semibold text-brand-900">{preset.title}</div>
-                            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-500">
-                              Apply
-                            </span>
-                          </div>
-                          <div className="mt-2 text-sm text-slate-500">{preset.schedule}</div>
-                          <div className="mt-3 text-xs text-slate-400">{preset.facilities.join(' · ')}</div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
                   <div className="rounded-3xl border border-ice-200 bg-slate-950 p-5 text-white shadow-sm">
                     <div className="flex items-start justify-between gap-4">
                       <div>

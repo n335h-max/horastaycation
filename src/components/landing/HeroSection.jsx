@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Icon } from '../Icon';
 import { STATS } from '../../data/siteData';
 
-const HERO_TRUST_SIGNALS = ['100+ Happy Guests', '5-Star Rated', 'Owner-Ready Listings'];
+const HERO_TRUST_SIGNALS = ['Happy Guests', 'Quality Rated', 'Owner-Ready Listings'];
 
 function StatCard({ stat, formatter }) {
   return (

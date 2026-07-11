@@ -35,37 +35,6 @@ const MEDIA_FIELD_CONFIG = {
     helper: 'Upload a short walkthrough video for the listing.',
   },
 };
-
-const LISTING_PRESETS = [
-  {
-    id: 'beachfront-villa',
-    title: 'Beachfront Villa',
-    facilities: ['Infinity Pool', 'Private Beach Access', 'BBQ Deck', 'WiFi', 'Outdoor Shower'],
-    schedule: 'Daily check-in from 3:00 PM · Sunset concierge from 5:30 PM · Check-out before 11:00 AM',
-    statusNote: 'Beachfront highlight now live',
-    mood: 'Ocean-facing stay with breezy social spaces, polished arrival moments, and sunset-ready lounging.',
-    bestFor: 'Best for family holidays, bridal parties, and premium short escapes',
-  },
-  {
-    id: 'forest-cabin',
-    title: 'Forest Cabin',
-    facilities: ['Fire Pit', 'Mountain View Deck', 'Coffee Bar', 'WiFi', 'Private Parking'],
-    schedule: 'Self check-in from 4:00 PM · Quiet hours from 10:00 PM · Check-out before 11:00 AM',
-    statusNote: 'Forest retreat schedule refreshed',
-    mood: 'A calm woodland escape shaped for slower mornings, layered textures, and private evening gatherings.',
-    bestFor: 'Best for couples, creators, and restorative weekend stays',
-  },
-  {
-    id: 'urban-loft',
-    title: 'Urban Loft',
-    facilities: ['Rooftop Access', 'Smart Lock', 'Workspace', 'Streaming TV', 'Fast WiFi'],
-    schedule: 'Express check-in from 2:00 PM · Weekday priority stays · Check-out before 12:00 PM',
-    statusNote: 'Urban quick-stay preset active',
-    mood: 'A compact city stay with efficient flow, strong visual styling, and easy work-to-rest transitions.',
-    bestFor: 'Best for business trips, staycations, and content shoots',
-  },
-];
-
 const MEDIA_FIELD_ORDER = ['image', 'summaryImage', 'thumbnail', 'videoUrl'];
 const STUDIO_SECTIONS = [
   { id: 'basic', eyebrow: 'Basic Info', title: 'Core listing settings' },
@@ -224,20 +193,6 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
     setListingForm((current) => ({
       ...current,
       [name]: name === 'price' ? Number(value || 0) : value,
-    }));
-  }, []);
-
-  const handlePresetApply = useCallback((presetId) => {
-    const preset = LISTING_PRESETS.find((p) => p.id === presetId);
-    if (!preset) return;
-    setListingForm((current) => ({
-      ...current,
-      name: current.name || preset.title,
-      mood: current.mood || preset.mood,
-      bestFor: current.bestFor || preset.bestFor,
-      schedule: current.schedule || preset.schedule,
-      statusNote: current.statusNote || preset.statusNote,
-      facilitiesText: current.facilitiesText || preset.facilities.join(', '),
     }));
   }, []);
 
@@ -488,7 +443,6 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
     clearMediaField,
     handleMediaDragOver,
     handleMediaDrop,
-    handlePresetApply,
     toggleBulkListing,
     toggleBulkListings,
     toggleAllBulkListings,
@@ -509,6 +463,5 @@ export {
   MEDIA_FIELD_CONFIG,
   MEDIA_FIELD_ORDER,
   STUDIO_SECTIONS,
-  LISTING_PRESETS,
   WINDOW_OPTIONS,
 };

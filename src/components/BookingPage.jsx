@@ -487,7 +487,7 @@ export function BookingPage({
                     onChange={onBookingChange}
                     autoComplete="name"
                     className={`form-input ${bookingErrors?.guestName ? 'border-rose-400 ring-rose-100' : ''}`}
-                    placeholder="Jane Smith"
+                    placeholder="Full name"
                     required
                   />
                   {bookingErrors?.guestName ? <p className="mt-1 text-sm text-rose-600">{bookingErrors.guestName[0]}</p> : null}
@@ -504,7 +504,7 @@ export function BookingPage({
                     onChange={onBookingChange}
                     autoComplete="email"
                     className={`form-input ${bookingErrors?.guestEmail ? 'border-rose-400 ring-rose-100' : ''}`}
-                    placeholder="jane@example.com"
+                    placeholder="your@email.com"
                     required
                   />
                   {bookingErrors?.guestEmail ? (
