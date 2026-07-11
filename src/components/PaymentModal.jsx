@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { Icon } from './Icon';
+import { formatCurrency } from '../lib/formatters';
 
-export function PaymentModal({ open, summary, isSubmitting, onClose, onSubmit, formatCurrency }) {
+export function PaymentModal({ open, summary, isSubmitting, onClose, onSubmit }) {
   const dialogRef = useRef(null);
 
   useEffect(() => {

@@ -64,3 +64,26 @@
 - [x] No new warnings introduced
 - [x] Manual checklist verified
 - [x] Ready for review / launch
+
+---
+
+# UI/UX Review Quick Wins — Task Checklist
+
+## Slice A: CSS Glass Panel & Aria-Current
+- [x] Define `.glass-panel` classes in `index.css` (backdrop-filter, bg-opacity, border)
+- [x] Add `aria-current="page"` to active desktop nav buttons in `SiteChrome.jsx`
+- [x] Add `aria-current="page"` to active mobile nav buttons in `SiteChrome.jsx`
+
+## Slice B: Dialog Roles & Focus Management
+- [x] Add `role="dialog"`, `aria-modal="true"`, `aria-labelledby` to `PaymentModal`
+- [x] Trap focus + Escape/backdrop close in `PaymentModal`
+- [x] Add `aria-expanded` to `SupportWidget` toggle
+- [x] Improve `aria-modal`, keyboard dismissal, focus guards in `SupportWidget`
+
+## Slice C: Formatter Utility Migration
+- [x] Step C1: Create `src/lib/formatters.js` with `formatCurrency` and `formatDate` (module-level `Intl` caches)
+- [x] Step C2: Update leaf consumers (`PaymentModal`, `PublishedListingsGrid`, `BookingPage`, `LandingPage`)
+- [x] Step C3: Update management components (`ListingsStudio`, `ManagementListingsPage`, `DashboardPage`)
+- [x] Step C4: Update `ExperiencePages.jsx` — remove `formatCurrency` prop from `OwnerDashboardPage`, `DashboardPage`, and `DashboardStat`
+- [x] Step C5: Remove prop-drilling from `App.jsx` routes (landing, ownerDashboard, booking, dashboard, managementListings, paymentModal)
+- [x] Build & tests pass after Slice C

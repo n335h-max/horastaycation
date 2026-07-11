@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { formatCurrency } from '../../lib/formatters';
 
 function getListingBadge(property) {
   if (property.publishStatus === 'draft') {
@@ -10,7 +11,7 @@ function getListingBadge(property) {
   return { label: 'Published', className: 'bg-emerald-50 text-emerald-700' };
 }
 
-export function PublishedListingsGrid({ listings, formatCurrency, compact = false }) {
+export function PublishedListingsGrid({ listings, compact = false }) {
   return (
     <div className={`grid gap-4 ${compact ? 'md:grid-cols-1' : 'md:grid-cols-2 xl:grid-cols-3'}`}>
       {listings.map((property) => {

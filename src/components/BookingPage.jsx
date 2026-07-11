@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { formatCurrency } from '../lib/formatters';
 import { GUEST_OPTIONS, SEARCH_LOCATIONS, SPECIAL_REQUEST_OPTIONS } from '../data/siteData';
 import { isRangeBlocked } from '../lib/guestFeatures';
 import { Icon } from './Icon';
@@ -12,8 +13,6 @@ export function BookingPage({
   onShowPage,
   onProceedToPayment,
   bookingSummary,
-  formatCurrency,
-  formatDate,
   authUser,
   authRole,
   availableRoles = ['client'],

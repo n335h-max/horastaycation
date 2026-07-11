@@ -62,7 +62,6 @@ export function LandingPage({
   onScrollToSection,
   featuredProperties = [],
   formatCompactNumber,
-  formatCurrency,
   wishlistCount = 0,
   analyticsSummary,
   onOpenSupport,

@@ -2,6 +2,7 @@ import { startTransition, useEffect, useMemo, useState } from 'react';
 import { BUDGET_OPTIONS } from '../data/siteData';
 import { deleteMediaFile, saveMediaFile } from '../lib/mediaStorage';
 import { validateWithSchema, ownerSchema, reviewSchema } from '../lib/validation';
+import { formatCurrency } from '../lib/formatters';
 import { Icon } from './Icon';
 
 const INITIAL_OWNER_FORM = {
@@ -507,7 +508,7 @@ export function ManagementLoginPage({
   );
 }
 
-function DashboardStat({ stat, formatCurrency }) {
+function DashboardStat({ stat }) {
   const value = stat.currency ? formatCurrency(stat.value) : stat.value;
   const isEmpty = Number(stat.value) === 0;
 
@@ -581,7 +582,6 @@ export function OwnerDashboardPage({
   onShowPage,
   onSignOut,
   authUser,
-  formatCurrency,
 }) {
   const latestOwner = ownerApplications[0] ?? null;
   const [isNextStepsExpanded, setIsNextStepsExpanded] = useState(true);
@@ -704,7 +704,7 @@ export function OwnerDashboardPage({
 
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {ownerStats.map((stat) => (
-            <DashboardStat key={stat.id} stat={stat} formatCurrency={formatCurrency} />
+            <DashboardStat key={stat.id} stat={stat} />
           ))}
         </div>
 
@@ -1008,7 +1008,6 @@ export function DashboardPage({
   onShowPage,
   onSignOut,
   authUser,
-  formatCurrency,
   analyticsSummary,
 }) {
   const latestBooking = bookingTransactions[0] ?? null;
@@ -1407,7 +1406,7 @@ export function DashboardPage({
 
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {stats.map((stat) => (
-            <DashboardStat key={stat.id} stat={stat} formatCurrency={formatCurrency} />
+            <DashboardStat key={stat.id} stat={stat} />
           ))}
         </div>
 

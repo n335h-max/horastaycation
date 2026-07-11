@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { formatCurrency } from '../../lib/formatters';
 import { Icon } from '../Icon';
 import { PublishedListingsGrid } from './PublishedListingsGrid';
 import { useManagementStudio } from '../../hooks/useManagementStudio';
@@ -26,7 +27,7 @@ function getPublishBadge(publishStatus) {
   return 'bg-emerald-50 text-emerald-700';
 }
 
-export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onShowPage, formatCurrency }) {
+export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onShowPage }) {
   const studio = useManagementStudio(listings, onSaveListing, onDeleteListing);
   const [showAdvancedEditor, setShowAdvancedEditor] = useState(false);
 
@@ -68,7 +69,7 @@ export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onSho
     if (!liveListings.length) return formatCurrency(0);
     const avg = Math.round(liveListings.reduce((sum, listing) => sum + Number(listing.price || 0), 0) / liveListings.length);
     return formatCurrency(avg);
-  }, [formatCurrency, liveListings]);
+  }, [liveListings]);
 
   const selectedListing = studio.selectedListing || liveListings[0];
   const visibleSelectedCount = filteredLiveListings.filter((listing) => isBulkSelected(listing.id)).length;
@@ -432,7 +433,7 @@ export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onSho
               </button>
             </div>
             <div className="mt-3">
-              <PublishedListingsGrid listings={publishedLiveListings.slice(0, 3)} formatCurrency={formatCurrency} compact />
+              <PublishedListingsGrid listings={publishedLiveListings.slice(0, 3)} compact />
             </div>
           </section>
         </aside>

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-
+import { formatCurrency } from '../../lib/formatters';
 import { getWindowConfig, isInWindow } from '../../hooks/useManagementStudio';
 import { Icon } from '../Icon';
 
@@ -75,7 +75,6 @@ export function DashboardPage({
   onShowPage,
   onSignOut,
   authUser,
-  formatCurrency,
   analyticsEvents = [],
   supportRequests = [],
   onApproveOwner,
@@ -136,7 +135,7 @@ export function DashboardPage({
         tone: 'ice',
       });
     return items.slice(0, 3);
-  }, [analyticsSummary, bookingTransactions, formatCurrency, ownerApplications]);
+  }, [analyticsSummary, bookingTransactions, ownerApplications]);
 
   const emailTriggers = useMemo(() => {
     if (emails.length)

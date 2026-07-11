@@ -100,7 +100,7 @@ export default function App() {
   const activePage = getPageFromPath(location.pathname);
 
   const { toasts, pushToast } = useToast();
-  const { formatCurrency, formatCompactNumber, formatDate } = useFormatters();
+  const { formatCompactNumber } = useFormatters();
   const {
     cookiePreferences,
     cookieBannerOpen,
@@ -285,7 +285,6 @@ export default function App() {
                     onScrollToSection={scrollToSection}
                     featuredProperties={featuredListings}
                     formatCompactNumber={formatCompactNumber}
-                    formatCurrency={formatCurrency}
                     wishlistCount={wishlistIds.length}
                     analyticsSummary={summary}
                     onOpenSupport={() => handleSupportOpen('landing')}
@@ -351,7 +350,6 @@ export default function App() {
                       onShowPage={showPage}
                       onSignOut={handleSignOut}
                       authUser={authSession?.user}
-                      formatCurrency={formatCurrency}
                     />
                   </RoleProtectedRoute>
                 }
@@ -368,8 +366,6 @@ export default function App() {
                     onShowPage={showPage}
                     onProceedToPayment={handleProceedToPayment}
                     bookingSummary={bookingSummary}
-                    formatCurrency={formatCurrency}
-                    formatDate={formatDate}
                     authUser={authSession?.user}
                     authRole={authRole}
                     availableRoles={safeAvailableRoles}
@@ -453,7 +449,6 @@ export default function App() {
                       onShowPage={showPage}
                       onSignOut={handleSignOut}
                       authUser={authSession?.user}
-                      formatCurrency={formatCurrency}
                       analyticsEvents={store.analyticsEvents}
                       supportRequests={store.supportRequests}
                     />
@@ -481,7 +476,6 @@ export default function App() {
                       onShowPage={showPage}
                       onSignOut={handleSignOut}
                       authUser={authSession?.user}
-                      formatCurrency={formatCurrency}
                     />
                   </RoleProtectedRoute>
                 }
@@ -513,7 +507,6 @@ export default function App() {
             isSubmitting={isSubmittingPayment}
             onClose={() => setPaymentOpen(false)}
             onSubmit={handlePaymentSubmit}
-            formatCurrency={formatCurrency}
           />
         </Suspense>
       ) : null}
