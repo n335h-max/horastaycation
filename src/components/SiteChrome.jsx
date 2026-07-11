@@ -332,6 +332,7 @@ export function SiteHeader({
                   className={`rounded-full px-3 py-2 text-sm font-medium transition-colors ${navTextClass} ${
                     itemIsActive(item) ? activeLinkClass : ''
                   }`}
+                  aria-current={itemIsActive(item) ? 'page' : undefined}
                 >
                   {item.label}
                 </button>
@@ -343,6 +344,7 @@ export function SiteHeader({
                   className={`rounded-full px-3 py-2 text-sm font-medium transition-colors ${navTextClass} ${
                     itemIsActive(item) ? activeLinkClass : ''
                   }`}
+                  aria-current={itemIsActive(item) ? 'page' : undefined}
                 >
                   {item.label}
                 </button>
@@ -471,6 +473,7 @@ export function SiteHeader({
                   type="button"
                   onClick={() => onScrollToSection(item.sectionId, true)}
                   className={mobileNavItemClass}
+                  aria-current={itemIsActive(item) ? 'page' : undefined}
                 >
                   {item.label}
                 </button>
@@ -483,6 +486,7 @@ export function SiteHeader({
                     onToggleMobile(false);
                   }}
                   className={mobileNavItemClass}
+                  aria-current={itemIsActive(item) ? 'page' : undefined}
                 >
                   {item.label}
                 </button>
