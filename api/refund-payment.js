@@ -1,12 +1,11 @@
 import { getJsonBody, getStripeClient } from './_lib/stripeServer.js';
 import { requireManagementUser } from './_lib/auth.js';
 import { applyRateLimit } from './_lib/rateLimit.js';
+import { handleCors } from './_lib/cors.js';
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
-    return res.status(405).json({ error: 'Method not allowed.' });
-  }
+  const corsResult = handleCors(req, res, ['POST']);
+  if (corsResult) return corsResult;
 
   const management = await requireManagementUser(req);
   if (!management.ok) {

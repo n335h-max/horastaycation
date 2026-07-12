@@ -1,5 +1,6 @@
 import { getResendClient, getFromEmail, getManagementEmail } from './_lib/resendServer.js';
 import { logger } from './_lib/logger.js';
+import { handleCors } from './_lib/cors.js';
 import {
   bookingConfirmationTemplate,
   ownerBookingAlertTemplate,
@@ -139,10 +140,8 @@ const EMAIL_TYPES = {
 };
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
-    return res.status(405).json({ error: 'Method not allowed.' });
-  }
+  const corsResult = handleCors(req, res, ['POST']);
+  if (corsResult) return corsResult;
 
   if (!process.env.RESEND_API_KEY) {
     return res.status(503).json({ sent: false, error: 'Email service is not configured.' });

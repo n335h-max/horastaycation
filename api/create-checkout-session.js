@@ -1,6 +1,7 @@
 import { getJsonBody, getStripeClient } from './_lib/stripeServer.js';
 import { resolveAuthenticatedUser } from './_lib/auth.js';
 import { applyRateLimit } from './_lib/rateLimit.js';
+import { handleCors } from './_lib/cors.js';
 import { FEATURED_PROPERTIES } from '../src/data/siteData.js';
 
 const SERVICE_FEE_RATE = 0.12;
@@ -104,10 +105,8 @@ function sanitizeMetadataValue(value, maxLength = 500) {
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
-    return res.status(405).json({ error: 'Method not allowed.' });
-  }
+  const corsResult = handleCors(req, res, ['POST']);
+  if (corsResult) return corsResult;
 
   const auth = await resolveAuthenticatedUser(req);
   if (!auth.ok) {

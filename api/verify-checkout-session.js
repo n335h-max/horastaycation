@@ -1,12 +1,11 @@
 import { getStripeClient } from './_lib/stripeServer.js';
 import { mapWebhookMetadataToBookingRecord, upsertBookingTransactionAdmin } from './_lib/supabaseAdmin.js';
 import { resolveAuthenticatedUser } from './_lib/auth.js';
+import { handleCors } from './_lib/cors.js';
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    res.setHeader('Allow', 'GET');
-    return res.status(405).json({ error: 'Method not allowed.' });
-  }
+  const corsResult = handleCors(req, res, ['GET']);
+  if (corsResult) return corsResult;
 
   const auth = await resolveAuthenticatedUser(req);
   if (!auth.ok) {
