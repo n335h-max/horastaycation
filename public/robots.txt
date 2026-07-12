@@ -1,0 +1,13 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Private pages
+Disallow: /booking/success
+Disallow: /dashboard
+Disallow: /management
+Disallow: /owner
+Disallow: /auth/
+
+# Sitemap
+Sitemap: https://horastaycation.com/sitemap.xml

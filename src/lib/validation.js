@@ -21,7 +21,7 @@ export const bookingSchema = z
     guestName: z.string().trim().min(2, 'Enter the guest name.'),
     guestEmail: z.string().trim().email('Enter a valid email address.'),
     guestPhone: optionalPhoneSchema,
-    specialRequests: z.string().trim().optional(),
+    specialRequests: z.string().trim().max(500, 'Special requests must be 500 characters or less.').optional(),
   })
   .refine((data) => new Date(data.checkout) > new Date(data.checkin), {
     message: 'Check-out must be after check-in.',

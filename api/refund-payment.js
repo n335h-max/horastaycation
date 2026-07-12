@@ -1,5 +1,6 @@
 import { getJsonBody, getStripeClient } from './_lib/stripeServer.js';
 import { requireManagementUser } from './_lib/auth.js';
+import { applyRateLimit } from './_lib/rateLimit.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -10,6 +11,16 @@ export default async function handler(req, res) {
   const management = await requireManagementUser(req);
   if (!management.ok) {
     return res.status(management.status || 500).json({ error: management.error || 'Unauthorized.' });
+  }
+
+  // Rate limit: 5 requests per 10 minutes per management user
+  const rateLimitResult = applyRateLimit(req, res, {
+    userId: management.user.id,
+    maxRequests: 5,
+    windowMs: 10 * 60 * 1000,
+  });
+  if (rateLimitResult) {
+    return rateLimitResult;
   }
 
   if (!process.env.STRIPE_SECRET_KEY) {

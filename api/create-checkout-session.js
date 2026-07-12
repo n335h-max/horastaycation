@@ -1,5 +1,6 @@
 import { getJsonBody, getStripeClient } from './_lib/stripeServer.js';
 import { resolveAuthenticatedUser } from './_lib/auth.js';
+import { applyRateLimit } from './_lib/rateLimit.js';
 import { FEATURED_PROPERTIES } from '../src/data/siteData.js';
 
 const SERVICE_FEE_RATE = 0.12;
@@ -95,6 +96,13 @@ function scopeIdempotencyKey(authUserId, rawKey) {
   return `checkout-${String(authUserId || '')}-${normalizedKey}`.slice(0, 255);
 }
 
+function sanitizeMetadataValue(value, maxLength = 500) {
+  return String(value || '')
+    .trim()
+    .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
+    .slice(0, maxLength);
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -104,6 +112,16 @@ export default async function handler(req, res) {
   const auth = await resolveAuthenticatedUser(req);
   if (!auth.ok) {
     return res.status(auth.status || 500).json({ error: auth.error || 'Unauthorized.' });
+  }
+
+  // Rate limit: 10 requests per minute per authenticated user
+  const rateLimitResult = applyRateLimit(req, res, {
+    userId: auth.user.id,
+    maxRequests: 10,
+    windowMs: 60 * 1000,
+  });
+  if (rateLimitResult) {
+    return rateLimitResult;
   }
 
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -148,30 +166,30 @@ export default async function handler(req, res) {
         },
       ],
       metadata: {
-        clientUserId: String(auth.user.id || ''),
-        clientUserEmail: String(auth.user.email || ''),
-        propertyId: String(bookingForm.property),
-        propertyName: String(pricing.property.name),
-        propertyLocation: String(pricing.property.location),
-        guestName: String(bookingForm.guestName || ''),
-        guestEmail: String(bookingForm.guestEmail || ''),
-        guestPhone: String(bookingForm.guestPhone || ''),
-        checkinDate: String(bookingForm.checkin || ''),
-        checkoutDate: String(bookingForm.checkout || ''),
-        guests: String(bookingForm.guests || ''),
-        nights: String(pricing.nights || ''),
-        subtotal: String(pricing.subtotal || 0),
-        serviceFee: String(pricing.serviceFee || 0),
-        total: String(pricing.total || 0),
-        specialRequests: String(bookingForm.specialRequests || ''),
+        clientUserId: sanitizeMetadataValue(auth.user.id, 255),
+        clientUserEmail: sanitizeMetadataValue(auth.user.email, 255),
+        propertyId: sanitizeMetadataValue(bookingForm.property, 100),
+        propertyName: sanitizeMetadataValue(pricing.property.name, 255),
+        propertyLocation: sanitizeMetadataValue(pricing.property.location, 255),
+        guestName: sanitizeMetadataValue(bookingForm.guestName, 255),
+        guestEmail: sanitizeMetadataValue(bookingForm.guestEmail, 255),
+        guestPhone: sanitizeMetadataValue(bookingForm.guestPhone, 50),
+        checkinDate: sanitizeMetadataValue(bookingForm.checkin, 50),
+        checkoutDate: sanitizeMetadataValue(bookingForm.checkout, 50),
+        guests: sanitizeMetadataValue(bookingForm.guests, 10),
+        nights: sanitizeMetadataValue(pricing.nights, 10),
+        subtotal: sanitizeMetadataValue(pricing.subtotal, 20),
+        serviceFee: sanitizeMetadataValue(pricing.serviceFee, 20),
+        total: sanitizeMetadataValue(pricing.total, 20),
+        specialRequests: sanitizeMetadataValue(bookingForm.specialRequests, 500),
       },
       payment_intent_data: {
         receipt_email: bookingForm.guestEmail || undefined,
         metadata: {
-          clientUserId: String(auth.user.id || ''),
-          clientUserEmail: String(auth.user.email || ''),
-          propertyId: String(bookingForm.property),
-          propertyName: String(pricing.property.name),
+          clientUserId: sanitizeMetadataValue(auth.user.id, 255),
+          clientUserEmail: sanitizeMetadataValue(auth.user.email, 255),
+          propertyId: sanitizeMetadataValue(bookingForm.property, 100),
+          propertyName: sanitizeMetadataValue(pricing.property.name, 255),
         },
       },
     }, { idempotencyKey });
