@@ -357,8 +357,9 @@ export default function App() {
               <Route
                 path={APP_PATHS.booking}
                 element={
-                  <BookingPageRoute
-                    properties={featuredListings}
+                  <ErrorBoundary fallback={<p className="p-8 text-center text-slate-500">Something went wrong on this page. <a href="/" className="text-brand-600 underline">Go home</a></p>}>
+                    <BookingPageRoute
+                      properties={featuredListings}
                     bookingForm={store.bookingDraft}
                     bookingErrors={bookingErrors}
                     isSubmitting={isOpeningPayment}
@@ -378,10 +379,8 @@ export default function App() {
                     canInstallApp={canInstallApp}
                     onInstallApp={() => handleInstallApp(pushToast, recordAnalytics)}
                   />
+                  </ErrorBoundary>
                 }
-              />
-              <Route
-                path={APP_PATHS.review}
                 element={
                   <RoleProtectedRoute
                     authUser={authSession?.user}
@@ -405,12 +404,14 @@ export default function App() {
               <Route
                 path={APP_PATHS.bookingSuccess}
                 element={
-                  <SuccessPageRoute
-                    variant="booking"
-                    onShowPage={showPage}
-                    isLoading={isVerifyingStripePayment}
-                    errorMessage={stripeVerificationError}
-                  />
+                  <ErrorBoundary fallback={<p className="p-8 text-center text-slate-500">Something went wrong. <a href="/" className="text-brand-600 underline">Go home</a></p>}>
+                    <SuccessPageRoute
+                      variant="booking"
+                      onShowPage={showPage}
+                      isLoading={isVerifyingStripePayment}
+                      errorMessage={stripeVerificationError}
+                    />
+                  </ErrorBoundary>
                 }
               />
               <Route
@@ -431,7 +432,8 @@ export default function App() {
                     fallbackPath={buildAuthPath('management', APP_PATHS.dashboard)}
                     isAuthLoading={isAuthLoading}
                   >
-                    <DashboardPageRoute
+                    <ErrorBoundary fallback={<p className="p-8 text-center text-slate-500">Dashboard failed to load. <a href="/" className="text-brand-600 underline">Go home</a></p>}>
+                      <DashboardPageRoute
                       listings={dashboardListings}
                       bookings={store.dashboardBookings}
                       bookingTransactions={store.bookingTransactions}
@@ -452,6 +454,7 @@ export default function App() {
                       analyticsEvents={store.analyticsEvents}
                       supportRequests={store.supportRequests}
                     />
+                    </ErrorBoundary>
                   </RoleProtectedRoute>
                 }
               />

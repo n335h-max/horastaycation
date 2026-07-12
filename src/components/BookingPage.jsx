@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { formatCurrency } from '../lib/formatters';
 import { GUEST_OPTIONS, SEARCH_LOCATIONS, SPECIAL_REQUEST_OPTIONS } from '../data/siteData';
 import { isRangeBlocked } from '../lib/guestFeatures';
+import { WHATSAPP_SUPPORT_NUMBER } from '../lib/constants';
 import { Icon } from './Icon';
 
 export function BookingPage({
@@ -29,7 +30,7 @@ export function BookingPage({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('Any location');
   const [savedOnly, setSavedOnly] = useState(false);
-  const whatsappBaseUrl = 'https://wa.me/601110629990?text=';
+  const whatsappBaseUrl = `https://wa.me/${WHATSAPP_SUPPORT_NUMBER}?text=`;
   const wishlistIdSet = useMemo(() => new Set(wishlistIds), [wishlistIds]);
   const locationOptions = useMemo(
     () => [

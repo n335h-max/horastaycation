@@ -1,5 +1,6 @@
 import { Suspense, lazy, startTransition, useEffect, useRef, useState } from 'react';
 import { OWNER_BENEFITS, STARTING_PACKAGE, TESTIMONIALS } from '../data/siteData';
+import { WHATSAPP_SUPPORT_NUMBER } from '../lib/constants';
 import { Icon } from './Icon';
 import { HeroSection } from './landing/HeroSection';
 import { IntroSection } from './landing/IntroSection';
@@ -76,7 +77,7 @@ export function LandingPage({
       )
     : [];
   const startingPackageIncludes = Array.isArray(STARTING_PACKAGE?.includes) ? STARTING_PACKAGE.includes : [];
-  const whatsappBaseUrl = 'https://wa.me/601110629990?text=';
+  const whatsappBaseUrl = `https://wa.me/${WHATSAPP_SUPPORT_NUMBER}?text=`;
   const featuredLocationOptions = [
     'All locations',
     ...new Set(safeFeaturedProperties.map((property) => property.location)),

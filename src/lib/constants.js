@@ -5,6 +5,9 @@
 /** Service fee percentage applied to bookings (e.g., 0.12 = 12%) */
 export const SERVICE_FEE_RATE = 0.12;
 
+/** WhatsApp support number (override via VITE_WHATSAPP_SUPPORT env) */
+export const WHATSAPP_SUPPORT_NUMBER = import.meta.env.VITE_WHATSAPP_SUPPORT || '601110629990';
+
 /** Toast notification auto-dismiss timeout in milliseconds */
 export const TOAST_DURATION_MS = 3200;
 
