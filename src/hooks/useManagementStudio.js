@@ -304,6 +304,8 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
     fileInput.type = 'file';
     fileInput.accept = MEDIA_FIELD_CONFIG[field]?.accept || 'image/*';
     fileInput.multiple = true;
+    fileInput.style.display = 'none';
+    document.body.appendChild(fileInput);
 
     fileInput.onchange = async () => {
       const files = Array.from(fileInput.files || []);
