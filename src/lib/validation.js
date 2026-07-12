@@ -26,7 +26,43 @@ export const bookingSchema = z
   .refine((data) => new Date(data.checkout) > new Date(data.checkin), {
     message: 'Check-out must be after check-in.',
     path: ['checkout'],
-  });
+  })
+  .refine(
+    (data) => {
+      const checkin = new Date(data.checkin);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return checkin >= today;
+    },
+    {
+      message: 'Check-in cannot be in the past.',
+      path: ['checkin'],
+    },
+  )
+  .refine(
+    (data) => {
+      const nights = Math.ceil(
+        (new Date(data.checkout) - new Date(data.checkin)) / (1000 * 60 * 60 * 24),
+      );
+      return nights >= 1 && nights <= 30;
+    },
+    {
+      message: 'Stay must be between 1 and 30 nights.',
+      path: ['checkout'],
+    },
+  )
+  .refine(
+    (data) => {
+      const checkin = new Date(data.checkin);
+      const maxDate = new Date();
+      maxDate.setFullYear(maxDate.getFullYear() + 2);
+      return checkin <= maxDate;
+    },
+    {
+      message: 'Check-in cannot be more than 2 years in advance.',
+      path: ['checkin'],
+    },
+  );
 
 export const paymentSchema = z.object({
   cardholder: z.string().trim().min(2, 'Enter the cardholder name.'),
