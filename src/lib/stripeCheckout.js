@@ -1,3 +1,5 @@
+import { getLocalStorage } from './safeStorage';
+
 const STRIPE_PENDING_CHECKOUTS_KEY = 'hora-stripe-pending-checkouts:v1';
 
 function readPendingCheckouts() {
@@ -6,7 +8,7 @@ function readPendingCheckouts() {
   }
 
   try {
-    const raw = window.localStorage.getItem(STRIPE_PENDING_CHECKOUTS_KEY);
+    const raw = getLocalStorage().getItem(STRIPE_PENDING_CHECKOUTS_KEY);
     return raw ? JSON.parse(raw) : {};
   } catch {
     return {};
@@ -18,7 +20,7 @@ function writePendingCheckouts(value) {
     return;
   }
 
-  window.localStorage.setItem(STRIPE_PENDING_CHECKOUTS_KEY, JSON.stringify(value));
+  getLocalStorage().setItem(STRIPE_PENDING_CHECKOUTS_KEY, JSON.stringify(value));
 }
 
 export function savePendingStripeCheckout(sessionId, payload) {

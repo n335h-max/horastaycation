@@ -1,3 +1,5 @@
+import { getSessionStorage } from './safeStorage';
+
 const CHUNK_RELOAD_KEY = 'hora:chunk-reload-attempted:';
 
 export function importWithChunkRecovery(importer, importerKey = 'global') {
@@ -6,7 +8,7 @@ export function importWithChunkRecovery(importer, importerKey = 'global') {
   return importer()
     .then((module) => {
       if (typeof window !== 'undefined') {
-        window.sessionStorage.removeItem(storageKey);
+        getSessionStorage().removeItem(storageKey);
       }
       return module;
     })
@@ -20,9 +22,9 @@ export function importWithChunkRecovery(importer, importerKey = 'global') {
         throw error;
       }
 
-      const alreadyReloaded = window.sessionStorage.getItem(storageKey) === '1';
+      const alreadyReloaded = getSessionStorage().getItem(storageKey) === '1';
       if (!alreadyReloaded) {
-        window.sessionStorage.setItem(storageKey, '1');
+        getSessionStorage().setItem(storageKey, '1');
         window.location.reload();
       }
 

@@ -1,31 +1,29 @@
 import { isManagementEmailAllowed, isSupabaseConfigured, supabase } from '../lib/supabase';
 import { SUPPORTED_ROLES_SET, ACTIVE_ROLE_STORAGE_KEY, AVAILABLE_ROLES_STORAGE_KEY } from '../lib/constants';
+import { getLocalStorage } from '../lib/safeStorage';
 
 const PROFILE_TABLE = 'user_profiles';
 const SUPPORTED_ROLES = SUPPORTED_ROLES_SET;
 
 function readStorage(key) {
-  if (typeof window === 'undefined') return '';
   try {
-    return window.localStorage.getItem(key) || '';
+    return getLocalStorage().getItem(key) || '';
   } catch {
     return '';
   }
 }
 
 function writeStorage(key, value) {
-  if (typeof window === 'undefined') return;
   try {
-    window.localStorage.setItem(key, value);
+    getLocalStorage().setItem(key, value);
   } catch {
     /* noop */
   }
 }
 
 function removeStorage(key) {
-  if (typeof window === 'undefined') return;
   try {
-    window.localStorage.removeItem(key);
+    getLocalStorage().removeItem(key);
   } catch {
     /* noop */
   }

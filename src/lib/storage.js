@@ -1,3 +1,5 @@
+import { getLocalStorage } from './safeStorage';
+
 const STORAGE_KEY = 'hora-staycation-store:v1';
 const BOOKING_DRAFT_KEY = 'hora-staycation-booking-draft:v1';
 
@@ -7,7 +9,7 @@ export function readStorage(defaultValue) {
   }
 
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = getLocalStorage().getItem(STORAGE_KEY);
     if (!raw) {
       return defaultValue;
     }
@@ -24,7 +26,7 @@ export function writeStorage(value) {
   }
 
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+    getLocalStorage().setItem(STORAGE_KEY, JSON.stringify(value));
   } catch {
     /* noop */
   }
@@ -36,7 +38,7 @@ export function readBookingDraft(defaultValue) {
   }
 
   try {
-    const raw = window.localStorage.getItem(BOOKING_DRAFT_KEY);
+    const raw = getLocalStorage().getItem(BOOKING_DRAFT_KEY);
     if (!raw) {
       return defaultValue;
     }
@@ -54,7 +56,7 @@ export function writeBookingDraft(value) {
   }
 
   try {
-    window.localStorage.setItem(BOOKING_DRAFT_KEY, JSON.stringify(value));
+    getLocalStorage().setItem(BOOKING_DRAFT_KEY, JSON.stringify(value));
   } catch {
     /* noop */
   }

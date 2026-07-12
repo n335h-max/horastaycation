@@ -1,3 +1,5 @@
+import { getLocalStorage } from './safeStorage';
+
 const CONSENT_STORAGE_KEY = 'hora-cookie-consent:v1';
 
 export const DEFAULT_COOKIE_PREFERENCES = {
@@ -13,7 +15,7 @@ export function readCookiePreferences() {
   }
 
   try {
-    const raw = window.localStorage.getItem(CONSENT_STORAGE_KEY);
+    const raw = getLocalStorage().getItem(CONSENT_STORAGE_KEY);
 
     if (!raw) {
       return null;
@@ -41,6 +43,6 @@ export function saveCookiePreferences(preferences) {
     consentedAt: preferences?.consentedAt || new Date().toISOString(),
   };
 
-  window.localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(nextPreferences));
+  getLocalStorage().setItem(CONSENT_STORAGE_KEY, JSON.stringify(nextPreferences));
   return nextPreferences;
 }
