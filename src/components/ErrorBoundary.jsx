@@ -13,7 +13,9 @@ export class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('[ErrorBoundary] Caught:', error, errorInfo);
+    // ErrorBoundary errors are always captured by React's error reporting.
+    // In production, attach a monitoring provider (Sentry) to logger.error.
+    if (import.meta.env.DEV) console.error('[ErrorBoundary] Caught:', error, errorInfo);
   }
 
   handleReset = () => {

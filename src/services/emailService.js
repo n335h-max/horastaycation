@@ -1,4 +1,5 @@
 import { RESEND_ENDPOINTS } from '../lib/constants';
+import { logger } from '../lib/logger';
 
 /**
  * Send an email via the Resend API endpoint.
@@ -29,7 +30,7 @@ export async function sendEmail(type, data, to = null) {
 
     return result;
   } catch (error) {
-    console.error('Email service error:', error);
+    logger.error('Email service error:', error);
     throw (error instanceof Error ? error : new Error('Failed to send email request.'));
   }
 }

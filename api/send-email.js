@@ -1,4 +1,5 @@
 import { getResendClient, getFromEmail, getManagementEmail } from './_lib/resendServer.js';
+import { logger } from './_lib/logger.js';
 import {
   bookingConfirmationTemplate,
   ownerBookingAlertTemplate,
@@ -213,7 +214,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ sent: true, id: result.data.id });
   } catch (error) {
-    console.error('Resend email send failed:', error);
+    logger.error('Resend email send failed:', error);
     return res.status(502).json({
       sent: false,
       error: error instanceof Error ? error.message : 'Email send failed.',

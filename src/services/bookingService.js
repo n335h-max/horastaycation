@@ -2,6 +2,7 @@ import { loadStore, saveStore, clone, initialBookingDraft } from './localStore';
 import { getAuthenticatedUser, insertRemote, updateRemote } from './supabaseClient';
 import { MAX_DASHBOARD_PREVIEW_ITEMS } from '../lib/constants';
 import { sendBookingConfirmation, sendManagementBookingAlert, sendOwnerBookingAlert } from './emailService';
+import { logger } from '../lib/logger';
 
 function formatBookingStatusLabel(status = 'confirmed') {
   return String(status)
@@ -163,18 +164,18 @@ export async function submitBooking({ bookingForm, bookingSummary, paymentForm =
 
     if (customerReceiptEmail) {
       sendBookingConfirmation(emailData).catch((err) =>
-        console.warn('Failed to send booking confirmation email:', err),
+        logger.warn('Failed to send booking confirmation email:', err),
       );
     }
 
     if (ownerRecipient) {
       sendOwnerBookingAlert(emailData, ownerRecipient).catch((err) =>
-        console.warn('Failed to send owner booking alert:', err),
+        logger.warn('Failed to send owner booking alert:', err),
       );
     }
 
     sendManagementBookingAlert(emailData).catch((err) =>
-      console.warn('Failed to send management booking alert:', err),
+      logger.warn('Failed to send management booking alert:', err),
     );
   }
 

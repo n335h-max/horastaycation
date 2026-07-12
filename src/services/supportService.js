@@ -1,6 +1,7 @@
 import { loadStore, saveStore } from './localStore';
 import { MAX_SUPPORT_REQUESTS, MAX_DASHBOARD_PREVIEW_ITEMS } from '../lib/constants';
 import { sendSupportRequestAlert } from './emailService';
+import { logger } from '../lib/logger';
 
 export async function submitSupportRequest(request) {
   const store = loadStore();
@@ -18,7 +19,7 @@ export async function submitSupportRequest(request) {
     message: request.message || '',
     email: request.email || '',
     name: request.name || '',
-  }).catch((err) => console.warn('Failed to send support request email:', err));
+  }).catch((err) => logger.warn('Failed to send support request email:', err));
 
   return { store, request: record };
 }

@@ -1,6 +1,7 @@
 import { loadStore, saveStore } from './localStore';
 import { getAuthenticatedUser, insertRemote } from './supabaseClient';
 import { MAX_DASHBOARD_PREVIEW_ITEMS } from '../lib/constants';
+import { logger } from '../lib/logger';
 import { sendOwnerLeadAlert, sendEvaluationRequestAlert, sendApplicationApproval } from './emailService';
 
 export async function submitOwnerApplication(application) {
@@ -39,7 +40,7 @@ export async function submitOwnerApplication(application) {
       ownerAddress: application.ownerAddress || '',
       unitCount: String(application.unitCount || '1'),
       budget: application.budget || '',
-    }).catch((err) => console.warn('Failed to send owner lead email:', err)),
+    }).catch((err) => logger.warn('Failed to send owner lead email:', err)),
   ]);
 
   return { store, remote };
@@ -74,7 +75,7 @@ export async function submitReview(review) {
       evaluatorPhone: review.evaluatorPhone || '',
       evaluatorAddress: review.evaluatorAddress || '',
       unitCount: String(review.unitCount || '1'),
-    }).catch((err) => console.warn('Failed to send evaluation request email:', err)),
+    }).catch((err) => logger.warn('Failed to send evaluation request email:', err)),
   ]);
 
   return { store, remote };
@@ -139,7 +140,7 @@ export async function approveApplication(applicationId, applicationType) {
     emailSent = true;
   } catch (err) {
     emailError = err instanceof Error ? err.message : String(err);
-    console.warn('Failed to send approval email:', emailError);
+    logger.warn('Failed to send approval email:', emailError);
   }
 
   return { store, emailSent, emailError, found: true };

@@ -1,6 +1,7 @@
 import { mapWebhookMetadataToBookingRecord, updateBookingTransactionAdmin, upsertBookingTransactionAdmin, hasProcessedStripeEvent, recordProcessedStripeEvent } from './_lib/supabaseAdmin.js';
 import { getStripeClient, readRawRequestBody } from './_lib/stripeServer.js';
 import { getResendClient, getFromEmail } from './_lib/resendServer.js';
+import { logger } from './_lib/logger.js';
 import {
   bookingConfirmationTemplate,
   ownerBookingAlertTemplate,
@@ -75,7 +76,7 @@ export default async function handler(req, res) {
       }
     } catch (err) {
       // If the dedupe check fails, continue processing but log a warning
-      console.warn('Failed to check dedupe for stripe event', err);
+      logger.warn('Failed to check dedupe for stripe event', err);
     }
 
     if (event.type === 'checkout.session.completed') {
@@ -97,7 +98,7 @@ export default async function handler(req, res) {
       const checkoutRecordResult = await recordProcessedStripeEvent(event.id, event.type);
       eventRecorded = Boolean(checkoutRecordResult?.recorded);
       if (!eventRecorded) {
-        console.warn(
+        logger.warn(
           'Skipping webhook emails because event could not be recorded before dispatch:',
           checkoutRecordResult?.reason || 'stripe_event_record_failed',
         );
@@ -137,7 +138,7 @@ export default async function handler(req, res) {
         if (managementEmail) {
           emailTasks.push(sendEmailViaResend('management_booking_alert', emailData, managementEmail));
         } else {
-          console.warn('MANAGEMENT_EMAIL is not configured; skipping management booking alert email.');
+          logger.warn('MANAGEMENT_EMAIL is not configured; skipping management booking alert email.');
         }
 
         const withTimeout = async (promise, ms) => {
@@ -157,7 +158,7 @@ export default async function handler(req, res) {
           const results = await Promise.allSettled(emailTasks.map((task) => withTimeout(task, 3000)));
           results.forEach((result, index) => {
             if (result.status === 'rejected') {
-              console.warn(`Failed to send webhook email #${index + 1}:`, result.reason);
+              logger.warn(`Failed to send webhook email #${index + 1}:`, result.reason);
             }
           });
         }
@@ -197,7 +198,7 @@ export default async function handler(req, res) {
     if (!eventRecorded) {
       const result = await recordProcessedStripeEvent(event.id, event.type);
       if (!result?.recorded) {
-        console.warn('Failed to record processed stripe event', result?.reason || 'stripe_event_record_failed');
+        logger.warn('Failed to record processed stripe event', result?.reason || 'stripe_event_record_failed');
       }
     }
 
