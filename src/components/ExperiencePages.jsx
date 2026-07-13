@@ -4,6 +4,7 @@ import { deleteMediaFile, saveMediaFile } from '../lib/mediaStorage';
 import { validateWithSchema, ownerSchema, reviewSchema } from '../lib/validation';
 import { formatCurrency } from '../lib/formatters';
 import { Icon } from './Icon';
+import { ListingImage } from './ListingImage';
 
 const INITIAL_OWNER_FORM = {
   ownerName: '',
@@ -2030,7 +2031,7 @@ export function DashboardPage({
               <div className="space-y-4">
                 {listings.map((property) => (
                   <div key={property.id} className="flex items-center gap-4 rounded-2xl border border-ice-200 p-4">
-                    <img
+                    <ListingImage
                       src={property.thumbnail}
                       alt={property.name}
                       width="80"

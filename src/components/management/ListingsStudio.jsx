@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { formatCurrency } from '../../lib/formatters';
 import { Icon } from '../Icon';
+import { ListingImage } from '../ListingImage';
 import { PublishedListingsGrid } from './PublishedListingsGrid';
 import { useManagementStudio } from '../../hooks/useManagementStudio';
 
@@ -436,17 +437,11 @@ export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onSho
           <section className="rounded-3xl border border-ice-200 bg-white p-5 shadow-sm">
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Selected listing</div>
             <div className="mt-3 h-32 overflow-hidden rounded-2xl bg-brand-100">
-              {selectedListing?.summaryImage || selectedListing?.image ? (
-                <img
-                  src={selectedListing.summaryImage || selectedListing.image}
-                  alt={selectedListing.name}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center text-3xl font-bold text-brand-700/40">
-                  {selectedListing?.name?.charAt(0)?.toUpperCase() || 'H'}
-                </div>
-              )}
+              <ListingImage
+                src={selectedListing?.summaryImage || selectedListing?.image}
+                alt={selectedListing?.name}
+                className="h-full w-full object-cover"
+              />
             </div>
             <h3 className="mt-3 text-3xl font-bold text-brand-950">{selectedListing?.name || 'Select listing'}</h3>
             <p className="mt-1 text-sm text-slate-500">{selectedListing?.location || 'No location set'}</p>

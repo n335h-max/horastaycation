@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Icon } from '../Icon';
+import { ListingImage } from '../ListingImage';
 import { STATS } from '../../data/siteData';
 
 const HERO_TRUST_SIGNALS = ['Happy Guests', 'Quality Rated', 'Owner-Ready Listings'];
@@ -90,7 +91,7 @@ function HeroCarousel({ properties, activeIndex, onStep }) {
                 aria-roledescription="slide"
                 aria-label={`${index + 1} of ${properties.length}: ${property.name}`}
               >
-                <img
+                <ListingImage
                   src={property.summaryImage || property.image}
                   alt={property.name}
                   width="420"

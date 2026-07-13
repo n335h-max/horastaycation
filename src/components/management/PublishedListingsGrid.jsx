@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { formatCurrency } from '../../lib/formatters';
+import { ListingImage } from '../ListingImage';
 
 function getListingBadge(property) {
   if (property.publishStatus === 'draft') {
@@ -21,7 +22,7 @@ export function PublishedListingsGrid({ listings, compact = false }) {
             key={property.id}
             className="overflow-hidden rounded-[1.8rem] border border-ice-200 bg-white shadow-sm"
           >
-            <img
+            <ListingImage
               src={property.thumbnail}
               alt={property.name}
               className={`w-full object-cover ${compact ? 'h-36' : 'h-40'}`}

@@ -4,6 +4,7 @@ import { GUEST_OPTIONS, SEARCH_LOCATIONS, SPECIAL_REQUEST_OPTIONS } from '../dat
 import { isRangeBlocked } from '../lib/guestFeatures';
 import { WHATSAPP_SUPPORT_NUMBER } from '../lib/constants';
 import { Icon } from './Icon';
+import { ListingImage } from './ListingImage';
 
 export function BookingPage({
   properties = [],
@@ -292,7 +293,7 @@ export function BookingPage({
                         className="overflow-hidden rounded-xl bg-ice-100"
                         aria-label={`Select ${property.name}`}
                       >
-                        <img
+                        <ListingImage
                           src={property.thumbnail || property.image}
                           alt={property.name}
                           width="320"
@@ -375,7 +376,7 @@ export function BookingPage({
                         <p className="text-lg font-bold">{formatCurrency(selectedProperty.price)}</p>
                       </div>
                     </div>
-                    <img
+                    <ListingImage
                       src={selectedProperty.summaryImage || selectedProperty.image}
                       alt={selectedProperty.name}
                       width="360"
