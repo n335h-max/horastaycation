@@ -210,7 +210,8 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
     try {
       const mediaRef = await saveMediaFile(file, field);
       if (mediaRef) {
-        setPendingMediaFiles((current) => ({ ...current, [field]: mediaRef }));
+        const objectUrl = URL.createObjectURL(file);
+        setPendingMediaFiles((current) => ({ ...current, [field]: { ...mediaRef, objectUrl } }));
         setStudioMessage(`Media file saved for upload: ${file.name}`);
       }
     } catch {
@@ -222,8 +223,12 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
 
   const clearMediaField = useCallback(
     (field) => {
-      if (pendingMediaFiles[field]) {
-        deleteMediaFile(pendingMediaFiles[field]);
+      const pending = pendingMediaFiles[field];
+      if (pending) {
+        deleteMediaFile(pending);
+        if (pending.objectUrl) {
+          URL.revokeObjectURL(pending.objectUrl);
+        }
         setPendingMediaFiles((current) => {
           const next = { ...current };
           delete next[field];
@@ -346,6 +351,9 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
         mediaFiles: pendingMediaFiles,
       });
       setDraftListing(null);
+      Object.values(pendingMediaFiles).forEach((pending) => {
+        if (pending?.objectUrl) URL.revokeObjectURL(pending.objectUrl);
+      });
       setPendingMediaFiles({});
       setStudioMessage('Listing content saved. The public staycation cards now use the latest management portal data.');
     } finally {
