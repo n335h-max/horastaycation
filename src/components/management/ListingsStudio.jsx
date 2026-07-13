@@ -344,13 +344,13 @@ export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onSho
                           <div className="mt-2 h-20 overflow-hidden rounded-lg bg-ice-50">
                             {config.accept.startsWith('image') && (currentUrl || hasPending) ? (
                               <img
-                                src={hasPending ? pendingFile.objectUrl : currentUrl}
+                                src={hasPending && pendingFile?.objectUrl ? pendingFile.objectUrl : currentUrl}
                                 alt={config.label}
                                 className="h-full w-full object-cover"
                               />
                             ) : (
                               <div className="flex h-full items-center justify-center text-xs text-slate-400">
-                                {hasPending ? pendingFile.name : 'Video uploaded'}
+                                {hasPending ? pendingFile?.name || 'Media queued' : 'Video uploaded'}
                               </div>
                             )}
                           </div>

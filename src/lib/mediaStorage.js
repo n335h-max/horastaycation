@@ -112,7 +112,14 @@ export function getMediaObjectUrl(mediaRef) {
 
         request.addEventListener('success', () => {
           const record = request.result;
-          resolve(record?.blob ? URL.createObjectURL(record.blob) : '');
+          const blob = record?.blob;
+          // Guard: createObjectURL throws 'Overload resolution failed' if the
+          // argument is not a Blob/File. Only build an object URL for real blobs.
+          if (blob && typeof Blob !== 'undefined' && blob instanceof Blob) {
+            resolve(URL.createObjectURL(blob));
+            return;
+          }
+          resolve('');
         });
         request.addEventListener('error', () => reject(request.error ?? new Error('Failed to read media file.')));
       }),

@@ -1182,7 +1182,8 @@ export function DashboardPage({
         throw new Error('Your browser does not support local media uploads in this environment.');
       }
 
-      const previewUrl = URL.createObjectURL(file);
+      const previewUrl =
+        typeof Blob !== 'undefined' && file instanceof Blob ? URL.createObjectURL(file) : '';
 
       setListingForm((current) => ({
         ...current,

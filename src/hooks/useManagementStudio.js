@@ -210,7 +210,10 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
     try {
       const mediaRef = await saveMediaFile(file, field);
       if (mediaRef) {
-        const objectUrl = URL.createObjectURL(file);
+        // Guard: only build an object URL for real Blob/File inputs. Passing a
+        // non-Blob to URL.createObjectURL throws 'Overload resolution failed'.
+        const objectUrl =
+          typeof Blob !== 'undefined' && file instanceof Blob ? URL.createObjectURL(file) : '';
         setPendingMediaFiles((current) => ({ ...current, [field]: { ...mediaRef, objectUrl } }));
         setStudioMessage(`Media file saved for upload: ${file.name}`);
       }
