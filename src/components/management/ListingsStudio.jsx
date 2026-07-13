@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { formatCurrency } from '../../lib/formatters';
 import { Icon } from '../Icon';
 import { PublishedListingsGrid } from './PublishedListingsGrid';
@@ -29,9 +29,7 @@ function getPublishBadge(publishStatus) {
 
 export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onShowPage }) {
   const studio = useManagementStudio(listings, onSaveListing, onDeleteListing);
-  const [showAdvancedEditor, setShowAdvancedEditor] = useState(false);
-  const bulkFileInputRef = useRef(null);
-  const mediaFileInputRefs = useRef({});
+  const [showAdvancedEditor, setShowAdvancedEditor] = useState(true);
 
   const selectedBulkCount =
     studio.bulkListingIds instanceof Set ? studio.bulkListingIds.size : studio.bulkListingIds?.length ?? 0;
@@ -100,6 +98,16 @@ export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onSho
                 <h2 className="mt-1 text-3xl font-bold text-brand-950">{liveListings.length}</h2>
               </div>
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={studio.handleCreateListing}
+                  className="btn-primary px-4 py-2 text-sm"
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <Icon name="send" className="text-sm" />
+                    New listing
+                  </span>
+                </button>
                 <input
                   type="text"
                   placeholder="Search listings"
@@ -199,11 +207,11 @@ export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onSho
               </div>
 
               <div>
-                <label className="form-label" htmlFor="bulkUploadAction">
+                <label className="form-label" htmlFor="bulkUploadFile">
                   Bulk files
                 </label>
                 <input
-                  ref={bulkFileInputRef}
+                  id="bulkUploadFile"
                   type="file"
                   accept={MEDIA_FIELD_CONFIG[studio.bulkUploadField]?.accept || 'image/*'}
                   multiple
@@ -215,15 +223,17 @@ export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onSho
                     event.target.value = '';
                   }}
                 />
-                <button
+                <label
                   id="bulkUploadAction"
-                  type="button"
-                  onClick={() => bulkFileInputRef.current?.click()}
-                  disabled={studio.isBulkUploading || selectedBulkCount === 0}
-                  className="btn-primary w-full py-3 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+                  htmlFor="bulkUploadFile"
+                  className={`btn-primary flex w-full cursor-pointer items-center justify-center py-3 text-sm ${
+                    studio.isBulkUploading || selectedBulkCount === 0
+                      ? 'pointer-events-none cursor-not-allowed opacity-60'
+                      : ''
+                  }`}
                 >
-                  <span>{studio.isBulkUploading ? 'Uploading...' : 'Choose files'}</span>
-                </button>
+                  {studio.isBulkUploading ? 'Uploading...' : 'Choose files'}
+                </label>
                 <p className="mt-1 text-xs text-slate-500">
                   Select at least one target property before uploading.
                 </p>
@@ -346,7 +356,7 @@ export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onSho
                           </div>
                         )}
                         <input
-                          ref={(el) => { mediaFileInputRefs.current[field] = el; }}
+                          id={`media-file-${field}`}
                           type="file"
                           accept={config.accept}
                           className="hidden"
@@ -357,14 +367,14 @@ export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onSho
                           }}
                         />
                         <div className="mt-2 flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => mediaFileInputRefs.current[field]?.click()}
-                            disabled={studio.isUploadingMedia}
-                            className="flex-1 rounded-lg border border-ice-200 bg-white px-3 py-2 text-xs font-semibold text-brand-700 transition hover:bg-brand-50 disabled:opacity-50"
+                          <label
+                            htmlFor={`media-file-${field}`}
+                            className={`flex-1 cursor-pointer rounded-lg border border-ice-200 bg-white px-3 py-2 text-center text-xs font-semibold text-brand-700 transition hover:bg-brand-50 ${
+                              studio.isUploadingMedia ? 'pointer-events-none opacity-50' : ''
+                            }`}
                           >
                             {studio.isUploadingMedia ? 'Uploading...' : 'Choose file'}
-                          </button>
+                          </label>
                           {hasPending && (
                             <button
                               type="button"
