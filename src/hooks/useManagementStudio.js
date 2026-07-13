@@ -286,7 +286,7 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
     });
   }, [availableListings, setBulkListingIds]);
 
-  const handleBulkUpload = useCallback(async () => {
+  const handleBulkUpload = useCallback(async (files) => {
     const field = bulkUploadField;
     const targets = selectedBulkListings;
 
@@ -300,56 +300,39 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
       return;
     }
 
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = MEDIA_FIELD_CONFIG[field]?.accept || 'image/*';
-    fileInput.multiple = true;
-    fileInput.style.display = 'none';
-    document.body.appendChild(fileInput);
+    const fileArray = Array.isArray(files) ? files : [];
+    if (!fileArray.length) {
+      return;
+    }
 
-    fileInput.onchange = async () => {
-      const files = Array.from(fileInput.files || []);
-      if (!files.length) {
-        setIsBulkUploading(false);
-        fileInput.remove();
-        return;
-      }
+    if (fileArray.length > 1 && fileArray.length !== targets.length) {
+      setUploadError(`Select either 1 file for all targets or exactly ${targets.length} files.`);
+      return;
+    }
 
-      if (files.length > 1 && files.length !== targets.length) {
-        setUploadError(`Select either 1 file for all targets or exactly ${targets.length} files.`);
-        setIsBulkUploading(false);
-        fileInput.remove();
-        return;
-      }
-
-      setIsBulkUploading(true);
-      setUploadError('');
-      try {
-        for (let index = 0; index < targets.length; index += 1) {
-          const listing = targets[index];
-          const file = files.length === 1 ? files[0] : files[index];
-          const mediaRef = await saveMediaFile(file, field);
-          if (!mediaRef) {
-            throw new Error('Bulk media save failed.');
-          }
-          await onSaveListing({
-            ...listing,
-            mediaFiles: {
-              [field]: mediaRef,
-            },
-          });
+    setIsBulkUploading(true);
+    setUploadError('');
+    try {
+      for (let index = 0; index < targets.length; index += 1) {
+        const listing = targets[index];
+        const file = fileArray.length === 1 ? fileArray[0] : fileArray[index];
+        const mediaRef = await saveMediaFile(file, field);
+        if (!mediaRef) {
+          throw new Error('Bulk media save failed.');
         }
-        setStudioMessage(`Bulk upload complete for ${targets.length} listing(s) using ${files.length} file(s).`);
-      } catch {
-        setUploadError('Bulk upload failed.');
-      } finally {
-        setIsBulkUploading(false);
-        fileInput.onchange = null;
-        fileInput.remove();
+        await onSaveListing({
+          ...listing,
+          mediaFiles: {
+            [field]: mediaRef,
+          },
+        });
       }
-    };
-
-    fileInput.click();
+      setStudioMessage(`Bulk upload complete for ${targets.length} listing(s) using ${fileArray.length} file(s).`);
+    } catch {
+      setUploadError('Bulk upload failed.');
+    } finally {
+      setIsBulkUploading(false);
+    }
   }, [bulkUploadField, onSaveListing, selectedBulkListings]);
 
   const handleListingSubmit = useCallback(async (event) => {

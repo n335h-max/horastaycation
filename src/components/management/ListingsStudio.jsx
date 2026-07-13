@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { formatCurrency } from '../../lib/formatters';
 import { Icon } from '../Icon';
 import { PublishedListingsGrid } from './PublishedListingsGrid';
@@ -30,6 +30,8 @@ function getPublishBadge(publishStatus) {
 export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onShowPage }) {
   const studio = useManagementStudio(listings, onSaveListing, onDeleteListing);
   const [showAdvancedEditor, setShowAdvancedEditor] = useState(false);
+  const bulkFileInputRef = useRef(null);
+  const mediaFileInputRefs = useRef({});
 
   const selectedBulkCount =
     studio.bulkListingIds instanceof Set ? studio.bulkListingIds.size : studio.bulkListingIds?.length ?? 0;
@@ -200,10 +202,23 @@ export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onSho
                 <label className="form-label" htmlFor="bulkUploadAction">
                   Bulk files
                 </label>
+                <input
+                  ref={bulkFileInputRef}
+                  type="file"
+                  accept={MEDIA_FIELD_CONFIG[studio.bulkUploadField]?.accept || 'image/*'}
+                  multiple
+                  className="hidden"
+                  onChange={(event) => {
+                    const files = Array.from(event.target.files || []);
+                    if (!files.length) return;
+                    studio.handleBulkUpload(files);
+                    event.target.value = '';
+                  }}
+                />
                 <button
                   id="bulkUploadAction"
                   type="button"
-                  onClick={studio.handleBulkUpload}
+                  onClick={() => bulkFileInputRef.current?.click()}
                   disabled={studio.isBulkUploading || selectedBulkCount === 0}
                   className="btn-primary w-full py-3 text-sm disabled:cursor-not-allowed disabled:opacity-60"
                 >
@@ -299,6 +314,70 @@ export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onSho
                     Facilities (comma-separated)
                   </label>
                   <textarea id="facilitiesText" name="facilitiesText" rows="3" value={studio.listingForm.facilitiesText || ''} onChange={studio.handleListingFieldChange} className="form-input" />
+                </div>
+
+                <div className="rounded-2xl border border-ice-200 bg-ice-50 p-4">
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Media uploads</div>
+                  <p className="mt-1 text-sm text-slate-500">Upload photos and video for this listing.</p>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    {studio.mediaCards.map(({ field, config, pendingFile, currentUrl, hasPending }) => (
+                      <div key={field} className="rounded-xl border border-ice-200 bg-white p-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-semibold text-brand-900">{config.label}</span>
+                          {(currentUrl || hasPending) ? (
+                            <span className="text-xs font-medium text-emerald-600">Uploaded</span>
+                          ) : (
+                            <span className="text-xs font-medium text-slate-400">Pending</span>
+                          )}
+                        </div>
+                        {(currentUrl || hasPending) && (
+                          <div className="mt-2 h-20 overflow-hidden rounded-lg bg-ice-50">
+                            {config.accept.startsWith('image') && (currentUrl || hasPending) ? (
+                              <img
+                                src={hasPending ? URL.createObjectURL(pendingFile) : currentUrl}
+                                alt={config.label}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full items-center justify-center text-xs text-slate-400">
+                                {hasPending ? pendingFile.name : 'Video uploaded'}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        <input
+                          ref={(el) => { mediaFileInputRefs.current[field] = el; }}
+                          type="file"
+                          accept={config.accept}
+                          className="hidden"
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (file) studio.handleMediaUpload(field, file);
+                            event.target.value = '';
+                          }}
+                        />
+                        <div className="mt-2 flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => mediaFileInputRefs.current[field]?.click()}
+                            disabled={studio.isUploadingMedia}
+                            className="flex-1 rounded-lg border border-ice-200 bg-white px-3 py-2 text-xs font-semibold text-brand-700 transition hover:bg-brand-50 disabled:opacity-50"
+                          >
+                            {studio.isUploadingMedia ? 'Uploading...' : 'Choose file'}
+                          </button>
+                          {hasPending && (
+                            <button
+                              type="button"
+                              onClick={() => studio.clearMediaField(field)}
+                              className="rounded-lg border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-600"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
