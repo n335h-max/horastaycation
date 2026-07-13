@@ -381,6 +381,9 @@ export default function App() {
                   />
                   </ErrorBoundary>
                 }
+              />
+              <Route
+                path={APP_PATHS.review}
                 element={
                   <RoleProtectedRoute
                     authUser={authSession?.user}
