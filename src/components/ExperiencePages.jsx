@@ -1113,8 +1113,17 @@ export function DashboardPage({
     const previewUrls = Object.values(mediaPreviews);
 
     return () => {
+      // Only revoke URLs that are no longer present in the current mediaPreviews.
+      // Revoking all previously-captured URLs here would invalidate blob URLs
+      // that are still being displayed (e.g. when uploading a 2nd image, the
+      // 1st image's URL is still in use but would get revoked by this cleanup).
+      const currentUrls = new Set(Object.values(mediaPreviews));
       previewUrls.forEach((previewUrl) => {
-        if (typeof previewUrl === 'string' && previewUrl.startsWith('blob:')) {
+        if (
+          typeof previewUrl === 'string' &&
+          previewUrl.startsWith('blob:') &&
+          !currentUrls.has(previewUrl)
+        ) {
           URL.revokeObjectURL(previewUrl);
         }
       });
@@ -1918,7 +1927,7 @@ export function DashboardPage({
                               </div>
                             )
                           ) : (
-                            <img
+                            <ListingImage
                               src={preview || selectedListing?.image}
                               alt={`${listingForm.name} ${config.label.toLowerCase()}`}
                               className="h-40 w-full rounded-2xl object-cover"

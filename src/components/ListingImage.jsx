@@ -17,6 +17,16 @@ import { Icon } from './Icon';
 export function ListingImage({ src, alt, className, width, height, loading = 'lazy', fetchPriority }) {
   const [hasError, setHasError] = useState(false);
   const safeSrc = typeof src === 'string' && src.trim() ? src : '';
+  const [lastSrc, setLastSrc] = useState(safeSrc);
+
+  // Reset the error state when the src changes, otherwise a single transient
+  // load failure would permanently pin this card to the placeholder even after
+  // the listing (and its image URL) changes. Adjusting state during render is
+  // the React-recommended pattern for this (avoids a cascading-render effect).
+  if (safeSrc !== lastSrc) {
+    setLastSrc(safeSrc);
+    setHasError(false);
+  }
 
   if (!safeSrc || hasError) {
     return (

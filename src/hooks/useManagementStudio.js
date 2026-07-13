@@ -214,7 +214,9 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
         // non-Blob to URL.createObjectURL throws 'Overload resolution failed'.
         const objectUrl =
           typeof Blob !== 'undefined' && file instanceof Blob ? URL.createObjectURL(file) : '';
-        setPendingMediaFiles((current) => ({ ...current, [field]: { ...mediaRef, objectUrl } }));
+        // Keep the raw File so saveManagementListing can upload it to Supabase
+        // storage (it filters mediaFiles values by `instanceof File`).
+        setPendingMediaFiles((current) => ({ ...current, [field]: { ...mediaRef, objectUrl, file } }));
         setStudioMessage(`Media file saved for upload: ${file.name}`);
       }
     } catch {
@@ -324,14 +326,14 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
       for (let index = 0; index < targets.length; index += 1) {
         const listing = targets[index];
         const file = fileArray.length === 1 ? fileArray[0] : fileArray[index];
-        const mediaRef = await saveMediaFile(file, field);
-        if (!mediaRef) {
-          throw new Error('Bulk media save failed.');
-        }
+        // Persist locally for resilience, but pass the raw File to onSaveListing
+        // so saveManagementListing uploads it to Supabase storage (its filter is
+        // `instanceof File` — a mediaRef would be silently dropped).
+        await saveMediaFile(file, field);
         await onSaveListing({
           ...listing,
           mediaFiles: {
-            [field]: mediaRef,
+            [field]: file,
           },
         });
       }
@@ -347,11 +349,17 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
     event?.preventDefault?.();
     setIsSavingListing(true);
     try {
+      // Pass raw File objects (not mediaRef wrappers) so saveManagementListing's
+      // `instanceof File` filter accepts them and uploads to Supabase storage.
+      const mediaFiles = {};
+      Object.entries(pendingMediaFiles).forEach(([field, pending]) => {
+        if (pending?.file instanceof File) mediaFiles[field] = pending.file;
+      });
       await onSaveListing({
         ...selectedListing,
         ...listingForm,
         price: Number(listingForm.price || 0),
-        mediaFiles: pendingMediaFiles,
+        mediaFiles,
       });
       setDraftListing(null);
       Object.values(pendingMediaFiles).forEach((pending) => {

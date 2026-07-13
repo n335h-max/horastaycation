@@ -344,7 +344,7 @@ export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onSho
                         {(currentUrl || hasPending) && (
                           <div className="mt-2 h-20 overflow-hidden rounded-lg bg-ice-50">
                             {config.accept.startsWith('image') && (currentUrl || hasPending) ? (
-                              <img
+                              <ListingImage
                                 src={hasPending && pendingFile?.objectUrl ? pendingFile.objectUrl : currentUrl}
                                 alt={config.label}
                                 className="h-full w-full object-cover"
