@@ -6,6 +6,8 @@ import {
   upsertRemote,
   fetchRemoteManagementListings,
   fetchRemoteBookingTransactions,
+  fetchRemoteOwnerApplications,
+  fetchRemoteReviewSubmissions,
   uploadListingMediaFile,
 } from './supabaseClient';
 import { MAX_DASHBOARD_PREVIEW_ITEMS } from '../lib/constants';
@@ -36,6 +38,41 @@ function toRemoteManagementListing(listing) {
     updated_by: listing.updatedBy || null,
     updated_at: new Date().toISOString(),
   };
+}
+
+function applicationNaturalKey(item) {
+  return `${String(item?.ownerEmail || item?.evaluatorEmail || '').toLowerCase()}|${String(
+    item?.ownerName || item?.evaluatorName || '',
+  ).toLowerCase()}`;
+}
+
+// Remote is authoritative for contact info; preserve local-only records (e.g.
+// a submit whose insert hasn't synced yet) and any locally-recorded approval
+// state. Legacy rows submitted before client ids were synced have
+// DB-generated ids that differ from the local copy — dedupe by natural key so
+// they don't render twice.
+export function mergeApplications(localItems = [], remoteItems = []) {
+  const remoteIds = new Set(remoteItems.map((item) => item.id));
+  const localApprovedById = new Map(
+    localItems.filter((item) => item.approved).map((item) => [item.id, true]),
+  );
+  // Legacy rows submitted before client ids were synced have DB-generated ids
+  // that differ from the local copy, so also key local approval by natural key.
+  const localApprovedByNaturalKey = new Map(
+    localItems.filter((item) => item.approved).map((item) => [applicationNaturalKey(item), true]),
+  );
+  const mergedRemote = remoteItems.map((item) => ({
+    ...item,
+    approved:
+      Boolean(item.approved) ||
+      localApprovedById.has(item.id) ||
+      localApprovedByNaturalKey.has(applicationNaturalKey(item)),
+  }));
+  const naturalKeys = new Set(mergedRemote.map(applicationNaturalKey));
+  const localOnly = localItems.filter(
+    (item) => !remoteIds.has(item.id) && !naturalKeys.has(applicationNaturalKey(item)),
+  );
+  return [...mergedRemote, ...localOnly];
 }
 
 export async function saveManagementListing(listingInput) {
@@ -104,13 +141,19 @@ export async function deleteManagementListing(listingId) {
 }
 
 export async function syncRemoteData(options = {}) {
-  const { includeBookings = true, includeListings = true } = options;
+  const { includeBookings = true, includeListings = true, includeApplications = true } = options;
   const store = loadStore();
-  const [remoteListings, remoteBookings] = await Promise.all([
+  const [remoteListings, remoteBookings, remoteOwners, remoteReviews] = await Promise.all([
     includeListings ? fetchRemoteManagementListings() : Promise.resolve({ saved: false, error: null, listings: [] }),
     includeBookings
       ? fetchRemoteBookingTransactions()
       : Promise.resolve({ saved: false, error: null, transactions: [] }),
+    includeApplications
+      ? fetchRemoteOwnerApplications()
+      : Promise.resolve({ saved: false, error: null, applications: [] }),
+    includeApplications
+      ? fetchRemoteReviewSubmissions()
+      : Promise.resolve({ saved: false, error: null, submissions: [] }),
   ]);
   if (includeListings && remoteListings.saved && remoteListings.listings.length)
     store.managementListings = remoteListings.listings;
@@ -130,7 +173,21 @@ export async function syncRemoteData(options = {}) {
       0,
     );
   }
+  if (includeApplications && remoteOwners.saved) {
+    store.ownerApplications = mergeApplications(store.ownerApplications, remoteOwners.applications);
+  }
+  if (includeApplications && remoteReviews.saved) {
+    store.reviewSubmissions = mergeApplications(store.reviewSubmissions, remoteReviews.submissions);
+  }
   saveStore(store);
-  return { store, remote: { listings: remoteListings, bookings: remoteBookings } };
+  return {
+    store,
+    remote: {
+      listings: remoteListings,
+      bookings: remoteBookings,
+      ownerApplications: remoteOwners,
+      reviewSubmissions: remoteReviews,
+    },
+  };
 }
 

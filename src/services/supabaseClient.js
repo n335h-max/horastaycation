@@ -2,6 +2,56 @@ import { isSupabaseConfigured, supabase, SUPABASE_BUCKETS } from '../lib/supabas
 import { REMOTE_BOOKING_LIMIT } from '../lib/constants';
 import { fromRemoteManagementListing, mergeManagementListings, normalizeListingPayload } from './listingMapper';
 
+// ── Application mappers (owner leads + evaluation requests) ──
+
+function joinName(first, last, fallback) {
+  const combined = `${String(first || '').trim()} ${String(last || '').trim()}`.trim();
+  return combined || String(fallback || '').trim() || '';
+}
+
+// Legacy evaluation requests stored email/units inside review_text/cleanliness.
+// Prefer the real columns; fall back to parsing the crammed text for rows
+// submitted before the contact_phone/evaluator_email/unit_count columns existed.
+function parseLegacyReviewValue(reviewText, key) {
+  const match = String(reviewText || '').match(new RegExp(`${key}:\\s*(\\S+)`));
+  return match ? match[1].replace(/[.]+$/, '').trim() : '';
+}
+
+export function mapRemoteReviewSubmission(record) {
+  const unitCount =
+    String(record?.unit_count || '').trim() ||
+    String(record?.cleanliness || '').replace(/^units\s*/i, '').trim();
+
+  return {
+    id: record?.id,
+    submittedAt: record?.submitted_at,
+    evaluatorName: String(record?.reviewer_name || '').trim(),
+    evaluatorEmail:
+      String(record?.evaluator_email || '').trim() ||
+      parseLegacyReviewValue(record?.review_text, 'Email'),
+    evaluatorPhone: String(record?.contact_phone || '').trim(),
+    evaluatorAddress:
+      String(record?.evaluator_address || '').trim() ||
+      String(record?.location || '').trim(),
+    unitCount,
+    approved: false,
+  };
+}
+
+export function mapRemoteOwnerApplication(record) {
+  return {
+    id: record?.id,
+    submittedAt: record?.submitted_at,
+    ownerName: joinName(record?.owner_first_name, record?.owner_last_name, record?.owner_first_name),
+    ownerEmail: String(record?.owner_email || '').trim(),
+    ownerPhone: String(record?.owner_phone || '').trim(),
+    ownerAddress: String(record?.property_location || '').trim(),
+    unitCount: String(record?.max_guests ?? '').toString(),
+    budget: String(record?.budget || '').trim(),
+    approved: false,
+  };
+}
+
 // ── Auth ──
 
 export async function getAuthenticatedUser() {
@@ -142,5 +192,39 @@ export async function fetchRemoteBookingTransactions() {
     saved: true,
     error: null,
     transactions: Array.isArray(data) ? data.map(mapRemoteBookingTransaction) : [],
+  };
+}
+
+export async function fetchRemoteOwnerApplications() {
+  if (!isSupabaseConfigured || !supabase) {
+    return { saved: false, error: null, applications: [] };
+  }
+  const { data, error } = await supabase
+    .from('owner_applications')
+    .select('*')
+    .order('submitted_at', { ascending: false })
+    .limit(REMOTE_BOOKING_LIMIT);
+  if (error) return { saved: false, error, applications: [] };
+  return {
+    saved: true,
+    error: null,
+    applications: Array.isArray(data) ? data.map(mapRemoteOwnerApplication) : [],
+  };
+}
+
+export async function fetchRemoteReviewSubmissions() {
+  if (!isSupabaseConfigured || !supabase) {
+    return { saved: false, error: null, submissions: [] };
+  }
+  const { data, error } = await supabase
+    .from('review_submissions')
+    .select('*')
+    .order('submitted_at', { ascending: false })
+    .limit(REMOTE_BOOKING_LIMIT);
+  if (error) return { saved: false, error, submissions: [] };
+  return {
+    saved: true,
+    error: null,
+    submissions: Array.isArray(data) ? data.map(mapRemoteReviewSubmission) : [],
   };
 }

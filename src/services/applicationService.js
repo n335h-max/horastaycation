@@ -20,6 +20,7 @@ export async function submitOwnerApplication(application) {
   // Run DB insert and email alert in parallel — neither blocks the other
   const [remote] = await Promise.all([
     insertRemote('owner_applications', {
+      id: record.id,
       owner_user_id: currentUser?.id || null,
       owner_first_name: nameParts[0] || application.ownerName,
       owner_last_name: nameParts.slice(1).join(' ') || 'Owner',
@@ -32,6 +33,7 @@ export async function submitOwnerApplication(application) {
       price_per_night: Number.isFinite(nightlyBudget) && nightlyBudget > 0 ? nightlyBudget : 1,
       max_guests: application.unitCount,
       amenities: [`Budget ${application.budget}`],
+      budget: application.budget || '',
     }),
     sendOwnerLeadAlert({
       ownerName: application.ownerName || 'Owner',
@@ -59,6 +61,7 @@ export async function submitReview(review) {
   // Run DB insert and email alert in parallel — neither blocks the other
   const [remote] = await Promise.all([
     insertRemote('review_submissions', {
+      id: record.id,
       review_property: 'Evaluation With Us',
       reviewer_name: review.evaluatorName,
       stay_date: new Date().toISOString().slice(0, 7),
@@ -68,6 +71,10 @@ export async function submitReview(review) {
       amenities: 'Exclusive partnership confirmed',
       value: 'Pending review',
       review_text: `Evaluation request from ${review.evaluatorName}. Email: ${review.evaluatorEmail}. Address: ${review.evaluatorAddress}. Units: ${review.unitCount}.`,
+      contact_phone: review.evaluatorPhone || '',
+      evaluator_email: review.evaluatorEmail || '',
+      evaluator_address: review.evaluatorAddress || '',
+      unit_count: String(review.unitCount ?? ''),
     }),
     sendEvaluationRequestAlert({
       evaluatorName: review.evaluatorName || 'Evaluator',

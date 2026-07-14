@@ -11,27 +11,31 @@ const LISTING_SYNC_PATHS = new Set([
   APP_PATHS.managementListings,
 ]);
 const BOOKING_SYNC_PATHS = new Set([APP_PATHS.dashboard]);
+const APPLICATION_SYNC_PATHS = new Set([APP_PATHS.dashboard, APP_PATHS.ownerDashboard]);
 
 export function useAppStore(pathname) {
   const [store, setStore] = useState(() => getSnapshot());
   const hasHydratedListingsRef = useRef(false);
   const hasHydratedBookingsRef = useRef(false);
+  const hasHydratedApplicationsRef = useRef(false);
 
   const shouldSyncListings = LISTING_SYNC_PATHS.has(pathname);
   const shouldSyncBookings = BOOKING_SYNC_PATHS.has(pathname);
+  const shouldSyncApplications = APPLICATION_SYNC_PATHS.has(pathname);
 
   useEffect(() => {
     let isActive = true;
     const includeListings = shouldSyncListings && !hasHydratedListingsRef.current;
     const includeBookings = shouldSyncBookings && !hasHydratedBookingsRef.current;
-    const shouldHydrate = includeListings || includeBookings;
+    const includeApplications = shouldSyncApplications && !hasHydratedApplicationsRef.current;
+    const shouldHydrate = includeListings || includeBookings || includeApplications;
 
     if (!shouldHydrate) {
       return undefined;
     }
 
     async function hydrateRemoteData() {
-      const result = await syncRemoteData({ includeBookings, includeListings });
+      const result = await syncRemoteData({ includeBookings, includeListings, includeApplications });
 
       if (!isActive) {
         return;
@@ -44,6 +48,9 @@ export function useAppStore(pathname) {
       if (includeBookings) {
         hasHydratedBookingsRef.current = true;
       }
+      if (includeApplications) {
+        hasHydratedApplicationsRef.current = true;
+      }
     }
 
     hydrateRemoteData();
@@ -51,7 +58,7 @@ export function useAppStore(pathname) {
     return () => {
       isActive = false;
     };
-  }, [shouldSyncBookings, shouldSyncListings]);
+  }, [shouldSyncBookings, shouldSyncListings, shouldSyncApplications]);
 
   const sourceListings = Array.isArray(store.managementListings) ? store.managementListings : [];
 
