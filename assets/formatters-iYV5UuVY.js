@@ -1,0 +1,1 @@
+import{c as e,s as t}from"./index-Da6bTtac.js";var n=new Intl.NumberFormat(`ms-MY`,t);new Intl.DateTimeFormat(`en-US`,e);function r(e){return n.format(e)}export{r as t};
