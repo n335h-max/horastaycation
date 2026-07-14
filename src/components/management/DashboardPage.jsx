@@ -402,6 +402,7 @@ export function DashboardPage({
                         <p className="mt-1 text-sm text-slate-600">Location: {app.ownerAddress}</p>
                         <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-brand-700 font-medium">
                           <span>📧 {app.ownerEmail}</span>
+                          {app.ownerPhone ? <span>📞 {app.ownerPhone}</span> : null}
                           <span>🏢 {app.unitCount} unit(s)</span>
                           <span>💰 Budget: {app.budget}</span>
                         </div>
@@ -460,6 +461,7 @@ export function DashboardPage({
                         <p className="mt-1 text-sm text-slate-600">Location: {rev.evaluatorAddress}</p>
                         <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-brand-700 font-medium">
                           <span>📧 {rev.evaluatorEmail}</span>
+                          {rev.evaluatorPhone ? <span>📞 {rev.evaluatorPhone}</span> : null}
                           <span>🏢 {rev.unitCount} unit(s)</span>
                         </div>
                         <div className="mt-3 flex items-center gap-2">

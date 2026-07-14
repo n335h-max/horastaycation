@@ -2096,6 +2096,7 @@ export function DashboardPage({
                     <div className="text-sm text-slate-500">{application.ownerAddress}</div>
                     <div className="mt-1 text-xs text-brand-600">
                       Owner lead · {application.unitCount} unit(s) · {application.budget}
+                      {application.ownerPhone ? ` · 📞 ${application.ownerPhone}` : ''}
                     </div>
                   </div>
                 ))}
@@ -2105,6 +2106,7 @@ export function DashboardPage({
                     <div className="text-sm text-slate-500">{submission.evaluatorAddress}</div>
                     <div className="mt-1 text-xs text-brand-600">
                       Evaluate request · {submission.unitCount} unit(s) · {submission.evaluatorEmail}
+                      {submission.evaluatorPhone ? ` · 📞 ${submission.evaluatorPhone}` : ''}
                     </div>
                   </div>
                 ))}
