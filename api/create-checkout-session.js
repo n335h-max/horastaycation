@@ -2,9 +2,8 @@ import { getJsonBody, getStripeClient } from './_lib/stripeServer.js';
 import { resolveAuthenticatedUser } from './_lib/auth.js';
 import { applyRateLimit } from './_lib/rateLimit.js';
 import { handleCors } from './_lib/cors.js';
-import { FEATURED_PROPERTIES } from '../src/data/siteData.js';
-
-const SERVICE_FEE_RATE = 0.12;
+import { fetchPublishedManagementListing } from './_lib/supabaseAdmin.js';
+import { calculateBookingAmounts } from './_lib/pricing.js';
 
 function normalizeOrigin(value) {
   const input = String(value || '').trim();
@@ -28,46 +27,6 @@ function getOrigin(req) {
   const protocol = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim() || 'https';
   const host = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim();
   return host ? normalizeOrigin(`${protocol}://${host}`) : '';
-}
-
-function getPropertyPricing(propertyId) {
-  const property = FEATURED_PROPERTIES.find((item) => item.id === String(propertyId || '').trim());
-  if (!property) {
-    return null;
-  }
-
-  const nightlyRate = Number(property.price);
-  if (!Number.isFinite(nightlyRate) || nightlyRate <= 0) {
-    return null;
-  }
-
-  return property;
-}
-
-function calculateBookingAmounts(bookingForm) {
-  const property = getPropertyPricing(bookingForm?.property);
-  if (!property) {
-    return null;
-  }
-
-  const checkinDate = new Date(bookingForm.checkin);
-  const checkoutDate = new Date(bookingForm.checkout);
-  const nights = Math.ceil((checkoutDate - checkinDate) / (1000 * 60 * 60 * 24));
-
-  if (!Number.isFinite(nights) || nights <= 0) {
-    return null;
-  }
-
-  const subtotal = nights * Number(property.price);
-  const serviceFee = Math.round(subtotal * SERVICE_FEE_RATE);
-
-  return {
-    property,
-    nights,
-    subtotal,
-    serviceFee,
-    total: subtotal + serviceFee,
-  };
 }
 
 function getHeader(req, name) {
@@ -130,10 +89,19 @@ export default async function handler(req, res) {
   const stripe = getStripeClient();
   const { bookingForm, bookingSummary } = getJsonBody(req);
   const requestIdempotencyKey = String(getHeader(req, 'idempotency-key')).trim();
-  const pricing = calculateBookingAmounts(bookingForm);
 
-  if (!bookingForm?.property || !bookingForm?.checkin || !bookingForm?.checkout || !bookingForm?.guestEmail || !pricing) {
+  if (!bookingForm?.property || !bookingForm?.checkin || !bookingForm?.checkout || !bookingForm?.guestEmail) {
     return res.status(400).json({ error: 'Booking details are incomplete.' });
+  }
+
+  // Price against the Supabase management_listings table (the same source the
+  // client uses), not a static array. Previously this looked up an empty
+  // FEATURED_PROPERTIES array, so pricing was always null and every booking
+  // was rejected as "incomplete".
+  const listing = await fetchPublishedManagementListing(bookingForm.property);
+  const pricing = calculateBookingAmounts(listing, bookingForm);
+  if (!pricing) {
+    return res.status(400).json({ error: 'This staycation is no longer available for booking.' });
   }
 
   try {

@@ -32,9 +32,18 @@ const MOCK_PROPERTY = {
   price: 1,
 };
 
-vi.mock('../data/siteData.js', () => ({
-  FEATURED_PROPERTIES: [MOCK_PROPERTY],
-}));
+// Pricing now resolves the listing from the Supabase management_listings table
+// (the same source the client uses) rather than a static array. Mock the admin
+// REST fetch so the server-side price lookup returns the test listing.
+function managementListingsResponse() {
+  return {
+    ok: true,
+    text: async () =>
+      JSON.stringify([
+        { id: MOCK_PROPERTY.id, name: MOCK_PROPERTY.name, location: MOCK_PROPERTY.location, price: MOCK_PROPERTY.price },
+      ]),
+  };
+}
 
 const [createCheckoutSessionModule, sendEmailModule] = await Promise.all([
   import('../../api/create-checkout-session.js'),
@@ -69,6 +78,15 @@ beforeEach(() => {
   process.env.STRIPE_SECRET_KEY = 'sk_test_123';
   process.env.STRIPE_CURRENCY = 'myr';
   process.env.RESEND_API_KEY = 're_test_123';
+  process.env.SUPABASE_URL = 'https://example.supabase.co';
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
+
+  global.fetch = vi.fn((url) => {
+    if (String(url).includes('/rest/v1/management_listings')) {
+      return Promise.resolve(managementListingsResponse());
+    }
+    return Promise.resolve({ ok: true, text: async () => '{}' });
+  });
 
   resolveAuthenticatedUserMock.mockResolvedValue({
     ok: true,

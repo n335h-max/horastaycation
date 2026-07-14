@@ -31,6 +31,35 @@ async function restFetch(path, init = {}) {
   return text ? JSON.parse(text) : null;
 }
 
+export async function fetchPublishedManagementListing(propertyId) {
+  if (!canUseSupabaseAdmin()) {
+    return null;
+  }
+
+  const id = String(propertyId || '').trim();
+  if (!id) {
+    return null;
+  }
+
+  // Price bookings against the same source the client uses
+  // (store.managementListings <- Supabase management_listings), not a static
+  // array. Only published, non-deleted listings are bookable.
+  const query =
+    `/rest/v1/management_listings` +
+    `?id=eq.${encodeURIComponent(id)}` +
+    `&publish_status=eq.published` +
+    `&is_deleted=eq.false` +
+    `&select=id,name,location,price,publish_status,is_deleted`;
+
+  try {
+    const data = await restFetch(query, { method: 'GET' });
+    const row = Array.isArray(data) && data.length > 0 ? data[0] : null;
+    return row || null;
+  } catch {
+    return null;
+  }
+}
+
 export function mapWebhookMetadataToBookingRecord(metadata = {}, defaults = {}) {
   return {
     property_id: metadata.propertyId || defaults.propertyId || '',
