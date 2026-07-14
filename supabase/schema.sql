@@ -85,6 +85,7 @@ create table if not exists public.management_listings (
   summary_image text not null default '',
   thumbnail text not null default '',
   video_url text not null default '',
+  gallery_images jsonb not null default '[]'::jsonb,
   schedule text not null default '',
   publish_status text not null default 'published',
   availability_notes text not null default '',

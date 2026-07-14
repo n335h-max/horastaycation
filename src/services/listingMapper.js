@@ -15,6 +15,7 @@ function buildListingDefaults(listingId = '') {
     summaryImage: '',
     thumbnail: '',
     videoUrl: '',
+    galleryImages: [],
     schedule: '',
     publishStatus: 'draft',
     availabilityNotes: '',
@@ -23,6 +24,10 @@ function buildListingDefaults(listingId = '') {
     amenities: [],
     ownerId: null,
   };
+}
+
+function normalizeGalleryImages(value) {
+  return Array.isArray(value) ? value.filter((url) => typeof url === 'string' && url.trim()) : [];
 }
 
 export function normalizeListingPayload(listing) {
@@ -52,15 +57,18 @@ export function normalizeListingPayload(listing) {
     : Array.isArray(listing.blockedDates)
       ? listing.blockedDates
       : [];
+  const galleryImages = normalizeGalleryImages(listing.galleryImages);
+  const fallbackGalleryImage = galleryImages[0] || '';
 
   return {
     ...listing,
     price: Number(listing.price) || 0,
     amenities,
-    image: listing.image || listing.summaryImage || listing.thumbnail,
-    summaryImage: listing.summaryImage || listing.image || listing.thumbnail,
-    thumbnail: listing.thumbnail || listing.image || listing.summaryImage,
+    image: listing.image || listing.summaryImage || listing.thumbnail || fallbackGalleryImage,
+    summaryImage: listing.summaryImage || listing.image || listing.thumbnail || fallbackGalleryImage,
+    thumbnail: listing.thumbnail || listing.image || listing.summaryImage || fallbackGalleryImage,
     videoUrl: listing.videoUrl || '',
+    galleryImages,
     schedule: listing.schedule || '',
     publishStatus: listing.publishStatus || 'published',
     availabilityNotes: listing.availabilityNotes || '',
@@ -72,6 +80,7 @@ export function normalizeListingPayload(listing) {
     summaryImageAsset: listing.summaryImageAsset || null,
     thumbnailAsset: listing.thumbnailAsset || null,
     videoAsset: listing.videoAsset || null,
+    galleryImages: normalizeGalleryImages(listing.galleryImages),
   };
 }
 
@@ -99,6 +108,7 @@ export function fromRemoteManagementListing(record) {
     summaryImage: record.summary_image ?? defaults.summaryImage,
     thumbnail: record.thumbnail ?? defaults.thumbnail,
     videoUrl: record.video_url ?? '',
+    galleryImages: normalizeGalleryImages(record.gallery_images),
     schedule: record.schedule ?? defaults.schedule,
     publishStatus: record.publish_status ?? 'published',
     availabilityNotes: record.availability_notes ?? '',

@@ -29,6 +29,7 @@ export function toRemoteManagementListing(listing) {
     summary_image: listing.summaryImage || '',
     thumbnail: listing.thumbnail || '',
     video_url: listing.videoUrl || '',
+    gallery_images: Array.isArray(listing.galleryImages) ? listing.galleryImages : [],
     schedule: listing.schedule || '',
     publish_status: listing.publishStatus || 'published',
     availability_notes: listing.availabilityNotes || '',
