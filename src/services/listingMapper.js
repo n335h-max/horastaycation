@@ -21,6 +21,8 @@ function buildListingDefaults(listingId = '') {
     blockedDates: [],
     isDeleted: false,
     amenities: [],
+    ownerId: null,
+    ownerEmail: '',
   };
 }
 
@@ -66,6 +68,8 @@ export function normalizeListingPayload(listing) {
     blockedDates,
     blockedDatesText: blockedDates.join(', '),
     isDeleted: Boolean(listing.isDeleted),
+    ownerId: listing.ownerId ?? null,
+    ownerEmail: listing.ownerEmail || '',
     imageAsset: listing.imageAsset || null,
     summaryImageAsset: listing.summaryImageAsset || null,
     thumbnailAsset: listing.thumbnailAsset || null,
@@ -103,6 +107,8 @@ export function fromRemoteManagementListing(record) {
     blockedDates: Array.isArray(record.blocked_dates) ? record.blocked_dates : [],
     isDeleted: Boolean(record.is_deleted),
     amenities: Array.isArray(record.amenities) ? record.amenities : defaults.amenities,
+    ownerId: record.owner_id || null,
+    ownerEmail: record.owner_email || defaults.ownerEmail,
     imageAsset: null,
     summaryImageAsset: null,
     thumbnailAsset: null,

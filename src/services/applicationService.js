@@ -1,5 +1,5 @@
 import { loadStore, saveStore } from './localStore';
-import { getAuthenticatedUser, insertRemote } from './supabaseClient';
+import { getAuthenticatedUser, insertRemote, updateRemote } from './supabaseClient';
 import { MAX_DASHBOARD_PREVIEW_ITEMS } from '../lib/constants';
 import { logger } from '../lib/logger';
 import { sendOwnerLeadAlert, sendEvaluationRequestAlert, sendApplicationApproval } from './emailService';
@@ -7,7 +7,13 @@ import { sendOwnerLeadAlert, sendEvaluationRequestAlert, sendApplicationApproval
 export async function submitOwnerApplication(application) {
   const store = loadStore();
   const currentUser = await getAuthenticatedUser();
-  const record = { id: crypto.randomUUID(), submittedAt: new Date().toISOString(), ...application };
+  const record = {
+    id: crypto.randomUUID(),
+    submittedAt: new Date().toISOString(),
+    ownerUserId: currentUser?.id || null,
+    approved: false,
+    ...application,
+  };
   store.ownerApplications = [record, ...store.ownerApplications];
   store.dashboardEmails = [
     { title: 'New Owner Lead', detail: `Sent for ${application.ownerEmail}`, tone: 'brand' },
@@ -50,7 +56,14 @@ export async function submitOwnerApplication(application) {
 
 export async function submitReview(review) {
   const store = loadStore();
-  const record = { id: crypto.randomUUID(), submittedAt: new Date().toISOString(), ...review };
+  const currentUser = await getAuthenticatedUser();
+  const record = {
+    id: crypto.randomUUID(),
+    submittedAt: new Date().toISOString(),
+    ownerUserId: currentUser?.id || null,
+    approved: false,
+    ...review,
+  };
   store.reviewSubmissions = [record, ...store.reviewSubmissions];
   store.dashboardEmails = [
     { title: 'New Evaluation Request', detail: `Sent for ${review.evaluatorEmail}`, tone: 'brand' },
@@ -62,6 +75,7 @@ export async function submitReview(review) {
   const [remote] = await Promise.all([
     insertRemote('review_submissions', {
       id: record.id,
+      owner_user_id: currentUser?.id || null,
       review_property: 'Evaluation With Us',
       reviewer_name: review.evaluatorName,
       stay_date: new Date().toISOString().slice(0, 7),
@@ -75,6 +89,7 @@ export async function submitReview(review) {
       evaluator_email: review.evaluatorEmail || '',
       evaluator_address: review.evaluatorAddress || '',
       unit_count: String(review.unitCount ?? ''),
+      approved: false,
     }),
     sendEvaluationRequestAlert({
       evaluatorName: review.evaluatorName || 'Evaluator',
@@ -134,6 +149,14 @@ export async function approveApplication(applicationId, applicationType) {
 
   saveStore(store);
 
+  // Persist approval remotely so it survives browser clears and is visible on
+  // other devices. Update runs in parallel with the approval email; a remote
+  // failure does not block the email or the local state.
+  const approvedAtIso = new Date().toISOString();
+  const remoteTable = applicationType === 'owner' ? 'owner_applications' : 'review_submissions';
+  const remoteUpdate = updateRemote(remoteTable, { approved: true, approved_at: approvedAtIso }, 'id', applicationId)
+    .catch((err) => logger.warn('Failed to persist approval remotely:', err));
+
   let emailSent = false;
   let emailError = null;
   try {
@@ -149,6 +172,8 @@ export async function approveApplication(applicationId, applicationType) {
     emailError = err instanceof Error ? err.message : String(err);
     logger.warn('Failed to send approval email:', emailError);
   }
+
+  await remoteUpdate;
 
   return { store, emailSent, emailError, found: true };
 }

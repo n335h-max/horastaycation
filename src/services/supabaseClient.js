@@ -34,7 +34,9 @@ export function mapRemoteReviewSubmission(record) {
       String(record?.evaluator_address || '').trim() ||
       String(record?.location || '').trim(),
     unitCount,
-    approved: false,
+    ownerUserId: record?.owner_user_id || null,
+    approved: Boolean(record?.approved),
+    approvedAt: record?.approved_at || null,
   };
 }
 
@@ -48,7 +50,9 @@ export function mapRemoteOwnerApplication(record) {
     ownerAddress: String(record?.property_location || '').trim(),
     unitCount: String(record?.max_guests ?? '').toString(),
     budget: String(record?.budget || '').trim(),
-    approved: false,
+    ownerUserId: record?.owner_user_id || null,
+    approved: Boolean(record?.approved),
+    approvedAt: record?.approved_at || null,
   };
 }
 
@@ -141,13 +145,14 @@ export async function fetchRemoteManagementListings() {
   return { saved: true, error: null, listings: mergeManagementListings(listings) };
 }
 
-function mapRemoteBookingTransaction(record) {
+export function mapRemoteBookingTransaction(record) {
   return {
     id: record.id,
     submittedAt: record.submitted_at,
     bookingStatus: record.booking_status || 'confirmed',
     paymentStatus: record.payment_status || 'paid',
     paymentProvider: record.payment_provider || 'manual',
+    ownerId: record.owner_id || null,
     stripeSessionId: record.stripe_session_id || '',
     stripePaymentIntentId: record.stripe_payment_intent_id || '',
     refundId: record.stripe_refund_id || '',

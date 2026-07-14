@@ -28,9 +28,22 @@ function getPublishBadge(publishStatus) {
   return 'bg-emerald-50 text-emerald-700';
 }
 
-export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onShowPage }) {
+export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onShowPage, ownerApplications = [], reviewSubmissions = [] }) {
   const studio = useManagementStudio(listings, onSaveListing, onDeleteListing);
   const [showAdvancedEditor, setShowAdvancedEditor] = useState(true);
+  const [showRequestPicker, setShowRequestPicker] = useState(false);
+
+  // Approved requests management can fulfill by creating a staycation. The
+  // listing inherits owner_id from the chosen request — management does not
+  // manually select an owner.
+  const approvedRequests = useMemo(() => [
+    ...ownerApplications
+      .filter((app) => app.approved)
+      .map((app) => ({ id: app.id, type: 'owner', label: `${app.ownerName} — ${app.ownerAddress || 'No address'}`, request: app })),
+    ...reviewSubmissions
+      .filter((rev) => rev.approved)
+      .map((rev) => ({ id: rev.id, type: 'evaluation', label: `${rev.evaluatorName} — ${rev.evaluatorAddress || 'No address'}`, request: rev })),
+  ], [ownerApplications, reviewSubmissions]);
 
   const selectedBulkCount =
     studio.bulkListingIds instanceof Set ? studio.bulkListingIds.size : studio.bulkListingIds?.length ?? 0;
@@ -109,6 +122,15 @@ export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onSho
                     New listing
                   </span>
                 </button>
+                {approvedRequests.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowRequestPicker((current) => !current)}
+                    className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700"
+                  >
+                    New from request
+                  </button>
+                ) : null}
                 <input
                   type="text"
                   placeholder="Search listings"
@@ -124,6 +146,33 @@ export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onSho
                 </span>
               </div>
             </div>
+
+            {showRequestPicker && approvedRequests.length > 0 ? (
+              <div className="mt-4 rounded-2xl border border-brand-200 bg-brand-50/50 p-4">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">
+                  Create staycation from an approved request
+                </div>
+                <p className="mt-1 text-xs text-slate-500">
+                  The owner is auto-linked from the request — no manual owner selection.
+                </p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {approvedRequests.map((entry) => (
+                    <button
+                      key={`${entry.type}-${entry.id}`}
+                      type="button"
+                      onClick={() => {
+                        studio.handleCreateListing(entry.request);
+                        setShowRequestPicker(false);
+                      }}
+                      className="flex items-center justify-between rounded-xl border border-ice-200 bg-white px-3 py-2 text-left text-sm hover:border-brand-300"
+                    >
+                      <span className="font-medium text-brand-900">{entry.label}</span>
+                      <span className="text-xs font-semibold text-brand-600">{entry.type === 'owner' ? 'Build' : 'Evaluate'}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {filteredLiveListings.map((listing, index) => {
@@ -290,6 +339,14 @@ export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onSho
 
             {showAdvancedEditor ? selectedListing ? (
               <form onSubmit={studio.handleListingSubmit} className="mt-5 space-y-4">
+                {selectedListing.ownerId ? (
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm">
+                    <div className="font-semibold text-emerald-800">Owner auto-linked from request</div>
+                    <div className="mt-0.5 text-emerald-700">
+                      {selectedListing.ownerEmail || 'Owner account'} — inherited automatically, not manually selected.
+                    </div>
+                  </div>
+                ) : null}
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
                     <label className="form-label" htmlFor="name">

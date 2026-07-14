@@ -584,7 +584,19 @@ export function OwnerDashboardPage({
   onSignOut,
   authUser,
 }) {
-  const latestOwner = ownerApplications[0] ?? null;
+  // Owners only see their own requests, bookings and earnings. Filtering uses
+  // owner_id (the authenticated user id), never email or phone.
+  const ownerId = authUser?.id || null;
+  const myOwnerApplications = useMemo(
+    () => (ownerId ? ownerApplications.filter((app) => app.ownerUserId === ownerId) : ownerApplications),
+    [ownerApplications, ownerId],
+  );
+  const myBookingTransactions = useMemo(
+    () => (ownerId ? bookingTransactions.filter((tx) => tx.ownerId === ownerId || tx.bookingForm?.ownerId === ownerId) : bookingTransactions),
+    [bookingTransactions, ownerId],
+  );
+  const myEmails = emails;
+  const latestOwner = myOwnerApplications[0] ?? null;
   const [isNextStepsExpanded, setIsNextStepsExpanded] = useState(true);
   const [isNextStepsDismissed, setIsNextStepsDismissed] = useState(false);
 
@@ -593,7 +605,7 @@ export function OwnerDashboardPage({
       {
         id: 'requests',
         label: 'Owner Requests',
-        value: ownerApplications.length,
+        value: myOwnerApplications.length,
         icon: 'home',
         subLabel: latestOwner ? `Latest request for ${latestOwner.ownerAddress}` : 'No request submitted yet',
         emptyAction: {
@@ -604,9 +616,9 @@ export function OwnerDashboardPage({
       {
         id: 'booking-alerts',
         label: 'Client Bookings',
-        value: bookingTransactions.length,
+        value: myBookingTransactions.length,
         icon: 'calendar',
-        subLabel: bookingTransactions.length
+        subLabel: myBookingTransactions.length
           ? 'Live guest booking alerts are active'
           : 'Bookings appear once guests complete checkout',
         emptyAction: {
@@ -617,9 +629,9 @@ export function OwnerDashboardPage({
       {
         id: 'notifications',
         label: 'Notifications',
-        value: emails.length,
+        value: myEmails.length,
         icon: 'email',
-        subLabel: emails.length ? `${emails.length} unread emails sent` : 'Email alerts appear after activity starts',
+        subLabel: myEmails.length ? `${myEmails.length} unread emails sent` : 'Email alerts appear after activity starts',
         emptyAction: {
           label: 'Start with a request ->',
           onClick: () => onShowPage('owner-signup'),
@@ -628,17 +640,17 @@ export function OwnerDashboardPage({
       {
         id: 'projected-revenue',
         label: 'Projected Revenue',
-        value: bookingTransactions.reduce((sum, booking) => sum + (booking.bookingSummary?.total ?? 0), 0),
+        value: myBookingTransactions.reduce((sum, booking) => sum + (booking.bookingSummary?.total ?? 0), 0),
         icon: 'dollar',
         currency: true,
-        subLabel: bookingTransactions.length ? 'Updated from confirmed bookings' : 'Updates after first booking',
+        subLabel: myBookingTransactions.length ? 'Updated from confirmed bookings' : 'Updates after first booking',
         emptyAction: {
           label: 'See booking journey ->',
           onClick: () => onShowPage('booking'),
         },
       },
     ],
-    [bookingTransactions, emails.length, latestOwner, onShowPage, ownerApplications.length],
+    [myOwnerApplications.length, myBookingTransactions, myEmails.length, latestOwner, onShowPage],
   );
 
   const requestStages = latestOwner
@@ -814,8 +826,8 @@ export function OwnerDashboardPage({
               <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-600">Owner view</span>
             </div>
             <div className="space-y-4">
-              {bookingTransactions.length ? (
-                bookingTransactions.slice(0, 4).map((booking) => (
+              {myBookingTransactions.length ? (
+                myBookingTransactions.slice(0, 4).map((booking) => (
                   <div key={booking.id} className="rounded-2xl border border-ice-200 p-5">
                     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                       <div>

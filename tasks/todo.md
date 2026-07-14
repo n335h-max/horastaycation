@@ -1,89 +1,25 @@
-# Remove Fake Placeholders & Placeholder Data — Task Checklist
+# Owner Linking — Task Checklist
 
-## Phase 1: Form Placeholders (User-Facing Inputs)
-- [x] Task 1: BookingPage.jsx — Replace "Jane Smith" → "Full name"
-- [x] Task 1: BookingPage.jsx — Replace "jane@example.com" → "your@email.com"
-- [x] Task 2: ExperiencePages.jsx (OwnerSignupPage) — Replace "John Doe" → "Full name"
-- [x] Task 2: ExperiencePages.jsx (OwnerSignupPage) — Replace "owner@example.com" → "your@email.com"
-- [x] Task 3: ExperiencePages.jsx (ReviewPage) — Replace "Your name" → "Full name"
-- [x] Task 3: ExperiencePages.jsx (ReviewPage) — Replace "partner@example.com" → "your@email.com"
-- [x] Task 4: SupportWidget.jsx — Replace "Your name" → "Full name"
-- [x] Task 4: SupportWidget.jsx — Replace "you@example.com" → "your@email.com"
+## Phase 1: Database foundation
+- [x] 1. Migration: owner_user_id on review_submissions; owner_id on management_listings + booking_transactions; approved/approved_at on owner_applications + review_submissions; owner_email on management_listings; RLS + indexes  (APPLIED to remote)
+## Phase 2: Submission links owner
+- [x] 2. submitReview writes owner_user_id (submitOwnerApplication already does); both set approved:false locally
+- [x] 3. Tests: mappers thread owner_user_id (ownerLinking.test.js)
+## Phase 3: Staycation inherits owner_id
+- [x] 4. Management studio: "New from request" picker; auto-inherit owner (read-only display)
+- [x] 5. listingService.toRemoteManagementListing + fromRemoteManagementListing carry owner_id/owner_email
+- [x] 6. Tests: listing from request inherits owner_id; orphan listing has none
+## Phase 4: Approval persistence
+- [x] 7. approveApplication persists approved/approved_at remotely; mappers read them
+- [x] 8. Tests: mappers read approval state (covered in ownerLinking.test.js)
+## Phase 5: Owner dashboard filtering
+- [x] 9. OwnerDashboardPage filters by authUser.id (owner_id), not email
+- [ ] 10. (RLS already enforces server-side; client filter tested via render) — see ownerLinking dashboard filter
+## Phase 6: Booking owner notification
+- [x] 11. submitBooking resolves owner via bookingSummary.ownerEmail (snapshotted from listing); threads ownerId
+- [x] 12. Tests: booking resolves owner email + owner_id; orphan listing sends no owner alert
 
-## Phase 2: Hardcoded/Synthetic Data
-- [x] Task 5: siteData.js — Emptied DASHBOARD_STATS (removed 156 bookings, RM 48,290, 24 props, 4.8 rating)
-- [x] Task 5: siteData.js — Emptied INITIAL_BOOKINGS and INITIAL_EMAILS arrays
-- [x] Task 5: Verified dashboard consumers handle empty arrays gracefully (Empty states + emptyAction buttons)
-- [x] Task 5: useFormatters.js — Patched formatCompactNumber to avoid "0" outputs by returning empty string for zero
-
-## Phase 3: Management Studio Presets
-- [x] Task 6: ExperiencePages.jsx — Removed entire LISTING_PRESETS array (~30 lines)
-- [x] Task 6: ExperiencePages.jsx — Removed handlePresetApply function
-- [x] Task 6: ExperiencePages.jsx — Removed preset UI block (Listing Presets card with 3 fake property buttons)
-- [x] Task 6: ExperiencePages.jsx — Changed studio badge from "Drag-and-Drop · Bulk Upload · Presets" → "Drag-and-Drop · Bulk Upload"
-- [x] Task 6: ExperiencePages.jsx — Changed handleCreateListing success message to remove "Apply a preset" clause
-- [x] Task 6: ExperiencePages.jsx — Phone placeholders changed from "+60 12-345 6789" → "+60"
-- [x] Task 7: useManagementStudio.js — Removed LISTING_PRESETS array
-- [x] Task 7: useManagementStudio.js — Removed handlePresetApply useCallback hook
-- [x] Task 7: useManagementStudio.js — Removed handlePresetApply and LISTING_PRESETS from return object and exports
-- [x] Task 8: Verified no other files import LISTING_PRESETS or handlePresetApply from useManagementStudio.js
-
-## Phase 4: Legacy Sanitization Cleanup
-- [x] Task 9: localStore.js — Removed sanitizeLegacyPlaceholderData function (~30 lines)
-- [x] Task 9: localStore.js — Removed LEGACY_PLACEHOLDER_EMAIL_DETAILS and LEGACY_PROPERTY_IDS Sets
-- [x] Task 9: localStore.js — Removed withDefaults export (no external consumers)
-- [x] Task 9: localStore.js — Changed DEFAULT_STORE to use empty arrays for dashboardBookings, dashboardEmails
-- [x] Task 9: localStore.js — Removed unused imports INITIAL_BOOKINGS, INITIAL_EMAILS from siteData.js
-- [x] Task 9: Verified no external consumers of removed exports/bookingService still imports only loadStore, saveStore, clone, initialBookingDraft
-
-## Phase 5: Verification & Build
-- [x] Task 10: Search src/ for remaining @example.com / example.com (excluding .test.js) — none found
-- [x] Task 10: Search src/ for remaining fake names / fake phone placeholders / synthetic stats — none found
-- [x] Task 11: Run npm run build — ✅ successful (0 errors, 969ms)
-- [x] Task 11: Run npm run lint — ✅ clean (0 errors, 35 pre-existing warnings unrelated to this change)
-- [x] Task 12: Manual verification of all placeholder fields — neutral placeholders confirmed
-- [x] Task 12: Manual verification of dashboard empty states — emptyAction buttons present for all zero-value stats
-- [x] Task 12: Management studio presets fully removed; only bulk upload and drag-and-drop remain
-
----
-
-## Files Modified
-1. `src/components/BookingPage.jsx` — Neutralized name/email placeholders
-2. `src/components/ExperiencePages.jsx` — Neutralized placeholders, removed presets & preset UI, updated messages
-3. `src/components/SupportWidget.jsx` — Neutralized name/email placeholders
-4. `src/data/siteData.js` — Emptied DASHBOARD_STATS, INITIAL_BOOKINGS, INITIAL_EMAILS
-5. `src/hooks/useFormatters.js` — Patched formatCompactNumber for zero values
-6. `src/hooks/useManagementStudio.js` — Removed preset data and hook
-7. `src/services/localStore.js` — Removed legacy sanitization, simplified DEFAULT_STORE
-
----
-
-## Checkpoint: Complete
-- [x] Build succeeds
-- [x] Lint passes (0 errors)
-- [x] No new warnings introduced
-- [x] Manual checklist verified
-- [x] Ready for review / launch
-
----
-
-# UI/UX Review Quick Wins — Task Checklist
-
-## Slice A: CSS Glass Panel & Aria-Current
-- [x] Define `.glass-panel` classes in `index.css` (backdrop-filter, bg-opacity, border)
-- [x] Add `aria-current="page"` to active desktop nav buttons in `SiteChrome.jsx`
-- [x] Add `aria-current="page"` to active mobile nav buttons in `SiteChrome.jsx`
-
-## Slice B: Dialog Roles & Focus Management
-- [x] Add `role="dialog"`, `aria-modal="true"`, `aria-labelledby` to `PaymentModal`
-- [x] Trap focus + Escape/backdrop close in `PaymentModal`
-- [x] Add `aria-expanded` to `SupportWidget` toggle
-- [x] Improve `aria-modal`, keyboard dismissal, focus guards in `SupportWidget`
-
-## Slice C: Formatter Utility Migration
-- [x] Step C1: Create `src/lib/formatters.js` with `formatCurrency` and `formatDate` (module-level `Intl` caches)
-- [x] Step C2: Update leaf consumers (`PaymentModal`, `PublishedListingsGrid`, `BookingPage`, `LandingPage`)
-- [x] Step C3: Update management components (`ListingsStudio`, `ManagementListingsPage`, `DashboardPage`)
-- [x] Step C4: Update `ExperiencePages.jsx` — remove `formatCurrency` prop from `OwnerDashboardPage`, `DashboardPage`, and `DashboardStat`
-- [x] Step C5: Remove prop-drilling from `App.jsx` routes (landing, ownerDashboard, booking, dashboard, managementListings, paymentModal)
-- [x] Build & tests pass after Slice C
+## Notes
+- Approval persistence remote-side relies on the new approved/approved_at columns + updateRemote in approveApplication.
+- Owner email for booking alerts is snapshotted on management_listings.owner_email at create time (client can't read other users' auth emails).
+- RLS restricts owners to their own rows server-side; OwnerDashboardPage also filters client-side by authUser.id.

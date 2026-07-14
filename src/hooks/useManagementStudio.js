@@ -90,6 +90,10 @@ function buildDefaultListing() {
     reviewCount: 0,
     reviewSnippet: '',
     guestCapacity: 2,
+    ownerId: null,
+    ownerEmail: '',
+    sourceRequestId: null,
+    sourceRequestType: null,
   };
 }
 
@@ -196,8 +200,18 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
     }));
   }, []);
 
-  const handleCreateListing = useCallback(() => {
+  const handleCreateListing = useCallback((sourceRequest = null) => {
     const newListing = buildDefaultListing();
+    if (sourceRequest) {
+      // Inherit the authenticated owner from the source request. Management
+      // does NOT manually select an owner — it is auto-linked from the request.
+      newListing.ownerId = sourceRequest.ownerUserId || null;
+      newListing.ownerEmail = sourceRequest.ownerEmail || sourceRequest.evaluatorEmail || '';
+      newListing.sourceRequestId = sourceRequest.id || null;
+      newListing.sourceRequestType = sourceRequest.evaluatorName ? 'evaluation' : 'owner';
+      // Pre-fill address from the request for convenience.
+      newListing.location = sourceRequest.ownerAddress || sourceRequest.evaluatorAddress || '';
+    }
     setDraftListing(newListing);
     setSelectedListingId(newListing.id);
     setStudioMessage('New draft listing created. Fill in the fields and save to publish.');

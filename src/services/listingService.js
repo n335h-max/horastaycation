@@ -12,7 +12,7 @@ import {
 } from './supabaseClient';
 import { MAX_DASHBOARD_PREVIEW_ITEMS } from '../lib/constants';
 
-function toRemoteManagementListing(listing) {
+export function toRemoteManagementListing(listing) {
   return {
     id: listing.id,
     name: listing.name,
@@ -35,6 +35,8 @@ function toRemoteManagementListing(listing) {
     blocked_dates: Array.isArray(listing.blockedDates) ? listing.blockedDates : [],
     is_deleted: Boolean(listing.isDeleted),
     amenities: Array.isArray(listing.amenities) ? listing.amenities : [],
+    owner_id: listing.ownerId || null,
+    owner_email: listing.ownerEmail || '',
     updated_by: listing.updatedBy || null,
     updated_at: new Date().toISOString(),
   };

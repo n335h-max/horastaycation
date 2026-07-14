@@ -28,6 +28,7 @@ function refreshBookingDashboard(store) {
 function buildLegacyRemoteBookingPayload({ currentUser, bookingForm, bookingSummary, paymentForm }) {
   return {
     client_user_id: currentUser?.id || null,
+    owner_id: bookingSummary.ownerId || null,
     property_id: bookingForm.property,
     property_name: bookingSummary.name,
     property_location: bookingSummary.location,
@@ -84,6 +85,7 @@ export async function submitBooking({ bookingForm, bookingSummary, paymentForm =
       submittedAt: new Date().toISOString(),
       bookingStatus,
       paymentStatus,
+      ownerId: bookingSummary.ownerId || null,
       bookingForm,
       bookingSummary,
       paymentProvider: paymentMeta.provider || 'manual',

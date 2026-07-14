@@ -5,6 +5,8 @@ export function ManagementListingsPage({
   onSaveListing,
   onDeleteListing,
   onShowPage = () => {},
+  ownerApplications = [],
+  reviewSubmissions = [],
 }) {
   return (
     <section className="min-h-screen bg-ice-50 px-4 pb-14 pt-26 md:px-8">
@@ -43,6 +45,8 @@ export function ManagementListingsPage({
             onSaveListing={onSaveListing}
             onDeleteListing={onDeleteListing}
             onShowPage={onShowPage}
+            ownerApplications={ownerApplications}
+            reviewSubmissions={reviewSubmissions}
           />
         </div>
       </div>

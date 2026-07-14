@@ -43,6 +43,8 @@ export function useBooking({ featuredListings, store, setStore, pushToast, recor
       location: property.location,
       price: property.price,
       image: property.summaryImage,
+      ownerId: property.ownerId || null,
+      ownerEmail: property.ownerEmail || '',
       checkin: store.bookingDraft.checkin,
       checkout: store.bookingDraft.checkout,
       nights: diffInDays,
