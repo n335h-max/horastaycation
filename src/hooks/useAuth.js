@@ -4,6 +4,7 @@ import {
   getCurrentSession,
   getResolvedAuthState,
   getUserProfile,
+  persistRoleState,
   signInWithGoogle,
   signOutCurrentUser,
   switchUserRole,
@@ -11,6 +12,7 @@ import {
 } from '../services/authApi';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import { APP_PATHS } from '../lib/routes';
+import { SUPPORTED_ROLES_SET } from '../lib/constants';
 
 const ROLE_DEFAULT_PATHS = {
   owner: APP_PATHS.ownerSignup,
@@ -47,6 +49,17 @@ function getRouteRole(pathname) {
     return 'management';
   }
   return null;
+}
+
+// The OAuth redirect lands with ?auth_role=<role>. The hydrate/onAuthStateChange
+// handlers must honor it so a brand-new user (no profile row, empty storage) is
+// not temporarily resolved as 'client' and then clobbers applyRequestedRole's
+// correct resolution. Reading window.location fresh keeps it accurate before
+// applyRequestedRole navigates and clears the param.
+function getRequestedRoleFromUrl() {
+  if (typeof window === 'undefined') return null;
+  const role = new URLSearchParams(window.location.search).get('auth_role');
+  return role && SUPPORTED_ROLES_SET.has(role) ? role : null;
 }
 
 export function normalizeAvailableRoles(roles) {
@@ -100,7 +113,7 @@ export function useAuth(pushToast) {
       if (!isActive) return;
 
       setAuthProfile(profile);
-      const authState = getResolvedAuthState(session, profile);
+      const authState = getResolvedAuthState(session, profile, getRequestedRoleFromUrl());
       setAuthRole(authState.activeRole);
       setAvailableRoles(normalizeAvailableRoles(authState.availableRoles));
       setIsAuthLoading(false);
@@ -125,7 +138,7 @@ export function useAuth(pushToast) {
       if (!isActive) return;
 
       setAuthProfile(profile);
-      const authState = getResolvedAuthState(session, profile);
+      const authState = getResolvedAuthState(session, profile, getRequestedRoleFromUrl());
       setAuthRole(authState.activeRole);
       setAvailableRoles(normalizeAvailableRoles(authState.availableRoles));
     });
@@ -170,6 +183,13 @@ export function useAuth(pushToast) {
 
       setAuthRole(authState.activeRole);
       setAvailableRoles(normalizeAvailableRoles(authState.availableRoles));
+
+      // Persist synchronously BEFORE navigating. applyRequestedRole navigates
+      // (clearing the auth_role param) and syncUserProfile is fire-and-forget;
+      // without eager persistence a late auth handler reading localStorage sees
+      // empty storage and clobbers the role back to 'client'.
+      persistRoleState(authState.activeRole, authState.availableRoles);
+
       navigate(getSafeNextPath(nextPath, authState.activeRole), { replace: true });
 
       pushToast?.(

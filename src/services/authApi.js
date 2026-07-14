@@ -234,7 +234,7 @@ function getAvailableRoles(session, profile, requestedRole) {
   return normalizeRoles(normalizedRoles);
 }
 
-function persistRoleState(activeRole, availableRoles) {
+export function persistRoleState(activeRole, availableRoles) {
   writeStorage(ACTIVE_ROLE_STORAGE_KEY, activeRole);
   writeStorage(AVAILABLE_ROLES_STORAGE_KEY, availableRoles.join(','));
 }
