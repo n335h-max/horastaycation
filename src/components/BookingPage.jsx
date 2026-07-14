@@ -516,6 +516,24 @@ export function BookingPage({
                   ) : null}
                 </div>
                 <div>
+                  <label className="form-label" htmlFor="guestPhone">
+                    Phone
+                  </label>
+                  <input
+                    id="guestPhone"
+                    name="guestPhone"
+                    type="tel"
+                    value={bookingForm.guestPhone}
+                    onChange={onBookingChange}
+                    autoComplete="tel"
+                    className={`form-input ${bookingErrors?.guestPhone ? 'border-rose-400 ring-rose-100' : ''}`}
+                    placeholder="+60 12-345 6789"
+                  />
+                  {bookingErrors?.guestPhone ? (
+                    <p className="mt-1 text-sm text-rose-600">{bookingErrors.guestPhone[0]}</p>
+                  ) : null}
+                </div>
+                <div>
                   <label className="form-label" htmlFor="specialRequests">
                     Special Requests
                   </label>
