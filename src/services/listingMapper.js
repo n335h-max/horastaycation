@@ -80,7 +80,6 @@ export function normalizeListingPayload(listing) {
     summaryImageAsset: listing.summaryImageAsset || null,
     thumbnailAsset: listing.thumbnailAsset || null,
     videoAsset: listing.videoAsset || null,
-    galleryImages: normalizeGalleryImages(listing.galleryImages),
   };
 }
 

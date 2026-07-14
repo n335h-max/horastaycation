@@ -371,26 +371,11 @@ export const SEARCH_LOCATIONS = [
   'Melaka',
 ];
 
-export const GUEST_OPTIONS = [
-  { value: '1', label: '1 Guest' },
-  { value: '2', label: '2 Guests' },
-  { value: '3', label: '3 Guests' },
-  { value: '4', label: '4 Guests' },
-];
-
 export const BUDGET_OPTIONS = [
   { value: 'RM 50,000 - RM 80,000', label: 'RM 50,000 - RM 80,000' },
   { value: 'RM 80,000 - RM 120,000', label: 'RM 80,000 - RM 120,000' },
   { value: 'RM 120,000 - RM 180,000', label: 'RM 120,000 - RM 180,000' },
   { value: 'RM 180,000+', label: 'RM 180,000+' },
-];
-
-export const SPECIAL_REQUEST_OPTIONS = [
-  { value: '', label: 'No special request' },
-  { value: 'Early check-in request', label: 'Early check-in' },
-  { value: 'Late check-out request', label: 'Late check-out' },
-  { value: 'Romantic setup request', label: 'Romantic setup' },
-  { value: 'Family-ready setup request', label: 'Family-ready setup' },
 ];
 
 export const RATING_OPTIONS = ['5 - Excellent', '4 - Good', '3 - Average', '2 - Below Average', '1 - Poor'];
