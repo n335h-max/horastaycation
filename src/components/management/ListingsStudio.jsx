@@ -15,6 +15,13 @@ const MEDIA_FIELD_CONFIG = {
 const MEDIA_FIELD_ORDER = ['image', 'summaryImage', 'thumbnail', 'videoUrl'];
 const LISTING_CARD_TINTS = ['bg-brand-100/70', 'bg-emerald-100/70', 'bg-amber-100/70', 'bg-teal-100/70', 'bg-violet-100/70'];
 
+function getPublishBadge(publishStatus) {
+  if (publishStatus === 'draft') {
+    return 'bg-slate-100 text-slate-600';
+  }
+  return 'bg-emerald-50 text-emerald-700';
+}
+
 function GalleryUploader({ items, onAddFiles, onRemove, onReorder, disabled }) {
   const inputRef = useRef(null);
   const dragIndexRef = useRef(null);
@@ -111,19 +118,6 @@ function GalleryUploader({ items, onAddFiles, onRemove, onReorder, disabled }) {
       ) : null}
     </div>
   );
-}
-const STUDIO_SETTINGS = [
-  'Core listing settings',
-  'Photos, thumbnails and video',
-  'Guest windows and blocked dates',
-  'Guest-facing story and amenities',
-];
-
-function getPublishBadge(publishStatus) {
-  if (publishStatus === 'draft') {
-    return 'bg-slate-100 text-slate-600';
-  }
-  return 'bg-emerald-50 text-emerald-700';
 }
 
 export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onShowPage, ownerApplications = [], reviewSubmissions = [] }) {
@@ -483,6 +477,58 @@ export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onSho
                 </div>
 
                 <div className="rounded-2xl border border-ice-200 bg-ice-50 p-4">
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Guest windows & blocked dates</div>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="form-label" htmlFor="schedule">
+                        Schedule
+                      </label>
+                      <input
+                        id="schedule"
+                        name="schedule"
+                        value={studio.listingForm.schedule || ''}
+                        onChange={studio.handleListingFieldChange}
+                        className="form-input"
+                        placeholder="Daily check-in from 3:00 PM"
+                      />
+                      <p className="mt-2 text-xs text-slate-400">
+                        Check-in/check-out times, weekday availability, or blackout notes.
+                      </p>
+                    </div>
+                    <div>
+                      <label className="form-label" htmlFor="availabilityNotes">
+                        Availability notes
+                      </label>
+                      <input
+                        id="availabilityNotes"
+                        name="availabilityNotes"
+                        value={studio.listingForm.availabilityNotes || ''}
+                        onChange={studio.handleListingFieldChange}
+                        className="form-input"
+                        placeholder="Closed on public holidays"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="form-label" htmlFor="blockedDatesText">
+                        Blocked dates
+                      </label>
+                      <textarea
+                        id="blockedDatesText"
+                        name="blockedDatesText"
+                        rows="3"
+                        value={studio.listingForm.blockedDatesText || ''}
+                        onChange={studio.handleListingFieldChange}
+                        className="form-input"
+                        placeholder="2026-06-20, 2026-06-21, 2026-06-22"
+                      />
+                      <p className="mt-2 text-xs text-slate-400">
+                        Comma-separated dates (YYYY-MM-DD). Guests cannot book stays covering these days.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-ice-200 bg-ice-50 p-4">
                   <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Media uploads</div>
                   <p className="mt-1 text-sm text-slate-500">Upload photos and video for this listing.</p>
                   <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -626,23 +672,6 @@ export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onSho
                 <dd className="font-semibold text-brand-900">{selectedListing?.amenities?.length || 0}</dd>
               </div>
             </dl>
-          </section>
-
-          <section className="rounded-3xl border border-ice-200 bg-white p-5 shadow-sm">
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Settings</div>
-            <div className="mt-3 space-y-2">
-              {STUDIO_SETTINGS.map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => setShowAdvancedEditor(true)}
-                  className="flex w-full items-center justify-between rounded-xl border border-ice-200 bg-ice-50 px-3 py-2 text-left text-sm font-medium text-slate-700"
-                >
-                  <span>{item}</span>
-                  <Icon name="arrow-right" className="text-xs text-slate-400" />
-                </button>
-              ))}
-            </div>
           </section>
 
           <section className="rounded-3xl border border-ice-200 bg-white p-5 shadow-sm">

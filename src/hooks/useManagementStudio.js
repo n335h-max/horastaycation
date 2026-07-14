@@ -39,13 +39,6 @@ const MEDIA_FIELD_ORDER = ['image', 'summaryImage', 'thumbnail', 'videoUrl'];
 
 /** Maximum number of gallery photos per listing (spec: 1..10). */
 export const MAX_GALLERY_IMAGES = 10;
-const STUDIO_SECTIONS = [
-  { id: 'basic', eyebrow: 'Basic Info', title: 'Core listing settings' },
-  { id: 'media', eyebrow: 'Media', title: 'Photos, thumbnails, and video' },
-  { id: 'schedule', eyebrow: 'Schedule & Availability', title: 'Guest windows and blocked dates' },
-  { id: 'copy', eyebrow: 'Copy & Description', title: 'Guest-facing story and amenities' },
-];
-
 function getTimestamp(value) {
   if (!value) return null;
   const parsed = new Date(value).getTime();
@@ -153,6 +146,8 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
     statusNote: selectedListing?.statusNote || '',
     publishStatus: selectedListing?.publishStatus || 'published',
     schedule: selectedListing?.schedule || '',
+    availabilityNotes: selectedListing?.availabilityNotes || '',
+    blockedDatesText: (selectedListing?.blockedDates || []).join(', '),
     mood: selectedListing?.mood || '',
     bestFor: selectedListing?.bestFor || '',
     facilitiesText: selectedListing?.facilities?.join(', ') || '',
@@ -168,6 +163,8 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
         statusNote: selectedListing.statusNote || '',
         publishStatus: selectedListing.publishStatus || 'published',
         schedule: selectedListing.schedule || '',
+        availabilityNotes: selectedListing.availabilityNotes || '',
+        blockedDatesText: (selectedListing.blockedDates || []).join(', '),
         mood: selectedListing.mood || '',
         bestFor: selectedListing.bestFor || '',
         facilitiesText: (selectedListing.facilities || []).join(', '),
@@ -179,6 +176,8 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
         statusNote: selectedListing.statusNote || '',
         publishStatus: selectedListing.publishStatus || 'published',
         schedule: selectedListing.schedule || '',
+        availabilityNotes: selectedListing.availabilityNotes || '',
+        blockedDatesText: (selectedListing.blockedDates || []).join(', '),
         mood: selectedListing.mood || '',
         bestFor: selectedListing.bestFor || '',
         facilitiesText: (selectedListing.facilities || []).join(', '),
@@ -493,6 +492,8 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
       current.statusNote !== originalFormSnapshot.statusNote ||
       current.publishStatus !== originalFormSnapshot.publishStatus ||
       current.schedule !== originalFormSnapshot.schedule ||
+      current.availabilityNotes !== originalFormSnapshot.availabilityNotes ||
+      current.blockedDatesText !== originalFormSnapshot.blockedDatesText ||
       current.mood !== originalFormSnapshot.mood ||
       current.bestFor !== originalFormSnapshot.bestFor ||
       current.facilitiesText !== originalFormSnapshot.facilitiesText
@@ -561,6 +562,5 @@ export {
   isInWindow,
   MEDIA_FIELD_CONFIG,
   MEDIA_FIELD_ORDER,
-  STUDIO_SECTIONS,
   WINDOW_OPTIONS,
 };
