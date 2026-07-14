@@ -1,1 +1,0 @@
-import{t as e}from"./react-vendor-COv8wcnU.js";import{n as t}from"./ExperiencePages-DxYymgND.js";var n=e();function r(e){return(0,n.jsx)(t,{...e})}export{r as OwnerSignupPageRoute};
