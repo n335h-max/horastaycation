@@ -594,6 +594,9 @@ export function SiteFooter({ onShowPage, onManageCookies }) {
                <a href="mailto:n33sh07@gmail.com" className="block transition-colors hover:text-accent-400">
                 n33sh07@gmail.com
               </a>
+               <a href="mailto:hijaugrouplandscape@gmail.com" className="block transition-colors hover:text-accent-400">
+                hijaugrouplandscape@gmail.com
+              </a>
             </div>
           </div>
           <div>
