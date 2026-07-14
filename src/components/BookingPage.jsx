@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { formatCurrency } from '../lib/formatters';
-import { SEARCH_LOCATIONS, SPECIAL_REQUEST_OPTIONS } from '../data/siteData';
+import { SEARCH_LOCATIONS } from '../data/siteData';
 import { isRangeBlocked } from '../lib/guestFeatures';
 import { WHATSAPP_SUPPORT_NUMBER } from '../lib/constants';
 import { Icon } from './Icon';
@@ -429,29 +429,6 @@ export function BookingPage({
                 </div>
               </div>
 
-              <div>
-                <label className="form-label" htmlFor="guests">
-                  Guests
-                </label>
-                <input
-                  id="guests"
-                  name="guests"
-                  type="number"
-                  min="1"
-                  max={selectedProperty?.guestCapacity || undefined}
-                  inputMode="numeric"
-                  value={bookingForm.guests}
-                  onChange={onBookingChange}
-                  className={`form-input ${bookingErrors?.guests ? 'border-rose-400 ring-rose-100' : ''}`}
-                  placeholder="1"
-                  required
-                />
-                {selectedProperty?.guestCapacity ? (
-                  <p className="mt-1 text-xs text-slate-400">Max {selectedProperty.guestCapacity} guests for this stay.</p>
-                ) : null}
-                {bookingErrors?.guests ? <p className="mt-1 text-sm text-rose-600">{bookingErrors.guests[0]}</p> : null}
-              </div>
-
               <div className="rounded-2xl border border-ice-200 bg-ice-50 p-4">
                 {bookingSummary ? (
                   <div className="space-y-2 text-sm">
@@ -498,6 +475,28 @@ export function BookingPage({
                   {bookingErrors?.guestName ? <p className="mt-1 text-sm text-rose-600">{bookingErrors.guestName[0]}</p> : null}
                 </div>
                 <div>
+                  <label className="form-label" htmlFor="guests">
+                    Number of Guests
+                  </label>
+                  <input
+                    id="guests"
+                    name="guests"
+                    type="number"
+                    min="1"
+                    max={selectedProperty?.guestCapacity || undefined}
+                    inputMode="numeric"
+                    value={bookingForm.guests}
+                    onChange={onBookingChange}
+                    className={`form-input ${bookingErrors?.guests ? 'border-rose-400 ring-rose-100' : ''}`}
+                    placeholder="1"
+                    required
+                  />
+                  {selectedProperty?.guestCapacity ? (
+                    <p className="mt-1 text-xs text-slate-400">Max {selectedProperty.guestCapacity} guests for this stay.</p>
+                  ) : null}
+                  {bookingErrors?.guests ? <p className="mt-1 text-sm text-rose-600">{bookingErrors.guests[0]}</p> : null}
+                </div>
+                <div>
                   <label className="form-label" htmlFor="guestEmail">
                     Email
                   </label>
@@ -520,19 +519,16 @@ export function BookingPage({
                   <label className="form-label" htmlFor="specialRequests">
                     Special Requests
                   </label>
-                  <select
+                  <textarea
                     id="specialRequests"
                     name="specialRequests"
+                    rows="3"
                     value={bookingForm.specialRequests}
                     onChange={onBookingChange}
                     className="form-input"
-                  >
-                    {SPECIAL_REQUEST_OPTIONS.map((option) => (
-                      <option key={option.label} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="e.g. early check-in, late check-out, romantic setup, accessibility needs..."
+                  />
+                  <p className="mt-1 text-xs text-slate-400">Optional — up to 500 characters.</p>
                 </div>
               </div>
 
