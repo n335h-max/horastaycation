@@ -17,7 +17,12 @@ export const bookingSchema = z
     property: z.string().trim().min(1, 'Select a property.'),
     checkin: z.string().min(1, 'Select a check-in date.'),
     checkout: z.string().min(1, 'Select a check-out date.'),
-    guests: z.string().min(1, 'Select guest count.'),
+    guests: z
+      .string()
+      .min(1, 'Enter guest count.')
+      .refine((value) => Number.isInteger(Number(value)) && Number(value) >= 1, {
+        message: 'Enter at least 1 guest.',
+      }),
     guestName: z.string().trim().min(2, 'Enter the guest name.'),
     guestEmail: z.string().trim().email('Enter a valid email address.'),
     guestPhone: optionalPhoneSchema,

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { formatCurrency } from '../lib/formatters';
-import { GUEST_OPTIONS, SEARCH_LOCATIONS, SPECIAL_REQUEST_OPTIONS } from '../data/siteData';
+import { SEARCH_LOCATIONS, SPECIAL_REQUEST_OPTIONS } from '../data/siteData';
 import { isRangeBlocked } from '../lib/guestFeatures';
 import { WHATSAPP_SUPPORT_NUMBER } from '../lib/constants';
 import { Icon } from './Icon';
@@ -236,19 +236,17 @@ export function BookingPage({
                   <label className="form-label" htmlFor="guests-search">
                     Guests
                   </label>
-                  <select
+                  <input
                     id="guests-search"
                     name="guests"
+                    type="number"
+                    min="1"
+                    inputMode="numeric"
                     value={bookingForm.guests}
                     onChange={onBookingChange}
                     className="form-input"
-                  >
-                    {GUEST_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="1"
+                  />
                 </div>
                 <button type="submit" className="btn-outline px-4 py-2.5 text-sm">
                   Apply
@@ -435,20 +433,22 @@ export function BookingPage({
                 <label className="form-label" htmlFor="guests">
                   Guests
                 </label>
-                <select
+                <input
                   id="guests"
                   name="guests"
+                  type="number"
+                  min="1"
+                  max={selectedProperty?.guestCapacity || undefined}
+                  inputMode="numeric"
                   value={bookingForm.guests}
                   onChange={onBookingChange}
                   className={`form-input ${bookingErrors?.guests ? 'border-rose-400 ring-rose-100' : ''}`}
+                  placeholder="1"
                   required
-                >
-                  {GUEST_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                />
+                {selectedProperty?.guestCapacity ? (
+                  <p className="mt-1 text-xs text-slate-400">Max {selectedProperty.guestCapacity} guests for this stay.</p>
+                ) : null}
                 {bookingErrors?.guests ? <p className="mt-1 text-sm text-rose-600">{bookingErrors.guests[0]}</p> : null}
               </div>
 
