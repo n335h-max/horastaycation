@@ -5,6 +5,7 @@ import { isRangeBlocked } from '../lib/guestFeatures';
 import { WHATSAPP_SUPPORT_NUMBER } from '../lib/constants';
 import { Icon } from './Icon';
 import { ListingImage } from './ListingImage';
+import { ListingGallery } from './ListingGallery';
 
 export function BookingPage({
   properties = [],
@@ -163,6 +164,9 @@ export function BookingPage({
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1.18fr_0.82fr]">
           <div className="space-y-5">
+            {selectedProperty ? (
+              <ListingGallery property={selectedProperty} />
+            ) : null}
             <div className="rounded-[1.2rem] border border-brand-100 bg-white p-4 shadow-sm md:p-5">
               <div className="flex flex-wrap items-center justify-between gap-2.5">
                 <div>
