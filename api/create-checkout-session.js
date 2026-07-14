@@ -135,6 +135,7 @@ export default async function handler(req, res) {
       metadata: {
         clientUserId: sanitizeMetadataValue(auth.user.id, 255),
         clientUserEmail: sanitizeMetadataValue(auth.user.email, 255),
+        ownerId: sanitizeMetadataValue(pricing.property.owner_id, 255),
         propertyId: sanitizeMetadataValue(bookingForm.property, 100),
         propertyName: sanitizeMetadataValue(pricing.property.name, 255),
         propertyLocation: sanitizeMetadataValue(pricing.property.location, 255),

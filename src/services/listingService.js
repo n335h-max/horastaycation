@@ -36,7 +36,6 @@ export function toRemoteManagementListing(listing) {
     is_deleted: Boolean(listing.isDeleted),
     amenities: Array.isArray(listing.amenities) ? listing.amenities : [],
     owner_id: listing.ownerId || null,
-    owner_email: listing.ownerEmail || '',
     updated_by: listing.updatedBy || null,
     updated_at: new Date().toISOString(),
   };

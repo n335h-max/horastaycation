@@ -73,36 +73,32 @@ describe('mapRemoteOwnerApplication — owner linking + approval', () => {
 });
 
 describe('management_listings (staycations) — owner_id threading', () => {
-  it('fromRemoteManagementListing reads owner_id + owner_email', () => {
+  it('fromRemoteManagementListing reads owner_id', () => {
     const row = {
       id: 'l1',
       name: 'Villa',
       location: 'PD',
       price: 200,
       owner_id: 'owner-uuid-3',
-      owner_email: 'owner@example.com',
       amenities: [],
     };
 
     const listing = fromRemoteManagementListing(row);
 
     expect(listing.ownerId).toBe('owner-uuid-3');
-    expect(listing.ownerEmail).toBe('owner@example.com');
   });
 
-  it('normalizeListingPayload preserves ownerId/ownerEmail', () => {
+  it('normalizeListingPayload preserves ownerId', () => {
     const listing = normalizeListingPayload({
       id: 'l1',
       name: 'Villa',
       price: 100,
       ownerId: 'owner-uuid-4',
-      ownerEmail: 'owner4@example.com',
     });
     expect(listing.ownerId).toBe('owner-uuid-4');
-    expect(listing.ownerEmail).toBe('owner4@example.com');
   });
 
-  it('toRemoteManagementListing writes owner_id + owner_email', () => {
+  it('toRemoteManagementListing writes owner_id', () => {
     const remote = toRemoteManagementListing({
       id: 'l1',
       name: 'Villa',
@@ -112,11 +108,10 @@ describe('management_listings (staycations) — owner_id threading', () => {
       blockedDates: [],
       isDeleted: false,
       ownerId: 'owner-uuid-5',
-      ownerEmail: 'owner5@example.com',
     });
 
     expect(remote.owner_id).toBe('owner-uuid-5');
-    expect(remote.owner_email).toBe('owner5@example.com');
+    expect(remote).not.toHaveProperty('owner_email');
   });
 
   it('toRemoteManagementListing writes null owner_id for orphan listings', () => {
@@ -129,7 +124,7 @@ describe('management_listings (staycations) — owner_id threading', () => {
       isDeleted: false,
     });
     expect(remote.owner_id).toBeNull();
-    expect(remote.owner_email).toBe('');
+    expect(remote).not.toHaveProperty('owner_email');
   });
 });
 
@@ -165,15 +160,14 @@ import { vi } from 'vitest';
 import { useManagementStudio } from '../hooks/useManagementStudio';
 
 describe('useManagementStudio — create listing from request inherits owner_id', () => {
-  it('a draft created from an owner request inherits ownerUserId + ownerEmail', () => {
+  it('a draft created from an owner request inherits ownerUserId', () => {
     // Management does NOT manually select an owner — it is auto-linked from the
-    // request's owner_user_id.
+    // request's owner_user_id. The owner email is resolved server-side later.
     const listings = [];
     const { result } = renderHook(() => useManagementStudio(listings, vi.fn(), vi.fn()));
     const ownerRequest = {
       id: 'req-1',
       ownerUserId: 'owner-uuid-7',
-      ownerEmail: 'owner7@example.com',
       ownerAddress: 'Melaka',
       ownerName: 'Ali',
     };
@@ -184,7 +178,6 @@ describe('useManagementStudio — create listing from request inherits owner_id'
 
     const draft = result.current.selectedListing;
     expect(draft.ownerId).toBe('owner-uuid-7');
-    expect(draft.ownerEmail).toBe('owner7@example.com');
     expect(draft.sourceRequestId).toBe('req-1');
     expect(draft.sourceRequestType).toBe('owner');
     expect(draft.location).toBe('Melaka');
@@ -196,7 +189,6 @@ describe('useManagementStudio — create listing from request inherits owner_id'
     const evalRequest = {
       id: 'req-2',
       ownerUserId: 'owner-uuid-8',
-      evaluatorEmail: 'eval8@example.com',
       evaluatorAddress: 'Penang',
       evaluatorName: 'Jane',
     };
@@ -207,7 +199,6 @@ describe('useManagementStudio — create listing from request inherits owner_id'
 
     const draft = result.current.selectedListing;
     expect(draft.ownerId).toBe('owner-uuid-8');
-    expect(draft.ownerEmail).toBe('eval8@example.com');
     expect(draft.sourceRequestType).toBe('evaluation');
   });
 
@@ -218,6 +209,6 @@ describe('useManagementStudio — create listing from request inherits owner_id'
       result.current.handleCreateListing();
     });
     expect(result.current.selectedListing.ownerId).toBeNull();
-    expect(result.current.selectedListing.ownerEmail).toBe('');
+    expect(result.current.selectedListing).not.toHaveProperty('ownerEmail');
   });
 });

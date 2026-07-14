@@ -29,7 +29,10 @@ beforeEach(() => {
 });
 
 describe('submitBooking — owner resolution + notification', () => {
-  it('resolves the owner email from bookingSummary.ownerEmail and notifies the owner', async () => {
+  it('passes ownerId (not a snapshot email) so the server resolves the current owner email', async () => {
+    // The owner's current email is resolved server-side from ownerId at
+    // notification time — the client never passes or trusts an owner email
+    // snapshot. The owner alert is dispatched with ownerId as the recipient key.
     const bookingForm = {
       property: 'l1',
       checkin: '2026-07-20',
@@ -48,7 +51,6 @@ describe('submitBooking — owner resolution + notification', () => {
       serviceFee: 48,
       total: 448,
       ownerId: 'owner-uuid-9',
-      ownerEmail: 'owner9@example.com',
     };
 
     const result = await submitBooking({ bookingForm, bookingSummary, paymentMeta: { provider: 'manual' } });
@@ -63,8 +65,8 @@ describe('submitBooking — owner resolution + notification', () => {
       expect.objectContaining({ owner_id: 'owner-uuid-9' }),
     );
 
-    // The owner was notified at the resolved email (manual flow sends emails).
-    expect(sendOwnerBookingAlert).toHaveBeenCalledWith(expect.any(Object), 'owner9@example.com');
+    // The owner alert is dispatched with ownerId (server resolves the email).
+    expect(sendOwnerBookingAlert).toHaveBeenCalledWith(expect.any(Object), 'owner-uuid-9');
   });
 
   it('does not notify an owner when the listing has none (orphan listing)', async () => {
@@ -85,7 +87,6 @@ describe('submitBooking — owner resolution + notification', () => {
       serviceFee: 24,
       total: 224,
       ownerId: null,
-      ownerEmail: '',
     };
 
     const result = await submitBooking({ bookingForm, bookingSummary, paymentMeta: { provider: 'manual' } });

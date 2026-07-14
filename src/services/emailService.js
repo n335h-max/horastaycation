@@ -45,8 +45,11 @@ export async function sendBookingConfirmation(data) {
 /**
  * Send booking alert to the property owner.
  */
-export async function sendOwnerBookingAlert(data, ownerEmail) {
-  return sendEmail('owner_booking_alert', { ...data, ownerEmail }, ownerEmail);
+export async function sendOwnerBookingAlert(data, ownerId) {
+  // The owner email is resolved server-side from ownerId (single source of
+  // truth) by /api/send-email; the client never passes or trusts an owner
+  // email snapshot.
+  return sendEmail('owner_booking_alert', { ...data, ownerId });
 }
 
 /**

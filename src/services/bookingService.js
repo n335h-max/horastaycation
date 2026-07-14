@@ -73,7 +73,9 @@ export async function submitBooking({ bookingForm, bookingSummary, paymentForm =
   const paymentStatus = paymentMeta.paymentStatus || 'paid';
   const statusNote = paymentMeta.statusNote || '';
   const customerReceiptEmail = paymentMeta.customerReceiptEmail || bookingForm.guestEmail || '';
-  const ownerRecipient = paymentMeta.ownerEmail || bookingSummary.ownerEmail || bookingForm.ownerEmail || '';
+  // Owner is identified by id, not email. The owner's current email is resolved
+  // server-side when notifications are sent (single source of truth).
+  const ownerId = bookingSummary.ownerId || bookingForm.ownerId || null;
 
   if (stripeSessionId && store.completedStripeSessions.includes(stripeSessionId)) {
     return { store, remote: { saved: true, error: null, alreadyProcessed: true } };
@@ -115,8 +117,8 @@ export async function submitBooking({ bookingForm, bookingSummary, paymentForm =
 
   store.dashboardEmails = [
     { title: 'Booking Confirmed — Customer', detail: `Sent to ${customerReceiptEmail}`, tone: 'indigo' },
-    ...(ownerRecipient
-      ? [{ title: 'New Booking Alert — Owner', detail: `Sent to ${ownerRecipient}`, tone: 'brand' }]
+    ...(ownerId
+      ? [{ title: 'New Booking Alert — Owner', detail: 'Sent to staycation owner', tone: 'brand' }]
       : []),
     { title: 'New Booking Alert — Management', detail: 'Sent to management inbox', tone: 'accent' },
     ...store.dashboardEmails,
@@ -170,8 +172,8 @@ export async function submitBooking({ bookingForm, bookingSummary, paymentForm =
       );
     }
 
-    if (ownerRecipient) {
-      sendOwnerBookingAlert(emailData, ownerRecipient).catch((err) =>
+    if (ownerId) {
+      sendOwnerBookingAlert(emailData, ownerId).catch((err) =>
         logger.warn('Failed to send owner booking alert:', err),
       );
     }

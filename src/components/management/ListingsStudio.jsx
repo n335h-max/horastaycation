@@ -343,7 +343,7 @@ export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onSho
                   <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm">
                     <div className="font-semibold text-emerald-800">Owner auto-linked from request</div>
                     <div className="mt-0.5 text-emerald-700">
-                      {selectedListing.ownerEmail || 'Owner account'} — inherited automatically, not manually selected.
+                      The staycation owner is linked automatically from the source request — not manually selected.
                     </div>
                   </div>
                 ) : null}

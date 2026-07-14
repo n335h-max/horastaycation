@@ -43,18 +43,61 @@ export async function fetchPublishedManagementListing(propertyId) {
 
   // Price bookings against the same source the client uses
   // (store.managementListings <- Supabase management_listings), not a static
-  // array. Only published, non-deleted listings are bookable.
+  // array. Only published, non-deleted listings are bookable. Select owner_id
+  // so checkout-session metadata can carry it for server-side owner resolution.
   const query =
     `/rest/v1/management_listings` +
     `?id=eq.${encodeURIComponent(id)}` +
     `&publish_status=eq.published` +
     `&is_deleted=eq.false` +
-    `&select=id,name,location,price,publish_status,is_deleted`;
+    `&select=id,name,location,price,publish_status,is_deleted,owner_id`;
 
   try {
     const data = await restFetch(query, { method: 'GET' });
     const row = Array.isArray(data) && data.length > 0 ? data[0] : null;
     return row || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Resolve an owner's CURRENT email from their auth user id, server-side, using
+ * the Supabase service role key. This is the single source of truth for owner
+ * notification recipients — it replaces snapshotting owner_email onto
+ * management_listings, which went stale if the owner changed their email.
+ *
+ * Returns the email string, or null if it cannot be resolved. Never throws so
+ * callers can treat a missing owner as "no notification" rather than a crash.
+ */
+export async function resolveOwnerEmail(ownerId) {
+  if (!canUseSupabaseAdmin()) {
+    return null;
+  }
+
+  const id = String(ownerId || '').trim();
+  if (!id) {
+    return null;
+  }
+
+  try {
+    const url = `${getSupabaseUrl().replace(/\/$/, '')}/auth/v1/admin/users/${encodeURIComponent(id)}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        apikey: getServiceRoleKey(),
+        Authorization: `Bearer ${getServiceRoleKey()}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const text = await response.text();
+    const user = text ? JSON.parse(text) : null;
+    return user?.email || null;
   } catch {
     return null;
   }

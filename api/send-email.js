@@ -1,6 +1,7 @@
 import { getResendClient, getFromEmail, getManagementEmail } from './_lib/resendServer.js';
 import { logger } from './_lib/logger.js';
 import { handleCors } from './_lib/cors.js';
+import { resolveOwnerEmail } from './_lib/supabaseAdmin.js';
 import {
   bookingConfirmationTemplate,
   ownerBookingAlertTemplate,
@@ -176,20 +177,24 @@ export default async function handler(req, res) {
   }
 
   const emailConfig = EMAIL_TYPES[type];
-  const defaultRecipient =
-    typeof emailConfig.defaultTo === 'function' ? emailConfig.defaultTo(data) : emailConfig.defaultTo;
-  const explicitTo = normalizeEmail(to);
-  const recipientEmail =
-    type === 'owner_booking_alert'
-      ? normalizeEmail(data.ownerEmail)
-      : normalizeEmail(defaultRecipient) || explicitTo;
 
-  if (type === 'owner_booking_alert' && normalizeEmail(data.ownerEmail) !== recipientEmail) {
-    return res.status(400).json({ error: 'Owner booking alerts must target the owner email in the payload.' });
-  }
-
-  if (!recipientEmail) {
-    return res.status(400).json({ error: 'No valid recipient email is configured for this message type.' });
+  // Owner booking alerts resolve the recipient server-side from the owner id
+  // (single source of truth — auth.users.email), never a client-supplied email
+  // snapshot that could be stale. All other types derive the recipient from
+  // the template's defaultTo (or an explicit `to`).
+  let recipientEmail = '';
+  if (type === 'owner_booking_alert') {
+    recipientEmail = normalizeEmail(await resolveOwnerEmail(data?.ownerId));
+    if (!recipientEmail) {
+      return res.status(400).json({ error: 'Owner booking alert could not resolve an owner email from ownerId.' });
+    }
+  } else {
+    const defaultRecipient =
+      typeof emailConfig.defaultTo === 'function' ? emailConfig.defaultTo(data) : emailConfig.defaultTo;
+    recipientEmail = normalizeEmail(defaultRecipient) || normalizeEmail(to);
+    if (!recipientEmail) {
+      return res.status(400).json({ error: 'No valid recipient email is configured for this message type.' });
+    }
   }
 
   try {

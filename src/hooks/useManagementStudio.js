@@ -90,10 +90,9 @@ function buildDefaultListing() {
     reviewCount: 0,
     reviewSnippet: '',
     guestCapacity: 2,
-    ownerId: null,
-    ownerEmail: '',
     sourceRequestId: null,
     sourceRequestType: null,
+    ownerId: null,
   };
 }
 
@@ -206,7 +205,6 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
       // Inherit the authenticated owner from the source request. Management
       // does NOT manually select an owner — it is auto-linked from the request.
       newListing.ownerId = sourceRequest.ownerUserId || null;
-      newListing.ownerEmail = sourceRequest.ownerEmail || sourceRequest.evaluatorEmail || '';
       newListing.sourceRequestId = sourceRequest.id || null;
       newListing.sourceRequestType = sourceRequest.evaluatorName ? 'evaluation' : 'owner';
       // Pre-fill address from the request for convenience.

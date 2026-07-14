@@ -80,6 +80,7 @@ beforeEach(() => {
             price: 200,
             publish_status: 'published',
             is_deleted: false,
+            owner_id: 'owner-uuid-1',
           },
         ]),
       );
@@ -115,6 +116,9 @@ describe('create-checkout-session — prices from Supabase listing (not static a
     // The unit amount must reflect the Supabase listing price (200/night * 3 nights + 12% fee = 67200 sen).
     const createArgs = stubs.stripeCreate.mock.calls[0][0];
     expect(createArgs.line_items[0].price_data.unit_amount).toBe(67200);
+    // ownerId is carried in session metadata so the webhook can resolve the
+    // owner's current email server-side (single source of truth).
+    expect(createArgs.metadata.ownerId).toBe('owner-uuid-1');
   });
 
   it('returns 400 with a clear message when the listing is not found / not published', async () => {

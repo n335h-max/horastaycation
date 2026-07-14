@@ -1,4 +1,4 @@
-import { mapWebhookMetadataToBookingRecord, updateBookingTransactionAdmin, upsertBookingTransactionAdmin, hasProcessedStripeEvent, recordProcessedStripeEvent } from './_lib/supabaseAdmin.js';
+import { mapWebhookMetadataToBookingRecord, updateBookingTransactionAdmin, upsertBookingTransactionAdmin, hasProcessedStripeEvent, recordProcessedStripeEvent, resolveOwnerEmail } from './_lib/supabaseAdmin.js';
 import { getStripeClient, readRawRequestBody } from './_lib/stripeServer.js';
 import { getResendClient, getFromEmail } from './_lib/resendServer.js';
 import { logger } from './_lib/logger.js';
@@ -131,8 +131,16 @@ export default async function handler(req, res) {
           emailTasks.push(sendEmailViaResend('booking_confirmation', emailData));
         }
 
-        if (m.ownerEmail) {
-          emailTasks.push(sendEmailViaResend('owner_booking_alert', emailData, m.ownerEmail));
+        // Owner alert: resolve the owner's CURRENT email server-side from
+        // ownerId (single source of truth), instead of trusting a snapshot
+        // ownerEmail that could be stale. Falls back to m.ownerEmail only if an
+        // owner id wasn't captured (legacy sessions).
+        const ownerId = String(m.ownerId || '').trim();
+        const ownerEmail = ownerId ? await resolveOwnerEmail(ownerId) : '';
+        if (ownerEmail) {
+          emailTasks.push(sendEmailViaResend('owner_booking_alert', emailData, ownerEmail));
+        } else {
+          logger.warn('Skipping owner booking alert: no ownerId on session or owner email could not be resolved.');
         }
 
         if (managementEmail) {
