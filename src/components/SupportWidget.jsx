@@ -12,6 +12,7 @@ export function SupportWidget({ open, onOpen, onClose, onSubmit, authUser, curre
   const [form, setForm] = useState({
     name: '',
     email: '',
+    phone: '',
     topic: QUICK_TOPICS[0].value,
     message: QUICK_TOPICS[0].message,
   });
@@ -168,6 +169,21 @@ export function SupportWidget({ open, onOpen, onClose, onSubmit, authUser, curre
                   placeholder="your@email.com"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="form-label" htmlFor="support-phone">
+                Phone
+              </label>
+              <input
+                id="support-phone"
+                name="phone"
+                type="tel"
+                value={form.phone}
+                onChange={handleChange}
+                className="form-input"
+                placeholder="+60 12-345 6789"
+              />
             </div>
 
             <div>

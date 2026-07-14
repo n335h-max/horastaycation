@@ -275,7 +275,7 @@ export function managementBookingAlertTemplate(input = {}) {
 }
 
 export function supportRequestTemplate(input = {}) {
-  const { topic, message, email, name } = sanitizeTemplateData(input);
+  const { topic, message, email, name, phone } = sanitizeTemplateData(input);
   const replyTo = sanitizeMailto(input.email);
 
   return `
@@ -303,6 +303,10 @@ export function supportRequestTemplate(input = {}) {
                 <tr>
                   <td style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em;">Email</td>
                   <td style="font-size: 14px; color: #1e293b; text-align: right;">${email}</td>
+                </tr>
+                <tr>
+                  <td style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em;">Phone</td>
+                  <td style="font-size: 14px; color: #1e293b; text-align: right;">${phone || '—'}</td>
                 </tr>
                 <tr>
                   <td style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em;">Topic</td>

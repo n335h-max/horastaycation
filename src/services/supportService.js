@@ -19,6 +19,7 @@ export async function submitSupportRequest(request) {
     message: request.message || '',
     email: request.email || '',
     name: request.name || '',
+    phone: request.phone || '',
   }).catch((err) => logger.warn('Failed to send support request email:', err));
 
   return { store, request: record };
