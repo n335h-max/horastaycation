@@ -36,6 +36,9 @@ const MEDIA_FIELD_CONFIG = {
   },
 };
 const MEDIA_FIELD_ORDER = ['image', 'summaryImage', 'thumbnail', 'videoUrl'];
+
+/** Maximum number of gallery photos per listing (spec: 1..10). */
+export const MAX_GALLERY_IMAGES = 10;
 const STUDIO_SECTIONS = [
   { id: 'basic', eyebrow: 'Basic Info', title: 'Core listing settings' },
   { id: 'media', eyebrow: 'Media', title: 'Photos, thumbnails, and video' },
@@ -116,6 +119,10 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
   const [bulkListingIds, setBulkListingIds] = useState(new Set());
   const [isBulkUploading, setIsBulkUploading] = useState(false);
   const [pendingMediaFiles, setPendingMediaFiles] = useState({});
+  // Ordered gallery items: each is { id, file?, objectUrl?, url? }. Pending
+  // uploads carry a File + blob URL; saved items carry a remote URL. Order in
+  // this array is the display order persisted to gallery_images on save.
+  const [galleryItems, setGalleryItems] = useState([]);
   const [prevAvailableListings, setPrevAvailableListings] = useState(availableListings);
 
   // Synchronize state during rendering when availableListings changes
@@ -175,6 +182,15 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
         mood: selectedListing.mood || '',
         bestFor: selectedListing.bestFor || '',
         facilitiesText: (selectedListing.facilities || []).join(', '),
+      });
+      // Reset gallery to the saved URLs for this listing. Pending uploads
+      // from a previously selected listing are discarded (their object URLs
+      // revoked) so they don't leak or land on the wrong listing.
+      setGalleryItems((current) => {
+        current.forEach((item) => {
+          if (item.objectUrl) URL.revokeObjectURL(item.objectUrl);
+        });
+        return (selectedListing.galleryImages || []).map((url) => ({ id: url, url }));
       });
     });
   }, [selectedListingId, draftListing, selectedListing]);
@@ -255,6 +271,58 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
     },
     [pendingMediaFiles],
   );
+
+  // Gallery: add one or more photo files (enforces the 1..10 cap). Pending
+  // items carry a File + blob URL for preview; saved items carry a remote URL.
+  const addGalleryFiles = useCallback((files) => {
+    const incoming = Array.from(files || []).filter((f) => f instanceof File);
+    if (!incoming.length) return;
+    setUploadError('');
+    setGalleryItems((current) => {
+      const room = MAX_GALLERY_IMAGES - current.length;
+      if (room <= 0) {
+        setUploadError(`Gallery is full (max ${MAX_GALLERY_IMAGES} photos).`);
+        return current;
+      }
+      const accepted = incoming.slice(0, room);
+      if (accepted.length < incoming.length) {
+        setUploadError(`Only ${accepted.length} of ${incoming.length} photo(s) added (max ${MAX_GALLERY_IMAGES}).`);
+      }
+      const additions = accepted.map((file) => ({
+        id: `pending-${crypto.randomUUID()}`,
+        file,
+        objectUrl: typeof Blob !== 'undefined' && file instanceof Blob ? URL.createObjectURL(file) : '',
+      }));
+      return [...current, ...additions];
+    });
+  }, []);
+
+  const removeGalleryItem = useCallback((id) => {
+    setGalleryItems((current) => {
+      const item = current.find((entry) => entry.id === id);
+      if (item?.objectUrl) URL.revokeObjectURL(item.objectUrl);
+      return current.filter((entry) => entry.id !== id);
+    });
+  }, []);
+
+  // Drag-and-drop reorder. `from`/`to` are indices into galleryItems.
+  const reorderGallery = useCallback((from, to) => {
+    setGalleryItems((current) => {
+      if (
+        from === to ||
+        from < 0 ||
+        to < 0 ||
+        from >= current.length ||
+        to >= current.length
+      ) {
+        return current;
+      }
+      const next = [...current];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  }, []);
 
   const handleMediaDragOver = useCallback((event) => {
     event.preventDefault();
@@ -367,11 +435,22 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
       Object.entries(pendingMediaFiles).forEach(([field, pending]) => {
         if (pending?.file instanceof File) mediaFiles[field] = pending.file;
       });
+      // Gallery: pending files are uploaded by saveManagementListing under the
+      // 'gallery' field; saved URLs are carried through galleryImageUrls so the
+      // service can merge uploaded + retained URLs in display order.
+      const galleryPendingFiles = galleryItems
+        .filter((item) => item.file instanceof File)
+        .map((item) => item.file);
+      if (galleryPendingFiles.length) {
+        mediaFiles.gallery = galleryPendingFiles;
+      }
+      const galleryImageUrls = galleryItems.map((item) => item.url || '');
       await onSaveListing({
         ...selectedListing,
         ...listingForm,
         price: Number(listingForm.price || 0),
         mediaFiles,
+        galleryImageUrls,
       });
       setDraftListing(null);
       Object.values(pendingMediaFiles).forEach((pending) => {
@@ -382,7 +461,7 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
     } finally {
       setIsSavingListing(false);
     }
-  }, [selectedListing, listingForm, pendingMediaFiles, onSaveListing]);
+  }, [selectedListing, listingForm, pendingMediaFiles, galleryItems, onSaveListing]);
 
   const handleDeleteListing = useCallback(async () => {
     if (!selectedListing?.id) {
@@ -444,6 +523,7 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
     selectedBulkListings,
     isBulkUploading,
     pendingMediaFiles,
+    galleryItems,
     listingSearch,
     showDeleteConfirm,
     hasUnsavedChanges,
@@ -459,6 +539,9 @@ export function useManagementStudio(listings, onSaveListing, onDeleteListing) {
     clearMediaField,
     handleMediaDragOver,
     handleMediaDrop,
+    addGalleryFiles,
+    removeGalleryItem,
+    reorderGallery,
     toggleBulkListing,
     toggleBulkListings,
     toggleAllBulkListings,

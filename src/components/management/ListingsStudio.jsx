@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { formatCurrency } from '../../lib/formatters';
 import { Icon } from '../Icon';
 import { ListingImage } from '../ListingImage';
 import { PublishedListingsGrid } from './PublishedListingsGrid';
-import { useManagementStudio } from '../../hooks/useManagementStudio';
+import { useManagementStudio, MAX_GALLERY_IMAGES } from '../../hooks/useManagementStudio';
 
 const MEDIA_FIELD_CONFIG = {
   image: { accept: 'image/*', label: 'Hero Photo Upload' },
@@ -14,6 +14,104 @@ const MEDIA_FIELD_CONFIG = {
 
 const MEDIA_FIELD_ORDER = ['image', 'summaryImage', 'thumbnail', 'videoUrl'];
 const LISTING_CARD_TINTS = ['bg-brand-100/70', 'bg-emerald-100/70', 'bg-amber-100/70', 'bg-teal-100/70', 'bg-violet-100/70'];
+
+function GalleryUploader({ items, onAddFiles, onRemove, onReorder, disabled }) {
+  const inputRef = useRef(null);
+  const dragIndexRef = useRef(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
+  const count = items.length;
+
+  function handleDrop(targetIndex, event) {
+    event.preventDefault();
+    event.stopPropagation();
+    setDragOverIndex(null);
+    const from = dragIndexRef.current;
+    dragIndexRef.current = null;
+    if (from === null || from === undefined) return;
+    onReorder?.(from, targetIndex);
+  }
+
+  return (
+    <div className="rounded-2xl border border-ice-200 bg-white p-3">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold text-brand-900">Photo Gallery</span>
+        <span className={`text-xs font-medium ${count >= MAX_GALLERY_IMAGES ? 'text-amber-600' : 'text-slate-400'}`}>
+          {count}/{MAX_GALLERY_IMAGES} uploaded
+        </span>
+      </div>
+      <p className="mt-1 text-xs text-slate-500">
+        Up to {MAX_GALLERY_IMAGES} photos. Drag to reorder. The first photo becomes the card image if no thumbnail is set.
+      </p>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(event) => {
+          const files = Array.from(event.target.files || []);
+          if (files.length) onAddFiles?.(files);
+          event.target.value = '';
+        }}
+      />
+      <div className="mt-2 flex gap-2">
+        <label
+          htmlFor={undefined}
+          onClick={() => inputRef.current?.click()}
+          className={`flex-1 cursor-pointer rounded-lg border border-ice-200 bg-white px-3 py-2 text-center text-xs font-semibold text-brand-700 transition hover:bg-brand-50 ${
+            disabled || count >= MAX_GALLERY_IMAGES ? 'pointer-events-none opacity-50' : ''
+          }`}
+        >
+          Add photos
+        </label>
+      </div>
+
+      {count > 0 ? (
+        <ul className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+          {items.map((item, index) => {
+            const src = item.objectUrl || item.url || '';
+            return (
+              <li
+                key={item.id}
+                draggable
+                onDragStart={() => {
+                  dragIndexRef.current = index;
+                }}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  setDragOverIndex(index);
+                }}
+                onDragLeave={() => setDragOverIndex(null)}
+                onDrop={(event) => handleDrop(index, event)}
+                className={`group relative aspect-square overflow-hidden rounded-lg border bg-ice-50 ${
+                  dragOverIndex === index ? 'border-brand-500 ring-2 ring-brand-100' : 'border-ice-200'
+                }`}
+              >
+                {src ? (
+                  <ListingImage src={src} alt={`Gallery ${index + 1}`} className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-xs text-slate-400">No preview</div>
+                )}
+                <span className="absolute left-1 top-1 rounded bg-brand-950/70 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                  {index + 1}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onRemove?.(item.id)}
+                  className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-rose-600 text-white opacity-0 transition group-hover:opacity-100"
+                  aria-label={`Remove photo ${index + 1}`}
+                >
+                  <Icon name="close" className="text-xs" />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
 const STUDIO_SETTINGS = [
   'Core listing settings',
   'Photos, thumbnails and video',
@@ -445,6 +543,15 @@ export function ListingsStudio({ listings, onSaveListing, onDeleteListing, onSho
                         </div>
                       </div>
                     ))}
+                  </div>
+                  <div className="mt-4">
+                    <GalleryUploader
+                      items={studio.galleryItems}
+                      onAddFiles={studio.addGalleryFiles}
+                      onRemove={studio.removeGalleryItem}
+                      onReorder={studio.reorderGallery}
+                      disabled={studio.isUploadingMedia}
+                    />
                   </div>
                 </div>
 

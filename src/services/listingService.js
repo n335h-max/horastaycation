@@ -82,19 +82,55 @@ export async function saveManagementListing(listingInput) {
   const currentUser = await getAuthenticatedUser();
   const mediaFiles = listingInput.mediaFiles || {};
   const listing = normalizeListingPayload(listingInput);
-  const uploadFields = Object.entries(mediaFiles).filter(([, f]) => f instanceof File);
-  const uploadResults = await Promise.all(
-    uploadFields.map(([fn]) => uploadListingMediaFile(listing.id, fn, mediaFiles[fn])),
+  // Single-file media fields (image/summaryImage/thumbnail/videoUrl): each
+  // value is one File. Gallery is special: mediaFiles.gallery is an array of
+  // Files, uploaded in order and merged with retained saved URLs.
+  const singleUploadFields = Object.entries(mediaFiles).filter(
+    ([fn, f]) => fn !== 'gallery' && f instanceof File,
+  );
+  const galleryPendingFiles = Array.isArray(mediaFiles.gallery)
+    ? mediaFiles.gallery.filter((f) => f instanceof File)
+    : [];
+  const singleUploadResults = await Promise.all(
+    singleUploadFields.map(([fn]) => uploadListingMediaFile(listing.id, fn, mediaFiles[fn])),
+  );
+  const galleryUploadResults = await Promise.all(
+    galleryPendingFiles.map((file, index) =>
+      uploadListingMediaFile(listing.id, `gallery-${index}`, file),
+    ),
   );
   const remoteListing = { ...listing };
 
-  uploadFields.forEach(([fieldName], i) => {
-    const result = uploadResults[i];
+  singleUploadFields.forEach(([fieldName], i) => {
+    const result = singleUploadResults[i];
     if (!result?.uploaded || !result.url) return;
     const fieldMap = { image: 'image', summaryImage: 'summaryImage', thumbnail: 'thumbnail', videoUrl: 'videoUrl' };
     remoteListing[fieldMap[fieldName]] = result.url;
     remoteListing[`${fieldName}Asset`] = null;
   });
+
+  // Build the ordered gallery: retained saved URLs (from galleryImageUrls) in
+  // their positions, with uploaded pending files inserted where their order was.
+  // The hook sends galleryImageUrls (one entry per gallery slot; '' for a slot
+  // that held a pending file). Uploaded URLs replace those empty slots in order.
+  const galleryImageUrls = Array.isArray(listingInput.galleryImageUrls)
+    ? listingInput.galleryImageUrls.map((url) => (typeof url === 'string' ? url : ''))
+    : listing.galleryImages || [];
+  const uploadedGalleryUrls = galleryUploadResults
+    .filter((r) => r?.uploaded && r.url)
+    .map((r) => r.url);
+  let uploadCursor = 0;
+  const mergedGallery = galleryImageUrls
+    .map((url) => (url ? url : uploadedGalleryUrls[uploadCursor++] || ''))
+    .filter(Boolean);
+  remoteListing.galleryImages = mergedGallery;
+  // If no explicit thumbnail was set and the gallery has images, use the first
+  // gallery image as the card thumbnail fallback.
+  if (!remoteListing.thumbnail && mergedGallery[0]) {
+    remoteListing.thumbnail = mergedGallery[0];
+    if (!remoteListing.image) remoteListing.image = mergedGallery[0];
+    if (!remoteListing.summaryImage) remoteListing.summaryImage = mergedGallery[0];
+  }
 
   remoteListing.updatedBy = currentUser?.id || null;
   const remote = await upsertRemote('management_listings', toRemoteManagementListing(remoteListing));
@@ -115,8 +151,8 @@ export async function saveManagementListing(listingInput) {
     remote: {
       saved: remote.saved,
       error: remote.error,
-      uploadedMediaCount: uploadResults.filter((r) => r?.uploaded).length,
-      attemptedMediaCount: uploadResults.length,
+      uploadedMediaCount: singleUploadResults.filter((r) => r?.uploaded).length + galleryUploadResults.filter((r) => r?.uploaded).length,
+      attemptedMediaCount: singleUploadFields.length + galleryPendingFiles.length,
     },
   };
 }
