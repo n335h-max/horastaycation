@@ -2,6 +2,8 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { clearPendingStripeCheckout, getPendingStripeCheckout, savePendingStripeCheckout } from '../lib/stripeCheckout';
 import { submitBooking, saveBookingDraft as persistBookingDraft } from '../services/horaApi';
+import { writeBookingDraft } from '../lib/storage';
+import { clone, initialBookingDraft } from '../services/localStore';
 import { validateWithSchema, bookingSchema } from '../lib/validation';
 import { isRangeBlocked } from '../lib/guestFeatures';
 import { SERVICE_FEE_RATE } from '../lib/constants';
@@ -85,9 +87,19 @@ export function useBooking({ featuredListings, store, setStore, pushToast, recor
       const pendingCheckout = getPendingStripeCheckout(bookingSuccessSessionId);
 
       if (!pendingCheckout) {
+        // H-2: The pending data was cleared after a successful booking (H-1).
+        // Check completed sessions before showing an alarming error — the user
+        // may simply be returning via the back button or revisiting a bookmark.
+        const alreadyProcessed = store.completedStripeSessions?.includes(bookingSuccessSessionId);
+        if (alreadyProcessed) {
+          // Session already handled. Silently terminate — no error, no re-submission.
+          return;
+        }
+
+        // Only surface an error for genuinely untracked, broken sessions.
         if (isActive) {
           setStripeVerificationError(
-            'Stripe returned successfully, but the pending booking data was not found on this device.',
+            'Stripe transaction succeeded, but local checkout session data expired.',
           );
         }
         return;
@@ -132,7 +144,13 @@ export function useBooking({ featuredListings, store, setStore, pushToast, recor
           return;
         }
 
-        setStore(bookingResult.store);
+        // H-1: Erase PII from both React state and localStorage immediately,
+        // before the debounced persistBookingDraft can re-write stale draft data.
+        setStore((prev) => ({
+          ...bookingResult.store,
+          bookingDraft: clone(initialBookingDraft),
+        }));
+        writeBookingDraft(initialBookingDraft); // synchronous — bypasses the 1 s debounce
         clearPendingStripeCheckout(bookingSuccessSessionId);
         setPaymentOpen(false);
         setBookingErrors({});

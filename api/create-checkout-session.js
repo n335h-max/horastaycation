@@ -104,6 +104,39 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'This staycation is no longer available for booking.' });
   }
 
+  // ── Server-side ingestion guards (M-1 & M-3) ──────────────────────────────
+  // Never trust the client for financial or capacity calculations. All checks
+  // run against authoritative data (Supabase listing + server clock).
+
+  const checkinDate = new Date(bookingForm.checkin);
+  const checkoutDate = new Date(bookingForm.checkout);
+
+  if (isNaN(checkinDate.getTime()) || isNaN(checkoutDate.getTime())) {
+    return res.status(400).json({ error: 'Invalid check-in or check-out date.' });
+  }
+
+  // 1. Prevent historical check-in dates
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (checkinDate < today) {
+    return res.status(400).json({ error: 'Check-in date cannot be in the past.' });
+  }
+
+  // 2. Enforce operational stay-length limits (1–30 nights)
+  const calculatedNights = Math.ceil((checkoutDate - checkinDate) / (1000 * 60 * 60 * 24));
+  if (calculatedNights < 1 || calculatedNights > 30) {
+    return res.status(400).json({ error: 'Invalid stay length. Limits are 1–30 nights.' });
+  }
+
+  // 3. Enforce listing guest capacity from Supabase (not the client form)
+  const requestedGuests = Number(bookingForm.guests || 1);
+  if (listing.max_guests && requestedGuests > listing.max_guests) {
+    return res.status(400).json({
+      error: `This property accommodates up to ${listing.max_guests} guest(s).`,
+    });
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   try {
     const origin = getOrigin(req);
     if (!origin) {

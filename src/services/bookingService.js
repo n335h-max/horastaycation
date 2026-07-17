@@ -18,10 +18,10 @@ function refreshBookingDashboard(store) {
     status: formatBookingStatusLabel(tx.bookingStatus || 'confirmed'),
     image: '',
   }));
-  store.dashboardRevenue = store.bookingTransactions.reduce(
-    (total, tx) => total + (tx.paymentStatus === 'refunded' ? 0 : Number(tx.bookingSummary.total) || 0),
-    0,
-  );
+  store.dashboardRevenue = store.bookingTransactions.reduce((total, tx) => {
+    if (tx.paymentStatus === 'refunded' || tx.paymentStatus === 'failed') return total;
+    return total + (Number(tx.bookingSummary?.total) || 0);
+  }, 0);
   return store;
 }
 
@@ -124,7 +124,9 @@ export async function submitBooking({ bookingForm, bookingSummary, paymentForm =
     ...store.dashboardEmails,
   ].slice(0, MAX_DASHBOARD_PREVIEW_ITEMS);
 
-  store.dashboardRevenue += bookingSummary.total;
+  // Derive revenue deterministically so refreshes and realtime Supabase hooks
+  // don't double-count (replaces the former `store.dashboardRevenue += total`).
+  refreshBookingDashboard(store);
   store.bookingDraft = clone(initialBookingDraft);
   if (stripeSessionId) store.completedStripeSessions = [...store.completedStripeSessions, stripeSessionId];
   saveStore(store);
