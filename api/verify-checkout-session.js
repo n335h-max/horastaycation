@@ -1,6 +1,7 @@
 import { getStripeClient } from './_lib/stripeServer.js';
 import { mapWebhookMetadataToBookingRecord, upsertBookingTransactionAdmin } from './_lib/supabaseAdmin.js';
 import { resolveAuthenticatedUser } from './_lib/auth.js';
+import { applyRateLimit } from './_lib/rateLimit.js';
 import { handleCors } from './_lib/cors.js';
 
 export default async function handler(req, res) {
@@ -11,6 +12,14 @@ export default async function handler(req, res) {
   if (!auth.ok) {
     return res.status(auth.status || 500).json({ error: auth.error || 'Unauthorized.' });
   }
+
+  // C-4: Rate limit to prevent session ID enumeration by authenticated callers.
+  const rateLimitResult = applyRateLimit(req, res, {
+    userId: auth.user.id,
+    maxRequests: 5,
+    windowMs: 60 * 1000,
+  });
+  if (rateLimitResult) return rateLimitResult;
 
   if (!process.env.STRIPE_SECRET_KEY) {
     return res.status(500).json({ error: 'Stripe secret key is not configured.' });

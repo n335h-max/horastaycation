@@ -34,9 +34,21 @@ export function savePendingStripeCheckout(sessionId, payload) {
   });
 }
 
+const PENDING_CHECKOUT_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
+
 export function getPendingStripeCheckout(sessionId) {
   const current = readPendingCheckouts();
-  return current[sessionId] || null;
+  const entry = current[sessionId];
+  if (!entry) return null;
+
+  // O-5: Prune stale entries so abandoned checkouts don't accumulate in localStorage.
+  const age = Date.now() - new Date(entry.savedAt).getTime();
+  if (age > PENDING_CHECKOUT_TTL_MS) {
+    clearPendingStripeCheckout(sessionId);
+    return null;
+  }
+
+  return entry;
 }
 
 export function clearPendingStripeCheckout(sessionId) {

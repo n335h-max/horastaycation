@@ -20,8 +20,14 @@ export function useBooking({ featuredListings, store, setStore, pushToast, recor
   const [isVerifyingStripePayment, setIsVerifyingStripePayment] = useState(false);
   const [stripeVerificationError, setStripeVerificationError] = useState('');
 
-  const bookingSuccessSessionId = new URLSearchParams(location.search).get('session_id') || '';
-  const bookingCheckoutState = new URLSearchParams(location.search).get('checkout') || '';
+  const bookingSuccessSessionId = useMemo(
+    () => new URLSearchParams(location.search).get('session_id') || '',
+    [location.search],
+  );
+  const bookingCheckoutState = useMemo(
+    () => new URLSearchParams(location.search).get('checkout') || '',
+    [location.search],
+  );
 
   const bookingSummary = useMemo(() => {
     const property = featuredListings.find((item) => item.id === store.bookingDraft.property);
@@ -297,6 +303,9 @@ export function useBooking({ featuredListings, store, setStore, pushToast, recor
         window.location.assign(payload.url);
       } catch (error) {
         pushToast(error instanceof Error ? error.message : 'Unable to start Stripe checkout.', 'warning', 'lock');
+      } finally {
+        // M-2: Always reset so the button re-enables if the user hits back
+        // from Stripe checkout before the redirect fully completes.
         setIsSubmittingPayment(false);
       }
     },

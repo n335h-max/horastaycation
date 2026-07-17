@@ -2,6 +2,7 @@ import { getResendClient, getFromEmail, getManagementEmail } from './_lib/resend
 import { logger } from './_lib/logger.js';
 import { handleCors } from './_lib/cors.js';
 import { resolveOwnerEmail } from './_lib/supabaseAdmin.js';
+import { resolveAuthenticatedUser } from './_lib/auth.js';
 import {
   bookingConfirmationTemplate,
   ownerBookingAlertTemplate,
@@ -143,6 +144,13 @@ const EMAIL_TYPES = {
 export default async function handler(req, res) {
   const corsResult = handleCors(req, res, ['POST']);
   if (corsResult) return corsResult;
+
+  // C-3: Require a valid Supabase JWT — Origin/Referer headers are trivially
+  // spoofable by curl and cannot be relied on as the sole protection.
+  const auth = await resolveAuthenticatedUser(req);
+  if (!auth.ok) {
+    return res.status(auth.status || 401).json({ error: 'Authentication required to send email.' });
+  }
 
   if (!process.env.RESEND_API_KEY) {
     return res.status(503).json({ sent: false, error: 'Email service is not configured.' });

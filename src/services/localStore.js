@@ -1,7 +1,7 @@
 import { readBookingDraft, readStorage, writeBookingDraft, writeStorage } from '../lib/storage';
 
 export const initialBookingDraft = {
-  property: 'villa-serena',
+  property: '', // M-4: no hard-coded default; UI selects the first available listing
   checkin: '',
   checkout: '',
   guests: '2',

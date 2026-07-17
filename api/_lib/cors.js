@@ -60,7 +60,7 @@ export function handleCors(req, res, methods = ['POST']) {
   if (req.method === 'OPTIONS') {
     if (allowedOrigins.length && requestOrigin && allowedOrigins.includes(requestOrigin)) {
       res.setHeader('Access-Control-Allow-Origin', requestOrigin);
-      res.setHeader('Access-Control-Allow-Methods', methods.join(', '));
+      res.setHeader('Access-Control-Allow-Methods', [...methods, 'OPTIONS'].join(', '));
       res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type, Idempotency-Key');
       res.setHeader('Access-Control-Max-Age', '86400');
       res.setHeader('Vary', 'Origin');

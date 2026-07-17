@@ -103,17 +103,16 @@ export async function isManagementMemberByEmail(email) {
   }
 
   try {
-    const result = await adminFetch('/rest/v1/management_users?select=email,is_active&is_active=eq.true', {
-      method: 'GET',
-    });
+    const result = await adminFetch(
+      `/rest/v1/management_users?select=email&is_active=eq.true&email=eq.${encodeURIComponent(normalizedEmail)}&limit=1`,
+      { method: 'GET' },
+    );
 
     if (!result.ok) {
       return { ok: false, status: 500, code: 'query_failed', error: 'Unable to verify management membership.' };
     }
 
-    const isMember =
-      Array.isArray(result.data) &&
-      result.data.some((row) => String(row?.email || '').trim().toLowerCase() === normalizedEmail);
+    const isMember = Array.isArray(result.data) && result.data.length > 0;
     return isMember
       ? { ok: true, status: 200, code: 'authorized', isMember: true }
       : { ok: false, status: 403, code: 'unauthorized', error: 'Management access is required.' };

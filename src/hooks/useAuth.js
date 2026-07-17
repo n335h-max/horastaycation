@@ -141,6 +141,7 @@ export function useAuth(pushToast) {
       const authState = getResolvedAuthState(session, profile, getRequestedRoleFromUrl());
       setAuthRole(authState.activeRole);
       setAvailableRoles(normalizeAvailableRoles(authState.availableRoles));
+      setIsAuthLoading(false); // H-3: ensure spinner clears on listener-path resolution
     });
 
     return () => {

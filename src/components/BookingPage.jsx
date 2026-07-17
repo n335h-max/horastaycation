@@ -403,6 +403,7 @@ export function BookingPage({
                     id="checkin"
                     name="checkin"
                     type="date"
+                    min={new Date().toISOString().slice(0, 10)}
                     value={bookingForm.checkin}
                     onChange={onBookingChange}
                     className={`form-input ${bookingErrors?.checkin ? 'border-rose-400 ring-rose-100' : ''}`}
