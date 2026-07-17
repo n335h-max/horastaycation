@@ -53,6 +53,12 @@ export default async function handler(req, res) {
   }
 
   if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    if (process.env.NODE_ENV === 'production') {
+      logger.error('STRIPE_WEBHOOK_SECRET is not configured — rejecting webhook so Stripe will retry.');
+      return res.status(500).json({ error: 'Webhook secret is not configured.' });
+    }
+    // Local dev: Stripe CLI may not be running; skip gracefully.
+    logger.warn('STRIPE_WEBHOOK_SECRET is not set — skipping webhook in non-production environment.');
     return res.status(200).json({ received: true, skipped: 'missing_webhook_secret' });
   }
 
@@ -212,8 +218,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ received: true });
   } catch (error) {
-    return res.status(400).json({
-      error: error instanceof Error ? error.message : 'Stripe webhook verification failed.',
-    });
+    logger.error('Stripe webhook handler error:', error);
+    return res.status(400).json({ error: 'Webhook processing failed.' });
   }
 }

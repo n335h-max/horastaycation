@@ -159,9 +159,7 @@ export default async function handler(req, res) {
   }
 
   if (!trustedOrigins.includes(requestOrigin)) {
-    return res.status(403).json({
-      error: `Cross-origin email requests are not allowed. Origin ${requestOrigin} is not in [${trustedOrigins.join(', ')}].`,
-    });
+    return res.status(403).json({ error: 'Cross-origin email requests are not allowed.' });
   }
 
   if (!allowRateLimit(req, type)) {

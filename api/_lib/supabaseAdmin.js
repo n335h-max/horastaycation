@@ -158,6 +158,14 @@ export async function upsertBookingTransactionAdmin(record) {
 }
 
 export async function updateBookingTransactionAdmin(matchField, matchValue, updates) {
+  // Allowlist the column names that are permitted as match keys.
+  // matchField is interpolated directly into the PostgREST query string, so
+  // any value outside this set must be rejected before it reaches the URL.
+  const ALLOWED_MATCH_FIELDS = new Set(['stripe_session_id', 'stripe_payment_intent_id']);
+  if (!ALLOWED_MATCH_FIELDS.has(matchField)) {
+    return { saved: false, reason: `invalid_match_field: ${matchField}` };
+  }
+
   if (!canUseSupabaseAdmin()) {
     return { saved: false, reason: 'missing_supabase_admin_env' };
   }

@@ -28,7 +28,7 @@ function getAllowedOrigins(req) {
   if (appBase) origins.add(appBase);
 
   const vercelUrl = normalizeOrigin(process.env.VERCEL_URL || '');
-  if (vercelUrl) origins.add(`https://${vercelUrl}`);
+  if (vercelUrl) origins.add(vercelUrl);
 
   // Also accept the request's own host if behind Vercel proxy
   const protocol = String(getHeader(req, 'x-forwarded-proto') || 'https').split(',')[0].trim() || 'https';

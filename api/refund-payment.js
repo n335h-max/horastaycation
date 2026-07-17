@@ -28,7 +28,10 @@ export default async function handler(req, res) {
 
   try {
     const stripe = getStripeClient();
-    const { paymentIntentId, stripeSessionId, reason = 'requested_by_customer' } = getJsonBody(req);
+    const { paymentIntentId, stripeSessionId, reason: rawReason } = getJsonBody(req);
+
+    const ALLOWED_REFUND_REASONS = new Set(['duplicate', 'fraudulent', 'requested_by_customer']);
+    const reason = ALLOWED_REFUND_REASONS.has(rawReason) ? rawReason : 'requested_by_customer';
 
     let resolvedPaymentIntentId = paymentIntentId;
 

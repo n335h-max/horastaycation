@@ -81,7 +81,7 @@ beforeEach(() => {
   process.env.SUPABASE_URL = 'https://example.supabase.co';
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
 
-  global.fetch = vi.fn((url) => {
+  globalThis.fetch = vi.fn((url) => {
     if (String(url).includes('/rest/v1/management_listings')) {
       return Promise.resolve(managementListingsResponse());
     }
@@ -107,8 +107,8 @@ it('calculates checkout amount from server-side property pricing', async () => {
   getJsonBodyMock.mockReturnValue({
     bookingForm: {
       property: MOCK_PROPERTY.id,
-      checkin: '2026-07-01',
-      checkout: '2026-07-03',
+      checkin: '2026-08-01',
+      checkout: '2026-08-03',
       guestEmail: 'guest@example.com',
       guestName: 'Test Guest',
       guests: '2',
