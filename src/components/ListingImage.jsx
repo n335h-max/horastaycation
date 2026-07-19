@@ -40,6 +40,8 @@ export function ListingImage({ src, alt, className, width, height, loading = 'la
     );
   }
 
+  const [loaded, setLoaded] = useState(false);
+
   return (
     <img
       src={safeSrc}
@@ -47,9 +49,10 @@ export function ListingImage({ src, alt, className, width, height, loading = 'la
       width={width}
       height={height}
       loading={loading}
-      // fetchPriority is a valid React DOM prop; only pass when provided
       {...(fetchPriority ? { fetchPriority } : {})}
-      className={className}
+      className={`${className} transition-[filter] duration-500 ease-out ${loaded ? 'blur-0' : 'blur-md scale-[1.03]'}`}
+      style={{ willChange: 'filter' }}
+      onLoad={() => setLoaded(true)}
       onError={() => setHasError(true)}
     />
   );

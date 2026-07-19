@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { formatCurrency } from '../lib/formatters';
 import { SEARCH_LOCATIONS } from '../data/siteData';
 import { isRangeBlocked } from '../lib/guestFeatures';
@@ -32,6 +32,8 @@ export function BookingPage({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('Any location');
   const [savedOnly, setSavedOnly] = useState(false);
+  const [summaryPulse, setSummaryPulse] = useState(false);
+  const formRef = useRef(null);
   const whatsappBaseUrl = `https://wa.me/${WHATSAPP_SUPPORT_NUMBER}?text=`;
   const wishlistIdSet = useMemo(() => new Set(wishlistIds), [wishlistIds]);
   const locationOptions = useMemo(
@@ -116,6 +118,12 @@ export function BookingPage({
         value: propertyId,
       },
     });
+    // U-2: Scroll to booking form and briefly pulse the summary panel
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+    setSummaryPulse(true);
+    setTimeout(() => setSummaryPulse(false), 600);
   }
 
   const selectedProperty = useMemo(
@@ -264,18 +272,41 @@ export function BookingPage({
                   <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-ice-100">
                     <Icon name="home" className="text-2xl text-slate-400" />
                   </div>
-                  <h3 className="font-display text-xl font-bold text-brand-950">No staycations available yet</h3>
-                  <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
-                    Our team is preparing new listings. Check back soon or contact support for early enquiries.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={onOpenSupport}
-                    className="mt-5 inline-flex items-center gap-2 rounded-full bg-brand-950 px-5 py-2.5 text-sm font-semibold text-white"
-                  >
-                    <Icon name="chat" />
-                    Contact Support
-                  </button>
+                  {properties.length === 0 ? (
+                    <>
+                      <h3 className="font-display text-xl font-bold text-brand-950">No staycations available yet</h3>
+                      <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
+                        Our team is preparing new listings. Check back soon or contact support for early enquiries.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={onOpenSupport}
+                        className="mt-5 inline-flex items-center gap-2 rounded-full bg-brand-950 px-5 py-2.5 text-sm font-semibold text-white"
+                      >
+                        <Icon name="chat" />
+                        Contact Support
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="font-display text-xl font-bold text-brand-950">No results match your filters</h3>
+                      <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
+                        Try adjusting your search, location, or date range.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchQuery('');
+                          setSelectedLocation('Any location');
+                          setSavedOnly(false);
+                        }}
+                        className="mt-5 inline-flex items-center gap-2 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
+                      >
+                        <Icon name="close" />
+                        Clear all filters
+                      </button>
+                    </>
+                  )}
                 </div>
               ) : (
                 filteredProperties.map((property) => {
@@ -362,7 +393,12 @@ export function BookingPage({
             </div>
           </div>
 
-          <aside className="h-fit rounded-[1.2rem] border border-ice-200 bg-white p-5 shadow-lg lg:sticky lg:top-24">
+          <aside
+            ref={formRef}
+            className={`h-fit rounded-[1.2rem] border bg-white p-5 shadow-lg lg:sticky lg:top-24 transition-all duration-300 ${
+              summaryPulse ? 'border-brand-400 ring-4 ring-brand-100' : 'border-ice-200'
+            }`}
+          >
             <form onSubmit={onProceedToPayment} className="space-y-5">
               <div className="rounded-2xl bg-brand-950 p-4 text-white">
                 <div className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">Booking Summary</div>
@@ -419,6 +455,7 @@ export function BookingPage({
                     id="checkout"
                     name="checkout"
                     type="date"
+                    min={bookingForm.checkin || new Date().toISOString().slice(0, 10)}
                     value={bookingForm.checkout}
                     onChange={onBookingChange}
                     className={`form-input ${bookingErrors?.checkout ? 'border-rose-400 ring-rose-100' : ''}`}
@@ -448,6 +485,16 @@ export function BookingPage({
                       <span>Total</span>
                       <span>{formatCurrency(bookingSummary.total)}</span>
                     </div>
+                  </div>
+                ) : selectedProperty && bookingForm.checkin && bookingForm.checkout ? (
+                  // U-7: shimmer skeleton while dates are set but summary hasn't resolved yet
+                  <div className="space-y-2 text-sm" aria-label="Calculating total...">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="flex justify-between">
+                        <div className="h-4 w-24 animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-16 animate-pulse rounded bg-slate-200" />
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <p className="text-sm text-slate-500">
@@ -479,19 +526,46 @@ export function BookingPage({
                   <label className="form-label" htmlFor="guests">
                     Number of Guests
                   </label>
-                  <input
-                    id="guests"
-                    name="guests"
-                    type="number"
-                    min="1"
-                    max={selectedProperty?.guestCapacity || undefined}
-                    inputMode="numeric"
-                    value={bookingForm.guests}
-                    onChange={onBookingChange}
-                    className={`form-input ${bookingErrors?.guests ? 'border-rose-400 ring-rose-100' : ''}`}
-                    placeholder="1"
-                    required
-                  />
+                  {/* U-12: +/− stepper — more thumb-friendly on mobile than a raw number input */}
+                  <div className={`form-input flex items-center justify-between gap-3 px-3 ${bookingErrors?.guests ? 'border-rose-400 ring-rose-100' : ''}`}>
+                    <button
+                      type="button"
+                      aria-label="Decrease guests"
+                      onClick={() =>
+                        onBookingChange({
+                          target: { name: 'guests', value: String(Math.max(1, Number(bookingForm.guests) - 1)) },
+                        })
+                      }
+                      disabled={Number(bookingForm.guests) <= 1}
+                      className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-ice-100 text-brand-700 font-bold hover:bg-brand-100 disabled:opacity-40 transition-colors"
+                    >
+                      −
+                    </button>
+                    <span id="guests" className="min-w-[2rem] text-center text-base font-semibold text-brand-950">
+                      {bookingForm.guests}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label="Increase guests"
+                      onClick={() =>
+                        onBookingChange({
+                          target: {
+                            name: 'guests',
+                            value: String(
+                              Math.min(
+                                selectedProperty?.guestCapacity || 20,
+                                Number(bookingForm.guests) + 1,
+                              ),
+                            ),
+                          },
+                        })
+                      }
+                      disabled={Number(bookingForm.guests) >= (selectedProperty?.guestCapacity || 20)}
+                      className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-ice-100 text-brand-700 font-bold hover:bg-brand-100 disabled:opacity-40 transition-colors"
+                    >
+                      +
+                    </button>
+                  </div>
                   {selectedProperty?.guestCapacity ? (
                     <p className="mt-1 text-xs text-slate-400">Max {selectedProperty.guestCapacity} guests for this stay.</p>
                   ) : null}

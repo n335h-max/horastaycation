@@ -99,7 +99,7 @@ export default function App() {
   const location = useLocation();
   const activePage = getPageFromPath(location.pathname);
 
-  const { toasts, pushToast } = useToast();
+  const { toasts, pushToast, dismissToast } = useToast();
   const { formatCompactNumber } = useFormatters();
   const {
     cookiePreferences,
@@ -256,7 +256,7 @@ export default function App() {
       <a href="#main-content" className="skip-link">
         Skip to main content
       </a>
-      <ToastStack toasts={toasts} />
+      <ToastStack toasts={toasts} onDismiss={dismissToast} />
       <SiteHeader
         activePage={activePage}
         mobileOpen={mobileOpen}
@@ -413,6 +413,7 @@ export default function App() {
                       onShowPage={showPage}
                       isLoading={isVerifyingStripePayment}
                       errorMessage={stripeVerificationError}
+                      bookingTransactions={store.bookingTransactions ?? []}
                     />
                   </ErrorBoundary>
                 }

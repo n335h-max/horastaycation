@@ -20,8 +20,13 @@ export function useToast() {
     setToasts((current) => [...current, { id: crypto.randomUUID(), message, type, icon }]);
   }, []);
 
+  const dismissToast = useCallback((id) => {
+    setToasts((current) => current.filter((t) => t.id !== id));
+  }, []);
+
   return {
     toasts,
     pushToast,
+    dismissToast,
   };
 }

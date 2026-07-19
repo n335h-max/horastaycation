@@ -80,11 +80,11 @@ export function AuthFlowPage({
       <div className="mx-auto max-w-6xl">
         <button
           type="button"
-          onClick={() => onShowPage('landing')}
+          onClick={() => onShowPage('booking')}
           className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-brand-600 hover:text-brand-800"
         >
           <Icon name="arrow-right" className="rotate-180" />
-          Back to Home
+          Back to Booking
         </button>
 
         <div className="rounded-[2rem] border border-brand-100 bg-white p-8 shadow-lg md:p-10">

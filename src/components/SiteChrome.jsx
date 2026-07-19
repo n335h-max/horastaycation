@@ -2,13 +2,23 @@ import { startTransition, useEffect, useId, useRef, useState } from 'react';
 import { NAV_ITEMS, SOCIAL_LINKS } from '../data/siteData';
 import { Icon } from './Icon';
 
-export function ToastStack({ toasts = [] }) {
+export function ToastStack({ toasts = [], onDismiss }) {
   return (
     <div className="toast-stack" aria-live="polite" aria-atomic="true">
       {toasts.map((toast) => (
         <div key={toast.id} className={`toast toast-${toast.type}`}>
           <Icon name={toast.icon} className="text-lg" />
-          <span>{toast.message}</span>
+          <span className="flex-1">{toast.message}</span>
+          {onDismiss ? (
+            <button
+              type="button"
+              onClick={() => onDismiss(toast.id)}
+              className="ml-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/35 transition-colors"
+              aria-label="Dismiss notification"
+            >
+              <Icon name="close" className="text-xs" />
+            </button>
+          ) : null}
         </div>
       ))}
     </div>
@@ -472,7 +482,7 @@ export function SiteHeader({
                   key={item.label}
                   type="button"
                   onClick={() => onScrollToSection(item.sectionId, true)}
-                  className={mobileNavItemClass}
+                  className={`${mobileNavItemClass} ${itemIsActive(item) ? (useHomeChrome ? 'border-white/20 bg-white/10 text-white font-bold' : 'border-brand-200 bg-brand-50 text-brand-700 font-bold') : ''}`}
                   aria-current={itemIsActive(item) ? 'page' : undefined}
                 >
                   {item.label}
@@ -485,7 +495,7 @@ export function SiteHeader({
                     onShowPage(item.page);
                     onToggleMobile(false);
                   }}
-                  className={mobileNavItemClass}
+                  className={`${mobileNavItemClass} ${itemIsActive(item) ? (useHomeChrome ? 'border-white/20 bg-white/10 text-white font-bold' : 'border-brand-200 bg-brand-50 text-brand-700 font-bold') : ''}`}
                   aria-current={itemIsActive(item) ? 'page' : undefined}
                 >
                   {item.label}
