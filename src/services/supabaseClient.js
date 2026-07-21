@@ -121,7 +121,7 @@ export async function uploadListingMediaFile(listingId, fieldName, file) {
   ].join('/');
 
   const { error } = await supabase.storage.from(bucket).upload(filePath, file, {
-    cacheControl: '3600',
+    cacheControl: '2592000',
     upsert: true,
     contentType: file.type || undefined,
   });

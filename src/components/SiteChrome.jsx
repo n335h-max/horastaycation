@@ -553,7 +553,7 @@ export function SiteFooter({ onShowPage, onManageCookies }) {
               <img src="/hora-logo.png" alt="Hora Staycation logo" className="h-8 w-8 rounded-lg object-cover" />
               <span className="font-display text-lg font-bold text-white">HORA Staycation</span>
             </div>
-            <p className="text-sm leading-relaxed text-white/50">
+            <p className="text-sm leading-relaxed text-white/70">
               Your staycation partner, curating unique stays and authentic experiences with GDPR and PDPA-aware privacy
               controls.
             </p>
@@ -564,21 +564,21 @@ export function SiteFooter({ onShowPage, onManageCookies }) {
               <button
                 type="button"
                 onClick={() => onShowPage('booking')}
-                className="block text-sm text-white/50 transition-colors hover:text-accent-400"
+                className="block text-sm text-white/70 transition-colors hover:text-accent-400"
               >
                 Book a Stay
               </button>
               <button
                 type="button"
                 onClick={() => onShowPage('owner-signup')}
-                className="block text-sm text-white/50 transition-colors hover:text-accent-400"
+                className="block text-sm text-white/70 transition-colors hover:text-accent-400"
               >
                 List Property
               </button>
               <button
                 type="button"
                 onClick={() => onShowPage('evaluate')}
-                className="block text-sm text-white/50 transition-colors hover:text-accent-400"
+                className="block text-sm text-white/70 transition-colors hover:text-accent-400"
               >
                 Write Review
               </button>
@@ -586,7 +586,7 @@ export function SiteFooter({ onShowPage, onManageCookies }) {
           </div>
           <div>
             <h3 className="mb-3 font-semibold text-white">Company</h3>
-            <div className="space-y-2 text-sm text-white/50">
+            <div className="space-y-2 text-sm text-white/70">
               <button
                 type="button"
                 onClick={() => onShowPage('privacy-policy')}
@@ -617,7 +617,7 @@ export function SiteFooter({ onShowPage, onManageCookies }) {
                   key={link.label}
                   href={link.href}
                   aria-label={link.label}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white/60 transition-all hover:bg-accent-400 hover:text-brand-900"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white/70 transition-all hover:bg-accent-400 hover:text-brand-900"
                 >
                   <Icon name={link.icon} />
                 </a>
@@ -625,7 +625,7 @@ export function SiteFooter({ onShowPage, onManageCookies }) {
             </div>
           </div>
         </div>
-        <div className="border-t border-white/10 pt-6 text-center text-sm text-white/30">
+        <div className="border-t border-white/10 pt-6 text-center text-sm text-white/70">
           © 2026 Hora Staycation. All rights reserved.
         </div>
       </div>

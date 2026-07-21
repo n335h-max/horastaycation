@@ -1,31 +1,42 @@
 import { useState } from 'react';
 import { Icon } from './Icon';
 
+function getResponsiveSources(src) {
+  if (typeof src !== 'string') return null;
+  const match = src.match(/^\/?(staycations\/[^\s]+?)(?:-(?:400w|800w))?\.(png|webp|jpg|jpeg)$/i);
+  if (!match) return null;
+  const basePath = '/' + match[1].replace(/^\//, '');
+  return {
+    webpSrcSet: `${basePath}-400w.webp 400w, ${basePath}-800w.webp 800w`,
+    jpegSrcSet: `${basePath}-400w.jpg 400w, ${basePath}-800w.jpg 800w`,
+    fallbackSrc: `${basePath}.jpg`,
+  };
+}
+
 /**
- * ListingImage — renders a listing/property image with graceful fallback.
- *
- * Why this exists: listings created in the management studio can have empty
- * image fields (no upload yet), and remote image URLs can 404 or fail to
- * load. A bare <img src=""> or <img src={undefined}> shows the browser's
- * broken-image icon, which looks broken to users.
- *
- * This component:
- *   - Renders a neutral placeholder when src is empty/missing
- *   - Falls back to the placeholder when the image fails to load (onError)
- *   - Keeps the same sizing/className contract as a plain <img>
+ * ListingImage — renders a listing/property image with graceful fallback and
+ * responsive WebP + JPEG fallback support for local staycation assets.
  */
-export function ListingImage({ src, alt, className, width, height, loading = 'lazy', fetchPriority }) {
+export function ListingImage({
+  src,
+  alt,
+  className,
+  width,
+  height,
+  loading = 'lazy',
+  fetchPriority,
+  sizes = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 420px',
+}) {
   const [hasError, setHasError] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
   const safeSrc = typeof src === 'string' && src.trim() ? src : '';
   const [lastSrc, setLastSrc] = useState(safeSrc);
 
-  // Reset the error state when the src changes, otherwise a single transient
-  // load failure would permanently pin this card to the placeholder even after
-  // the listing (and its image URL) changes. Adjusting state during render is
-  // the React-recommended pattern for this (avoids a cascading-render effect).
   if (safeSrc !== lastSrc) {
     setLastSrc(safeSrc);
     setHasError(false);
+    setLoaded(false);
   }
 
   if (!safeSrc || hasError) {
@@ -40,20 +51,33 @@ export function ListingImage({ src, alt, className, width, height, loading = 'la
     );
   }
 
-  const [loaded, setLoaded] = useState(false);
+  const sources = getResponsiveSources(safeSrc);
 
-  return (
+  const imgElement = (
     <img
-      src={safeSrc}
+      src={sources ? sources.fallbackSrc : safeSrc}
       alt={alt || ''}
       width={width}
       height={height}
       loading={loading}
       {...(fetchPriority ? { fetchPriority } : {})}
-      className={`${className} transition-[filter] duration-500 ease-out ${loaded ? 'blur-0' : 'blur-md scale-[1.03]'}`}
+      className={`${className || ''} transition-[filter] duration-500 ease-out ${loaded ? 'blur-0' : 'blur-md scale-[1.03]'}`}
       style={{ willChange: 'filter' }}
       onLoad={() => setLoaded(true)}
       onError={() => setHasError(true)}
     />
   );
+
+  if (sources) {
+    return (
+      <picture className={className}>
+        <source type="image/webp" srcSet={sources.webpSrcSet} sizes={sizes} />
+        <source type="image/jpeg" srcSet={sources.jpegSrcSet} sizes={sizes} />
+        {imgElement}
+      </picture>
+    );
+  }
+
+  return imgElement;
 }
+

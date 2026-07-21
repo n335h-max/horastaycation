@@ -83,7 +83,7 @@ function HeroCarousel({ properties, activeIndex, onStep }) {
             }}
           >
             {properties.map((property, index) => (
-              <article
+              <div
                 key={property.id}
                 className={`hero-carousel-card ${index === activeIndex ? 'is-active' : ''}`}
                 aria-hidden={index !== activeIndex}
@@ -104,7 +104,7 @@ function HeroCarousel({ properties, activeIndex, onStep }) {
                   <div className="hero-carousel-card-label">{property.location}</div>
                   <div className="hero-carousel-card-title">{property.name}</div>
                 </div>
-              </article>
+              </div>
             ))}
           </div>
           <button

@@ -100,7 +100,7 @@ export const PREVIOUS_PROJECTS = [
     location: 'Melaka',
     label: 'Previous Project 01',
     summary: 'Compact staycation direction with tiny-house comfort, clean pathways, and a polished first impression.',
-    image: '/staycations/ayer-keroh-melaka.png',
+    image: '/staycations/ayer-keroh-melaka.webp',
   },
   {
     id: 'sama-sama-tido',
@@ -108,7 +108,7 @@ export const PREVIOUS_PROJECTS = [
     location: 'Melaka',
     label: 'Previous Project 02',
     summary: 'A resort-style layout that highlights poolside leisure, outdoor social space, and broad lawn views.',
-    image: '/staycations/sama-sama-tido-melaka.png',
+    image: '/staycations/sama-sama-tido-melaka.webp',
   },
   {
     id: 'bohejiwa',
@@ -116,7 +116,7 @@ export const PREVIOUS_PROJECTS = [
     location: 'Port Dickson',
     label: 'Previous Project 03',
     summary: 'A stronger ambience-led concept with identity-building details and memorable guest arrival moments.',
-    image: '/staycations/bohejiwa-port-dickson.png',
+    image: '/staycations/bohejiwa-port-dickson.webp',
   },
   {
     id: 'alang-villa',
@@ -124,7 +124,7 @@ export const PREVIOUS_PROJECTS = [
     location: 'Port Dickson',
     label: 'Previous Project 04',
     summary: 'A staycation presentation shaped for private escapes, stronger branding, and destination appeal.',
-    image: '/staycations/alangs-villa-port-dickson.png',
+    image: '/staycations/alangs-villa-port-dickson.webp',
   },
   {
     id: 'aviva',
@@ -132,7 +132,7 @@ export const PREVIOUS_PROJECTS = [
     location: 'Seremban 2',
     label: 'Previous Project 05',
     summary: 'Compact hospitality planning that supports a cozy layout with clean landscaping and approachable scale.',
-    image: '/staycations/aviva-seremban-2.png',
+    image: '/staycations/aviva-seremban-2.webp',
   },
   {
     id: 'jalan-kebun',
@@ -140,7 +140,7 @@ export const PREVIOUS_PROJECTS = [
     location: 'Bangi',
     label: 'Previous Project 06',
     summary: 'A practical staycation setup where outdoor circulation, guest flow, and maintenance remain manageable.',
-    image: '/staycations/jalan-kebun-bangi.png',
+    image: '/staycations/jalan-kebun-bangi.webp',
   },
   {
     id: 'amana-villa',
@@ -148,7 +148,7 @@ export const PREVIOUS_PROJECTS = [
     location: 'Port Dickson',
     label: 'Previous Project 07',
     summary: 'A proposal reference focused on comfort, ambience, and refreshed landscape-led guest experiences.',
-    image: '/staycations/amana-villa-port-dickson.png',
+    image: '/staycations/amana-villa-port-dickson.webp',
   },
 ];
 
@@ -157,7 +157,7 @@ export const CONCEPT_OPTIONS = [
     id: 'modern',
     title: 'Modern Concept',
     icon: 'home',
-    image: '/staycations/concepts/modern.png',
+    image: '/staycations/concepts/modern.webp',
     summary: 'A blend of clean lines, elegant forms, and natural beauty for a stylish, contemporary staycation feel.',
     points: ['Modern design', 'Natural beauty', 'Warm ambience'],
   },
@@ -165,7 +165,7 @@ export const CONCEPT_OPTIONS = [
     id: 'japanese',
     title: 'Japanese Concept',
     icon: 'leaf',
-    image: '/staycations/concepts/japanese.png',
+    image: '/staycations/concepts/japanese.webp',
     summary: 'A serene direction with minimalist design, natural materials, and calming ambience for peaceful stays.',
     points: ['Japanese design', 'Natural elements', 'Relaxing ambience'],
   },
@@ -173,7 +173,7 @@ export const CONCEPT_OPTIONS = [
     id: 'natural',
     title: 'Natural Concept',
     icon: 'tree',
-    image: '/staycations/concepts/natural.png',
+    image: '/staycations/concepts/natural.webp',
     summary: 'A harmonious mix of greenery, stone, wood, and warm lighting to create a refreshing environment.',
     points: ['Natural design', 'Green elements', 'Warm ambience'],
   },
@@ -184,35 +184,35 @@ export const ADD_ON_OPTIONS = [
     id: 'pool',
     title: 'Pool',
     icon: 'hotub',
-    image: '/staycations/addons/pool.png',
+    image: '/staycations/addons/pool.webp',
     summary: 'Adds strong visual appeal and helps create a more relaxing resort-style guest experience.',
   },
   {
     id: 'bbq',
     title: 'BBQ Place',
     icon: 'fire',
-    image: '/staycations/addons/bbq-place.png',
+    image: '/staycations/addons/bbq-place.webp',
     summary: 'Creates a dedicated social space for outdoor dining, gathering, and memorable shared moments.',
   },
   {
     id: 'outdoor-kitchen',
     title: 'Outdoor Kitchen',
     icon: 'kitchen',
-    image: '/staycations/addons/outdoor-kitchen.png',
+    image: '/staycations/addons/outdoor-kitchen.webp',
     summary: 'Adds a practical cooking area outside the tiny house and supports light hosting activity.',
   },
   {
     id: 'marketing',
     title: 'Marketing Support',
     icon: 'chart',
-    image: '/staycations/addons/marketing.png',
+    image: '/staycations/addons/marketing.webp',
     summary: 'Supports awareness through professional visuals, posting plans, and stronger listing presentation.',
   },
   {
     id: 'foc-signboard',
     title: 'F.O.C Signboard',
     icon: 'shield',
-    image: '/staycations/addons/foc-signboard.png',
+    image: '/staycations/addons/foc-signboard.webp',
     summary: 'Free signboard plus an additional 5% discount, included and customizable with your homestay brand name.',
     label: '01.',
     highlight: 'Included',
@@ -246,7 +246,7 @@ export const ADD_ON_OPTIONS = [
     varieties: [
       {
         title: '01. Heliconia',
-        image: '/staycations/addons/heliconia.png',
+        image: '/staycations/addons/heliconia.webp',
         points: [
           'Lush greenery that adds height, texture, and a natural touch.',
           'Perfect for tropical and modern staycation spaces.',
@@ -254,7 +254,7 @@ export const ADD_ON_OPTIONS = [
       },
       {
         title: '02. Jasminum',
-        image: '/staycations/addons/jasminum.png',
+        image: '/staycations/addons/jasminum.webp',
         points: [
           'Compact and beautiful with delicate white blooms.',
           'Easy to maintain and ideal for a relaxing vibe.',

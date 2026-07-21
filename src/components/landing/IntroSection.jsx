@@ -18,14 +18,18 @@ export function IntroSection() {
             and create meaningful memories.
           </p>
           <div className="overflow-hidden rounded-3xl shadow-2xl">
-            <img
-              src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=stylish%20modern%20tiny-house%20staycation%20interior%20with%20warm%20wood%20textures%2C%20soft%20natural%20light%2C%20premium%20boutique%20hospitality%20photo%2C%20photorealistic&image_size=landscape_4_3"
-              alt="Stylish staycation house"
-              width="600"
-              height="500"
-              fetchPriority="high"
-              className="h-full w-full object-cover"
-            />
+            <picture>
+              <source type="image/webp" srcSet="/staycations/hero-interior.webp" />
+              <source type="image/jpeg" srcSet="/staycations/hero-interior.jpg" />
+              <img
+                src="/staycations/hero-interior.jpg"
+                alt="Stylish staycation house"
+                width="600"
+                height="500"
+                fetchPriority="high"
+                className="h-full w-full object-cover"
+              />
+            </picture>
           </div>
         </div>
 
