@@ -15,7 +15,9 @@ function buildListingDefaults(listingId = '') {
     summaryImage: '',
     thumbnail: '',
     videoUrl: '',
+    photos: [],
     galleryImages: [],
+    media: { photos: [], videoUrl: '' },
     schedule: '',
     publishStatus: 'draft',
     availabilityNotes: '',
@@ -57,8 +59,13 @@ export function normalizeListingPayload(listing) {
     : Array.isArray(listing.blockedDates)
       ? listing.blockedDates
       : [];
-  const galleryImages = normalizeGalleryImages(listing.galleryImages);
-  const fallbackGalleryImage = galleryImages[0] || '';
+  const rawPhotos = Array.isArray(listing.photos) && listing.photos.length > 0
+    ? listing.photos
+    : (Array.isArray(listing.galleryImages) ? listing.galleryImages.filter(Boolean) : []);
+  const photos = normalizeGalleryImages(rawPhotos);
+  const galleryImages = Array.isArray(listing.galleryImages) ? listing.galleryImages : photos;
+  const fallbackGalleryImage = photos[0] || '';
+  const videoUrl = listing.videoUrl || '';
 
   return {
     ...listing,
@@ -67,8 +74,13 @@ export function normalizeListingPayload(listing) {
     image: listing.image || listing.summaryImage || listing.thumbnail || fallbackGalleryImage,
     summaryImage: listing.summaryImage || listing.image || listing.thumbnail || fallbackGalleryImage,
     thumbnail: listing.thumbnail || listing.image || listing.summaryImage || fallbackGalleryImage,
-    videoUrl: listing.videoUrl || '',
+    videoUrl,
+    photos,
     galleryImages,
+    media: {
+      photos,
+      videoUrl,
+    },
     schedule: listing.schedule || '',
     publishStatus: listing.publishStatus || 'published',
     availabilityNotes: listing.availabilityNotes || '',
@@ -89,6 +101,9 @@ export function mergeManagementListings(listings = []) {
 
 export function fromRemoteManagementListing(record) {
   const defaults = buildListingDefaults(record.id);
+  const rawPhotos = record.photos && Array.isArray(record.photos) && record.photos.length > 0
+    ? record.photos
+    : record.gallery_images;
 
   return normalizeListingPayload({
     ...defaults,
@@ -107,7 +122,8 @@ export function fromRemoteManagementListing(record) {
     summaryImage: record.summary_image ?? defaults.summaryImage,
     thumbnail: record.thumbnail ?? defaults.thumbnail,
     videoUrl: record.video_url ?? '',
-    galleryImages: normalizeGalleryImages(record.gallery_images),
+    photos: normalizeGalleryImages(rawPhotos),
+    galleryImages: normalizeGalleryImages(record.gallery_images || rawPhotos),
     schedule: record.schedule ?? defaults.schedule,
     publishStatus: record.publish_status ?? 'published',
     availabilityNotes: record.availability_notes ?? '',

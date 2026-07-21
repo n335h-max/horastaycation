@@ -13,6 +13,10 @@ import {
 import { MAX_DASHBOARD_PREVIEW_ITEMS } from '../lib/constants';
 
 export function toRemoteManagementListing(listing) {
+  const photoList = Array.isArray(listing.galleryImages) && listing.galleryImages.length > 0
+    ? listing.galleryImages
+    : (Array.isArray(listing.photos) ? listing.photos : []);
+
   return {
     id: listing.id,
     name: listing.name,
@@ -29,7 +33,8 @@ export function toRemoteManagementListing(listing) {
     summary_image: listing.summaryImage || '',
     thumbnail: listing.thumbnail || '',
     video_url: listing.videoUrl || '',
-    gallery_images: Array.isArray(listing.galleryImages) ? listing.galleryImages : [],
+    gallery_images: photoList,
+    photos: photoList,
     schedule: listing.schedule || '',
     publish_status: listing.publishStatus || 'published',
     availability_notes: listing.availabilityNotes || '',
@@ -124,6 +129,7 @@ export async function saveManagementListing(listingInput) {
     .map((url) => (url ? url : uploadedGalleryUrls[uploadCursor++] || ''))
     .filter(Boolean);
   remoteListing.galleryImages = mergedGallery;
+  remoteListing.photos = mergedGallery;
   // If no explicit thumbnail was set and the gallery has images, use the first
   // gallery image as the card thumbnail fallback.
   if (!remoteListing.thumbnail && mergedGallery[0]) {

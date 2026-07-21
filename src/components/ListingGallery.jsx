@@ -19,8 +19,14 @@ import { Icon } from './Icon';
 
 function collectGalleryImages(property) {
   if (!property) return [];
-  const gallery = Array.isArray(property.galleryImages) ? property.galleryImages.filter(Boolean) : [];
-  if (gallery.length) return gallery;
+  const photos = Array.isArray(property.photos) && property.photos.length > 0
+    ? property.photos.filter(Boolean)
+    : Array.isArray(property.media?.photos) && property.media.photos.length > 0
+      ? property.media.photos.filter(Boolean)
+      : Array.isArray(property.galleryImages) && property.galleryImages.length > 0
+        ? property.galleryImages.filter(Boolean)
+        : [];
+  if (photos.length) return photos;
   // Legacy fallback: surface the existing single-image fields.
   return [property.summaryImage, property.image, property.thumbnail].filter(Boolean);
 }
@@ -144,11 +150,11 @@ export function ListingGallery({ property }) {
         </div>
       ) : null}
 
-      {property.videoUrl ? (
+      {property?.videoUrl || property?.media?.videoUrl ? (
         <div className="border-t border-ice-200 p-3">
           <div className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Video walkthrough</div>
           <video
-            src={property.videoUrl}
+            src={property.videoUrl || property.media?.videoUrl}
             controls
             playsInline
             preload="metadata"

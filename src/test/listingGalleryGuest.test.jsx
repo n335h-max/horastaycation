@@ -86,6 +86,34 @@ describe('ListingGallery — guest rendering', () => {
     expect(screen.getAllByRole('tab')).toHaveLength(3);
   });
 
+  it('supports property.photos and property.media objects', () => {
+    const property = {
+      id: 'p2',
+      name: 'Beach Villa',
+      photos: ['photo1.jpg', 'photo2.jpg', 'photo3.jpg'],
+      media: {
+        photos: ['photo1.jpg', 'photo2.jpg', 'photo3.jpg'],
+        videoUrl: 'https://storage/beach.mp4',
+      },
+    };
+    const { container } = render(<ListingGallery property={property} />);
+
+    // Main image preview.
+    const main = screen.getByRole('button', { name: 'Open full-screen gallery' });
+    expect(main.querySelector('img')).toHaveAttribute('src', 'photo1.jpg');
+
+    // Thumbnails.
+    const thumbs = screen.getAllByRole('tab');
+    expect(thumbs).toHaveLength(3);
+
+    // Counter "1 / 3".
+    expect(screen.getByText('1 / 3')).toBeInTheDocument();
+
+    // Video player.
+    const video = container.querySelector('video');
+    expect(video).toHaveAttribute('src', 'https://storage/beach.mp4');
+  });
+
   it('renders nothing when the property has no images at all', () => {
     const { container } = render(<ListingGallery property={{ id: 'p1', name: 'Empty' }} />);
     expect(container.firstChild).toBeNull();
