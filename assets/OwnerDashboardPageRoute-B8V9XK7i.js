@@ -1,1 +1,0 @@
-import{t as e}from"./react-vendor-jDcDd1zW.js";import{t}from"./ExperiencePages-DUDV44J2.js";var n=e();function r(e){return(0,n.jsx)(t,{...e})}export{r as OwnerDashboardPageRoute};
