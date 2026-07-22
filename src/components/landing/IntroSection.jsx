@@ -37,14 +37,23 @@ export function IntroSection() {
           <p className="mb-6 text-sm font-semibold uppercase tracking-[0.3em] text-brand-500">What HORA stands for</p>
           <div className="grid gap-4 sm:grid-cols-2">
             {HORA_VALUES.map((item) => (
-              <article key={item.letter} className="rounded-3xl bg-brand-950 p-6 text-white shadow-xl">
-                <div
-                  className={`mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${item.cardClass} font-display text-2xl font-bold`}
-                >
-                  {item.letter}
+              <article
+                key={item.letter}
+                className="group relative rounded-3xl p-px shadow-xl transition-transform duration-300 hover:-translate-y-1"
+                style={{
+                  background:
+                    'linear-gradient(135deg, rgba(37,99,235,0.55) 0%, rgba(6,182,212,0.35) 50%, rgba(37,99,235,0.12) 100%)',
+                }}
+              >
+                <div className="h-full rounded-[calc(1.5rem-1px)] bg-brand-950 p-6 text-white">
+                  <div
+                    className={`mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${item.cardClass} font-display text-2xl font-bold`}
+                  >
+                    {item.letter}
+                  </div>
+                  <h3 className="font-display text-2xl font-bold">{item.title}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-white/70">{item.description}</p>
                 </div>
-                <h3 className="font-display text-2xl font-bold">{item.title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-white/70">{item.description}</p>
               </article>
             ))}
           </div>

@@ -3,8 +3,8 @@ import { Icon } from '../Icon';
 
 function PreviousProjectCard({ project }) {
   return (
-    <article className="rounded-2xl border border-ice-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg overflow-hidden">
-      <div className="aspect-video overflow-hidden bg-ice-100">
+    <article className="stay-card overflow-hidden rounded-2xl border border-ice-200 bg-white shadow-sm">
+      <div className="prop-img-wrap aspect-video bg-ice-100">
         <img
           src={project.image}
           alt={project.name}
@@ -28,8 +28,8 @@ function PreviousProjectCard({ project }) {
 
 function ConceptCard({ concept }) {
   return (
-    <article className="overflow-hidden rounded-3xl border border-brand-100 bg-white shadow-sm">
-      <div className="aspect-[4/3] overflow-hidden bg-ice-100">
+    <article className="stay-card overflow-hidden rounded-3xl border border-brand-100 bg-white shadow-sm">
+      <div className="prop-img-wrap aspect-[4/3] bg-ice-100">
         <img
           src={concept.image}
           alt={concept.title}

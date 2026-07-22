@@ -252,9 +252,19 @@ export function SiteHeader({
   headerAction,
 }) {
   const [mobileProfileOpen, setMobileProfileOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const safeAvailableRoles = normalizeRoles(availableRoles);
   const isLanding = activePage === 'landing';
-  const useHomeChrome = true;
+  const useHomeChrome = !isScrolled;
+
+  useEffect(() => {
+    function handleScroll() {
+      setIsScrolled(window.scrollY > 80);
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   const navTextClass = useHomeChrome ? 'text-white/80 hover:text-white' : 'text-slate-600 hover:text-brand-600';
   const brandTextClass = useHomeChrome
     ? 'text-white group-hover:text-white/80'

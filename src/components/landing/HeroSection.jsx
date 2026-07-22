@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Icon } from '../Icon';
 import { ListingImage } from '../ListingImage';
-import { STATS } from '../../data/siteData';
+import { STATS, SEARCH_LOCATIONS } from '../../data/siteData';
 
 const HERO_TRUST_SIGNALS = ['Happy Guests', 'Quality Rated', 'Owner-Ready Listings'];
 
@@ -157,8 +158,27 @@ function HeroCarousel({ properties, activeIndex, onStep }) {
 }
 
 export function HeroSection({ onShowPage, featuredProperties, formatCompactNumber }) {
+  const navigate = useNavigate();
   const [heroActiveIndex, setHeroActiveIndex] = useState(0);
+  const [heroSearchLocation, setHeroSearchLocation] = useState('Any location');
+  const [heroSearchCheckin, setHeroSearchCheckin] = useState('');
+  const [heroSearchCheckout, setHeroSearchCheckout] = useState('');
+  const [heroSearchGuests, setHeroSearchGuests] = useState('1');
+  const today = new Date().toISOString().slice(0, 10);
   const heroShowcaseProperties = featuredProperties.slice(0, 7);
+
+  function handleHeroSearch(event) {
+    event.preventDefault();
+    const params = new URLSearchParams();
+    if (heroSearchLocation && heroSearchLocation !== 'Any location') {
+      params.set('location', heroSearchLocation);
+    }
+    if (heroSearchCheckin) params.set('checkin', heroSearchCheckin);
+    if (heroSearchCheckout) params.set('checkout', heroSearchCheckout);
+    if (heroSearchGuests) params.set('guests', heroSearchGuests);
+    const query = params.toString();
+    navigate(query ? `/booking?${query}` : '/booking');
+  }
 
   function handleHeroStep(direction) {
     if (!heroShowcaseProperties.length) return;
@@ -169,9 +189,6 @@ export function HeroSection({ onShowPage, featuredProperties, formatCompactNumbe
 
   return (
     <section className="hero-bg relative flex min-h-screen items-center overflow-hidden">
-      <div className="animate-float absolute right-10 top-20 h-20 w-20 rounded-full bg-accent-400/15 blur-sm" />
-      <div className="animate-float-slow absolute bottom-32 left-10 h-32 w-32 rounded-full bg-brand-400/10 blur-sm" />
-
       <div className="mx-auto w-full max-w-7xl px-4 pb-16 pt-28 md:px-8">
         <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="max-w-3xl text-center lg:text-left">
@@ -179,7 +196,10 @@ export function HeroSection({ onShowPage, featuredProperties, formatCompactNumbe
               <span className="h-2 w-2 rounded-full bg-accent-400" />
               <span className="text-sm font-medium text-white/80">Curated escapes for guests and owners</span>
             </div>
-            <h1 className="font-display text-5xl leading-tight font-black text-white md:text-7xl">Book Your Escape</h1>
+            <h1 className="font-display text-5xl leading-tight font-black md:text-7xl">
+              <span className="text-white">Book Your </span>
+              <span className="bg-gradient-to-r from-white via-accent-300 to-accent-400 bg-clip-text text-transparent">Escape</span>
+            </h1>
             <p className="mt-4 text-lg leading-relaxed text-white/80 md:text-xl">
               HORA Staycation pairs peaceful tiny-house stays, elevated ambience, and owner-ready hospitality tools in
               one refined experience.
@@ -194,6 +214,67 @@ export function HeroSection({ onShowPage, featuredProperties, formatCompactNumbe
                 </span>
               ))}
             </div>
+            <form
+              onSubmit={handleHeroSearch}
+              aria-label="Search staycations"
+              className="mt-8 rounded-2xl border border-white/15 bg-white p-3 shadow-2xl"
+            >
+              <div className="grid gap-2 sm:grid-cols-[1.5fr_1fr_1fr_0.8fr_auto] sm:items-end">
+                <div>
+                  <label htmlFor="hero-search-location" className="form-label">Location</label>
+                  <select
+                    id="hero-search-location"
+                    value={heroSearchLocation}
+                    onChange={(event) => setHeroSearchLocation(event.target.value)}
+                    className="form-input"
+                  >
+                    {SEARCH_LOCATIONS.map((location) => (
+                      <option key={location} value={location}>{location}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="hero-search-checkin" className="form-label">Check-in</label>
+                  <input
+                    id="hero-search-checkin"
+                    type="date"
+                    min={today}
+                    value={heroSearchCheckin}
+                    onChange={(event) => setHeroSearchCheckin(event.target.value)}
+                    className="form-input"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="hero-search-checkout" className="form-label">Check-out</label>
+                  <input
+                    id="hero-search-checkout"
+                    type="date"
+                    min={heroSearchCheckin || today}
+                    value={heroSearchCheckout}
+                    onChange={(event) => setHeroSearchCheckout(event.target.value)}
+                    className="form-input"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="hero-search-guests" className="form-label">Guests</label>
+                  <input
+                    id="hero-search-guests"
+                    type="number"
+                    min="1"
+                    inputMode="numeric"
+                    value={heroSearchGuests}
+                    onChange={(event) => setHeroSearchGuests(event.target.value)}
+                    className="form-input"
+                  />
+                </div>
+                <button type="submit" className="btn-primary h-[3.25rem] px-5">
+                  <span className="inline-flex items-center gap-2">
+                    <Icon name="search" />
+                    <span className="sr-only sm:not-sr-only sm:ml-1">Search</span>
+                  </span>
+                </button>
+              </div>
+            </form>
             <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-center lg:justify-start">
               <button type="button" onClick={() => onShowPage('booking')} className="btn-primary px-7 py-4 text-base">
                 <span className="inline-flex items-center gap-2">

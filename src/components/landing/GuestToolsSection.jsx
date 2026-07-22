@@ -2,13 +2,14 @@ import { Icon } from '../Icon';
 
 function LiveToolCard({ title, description, icon, action, accentClass = 'bg-brand-50 text-brand-600' }) {
   return (
-    <article className="rounded-3xl border border-brand-100 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-      <div className={`mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl ${accentClass}`}>
+    <article className="group relative overflow-hidden rounded-3xl border border-brand-100 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-200 hover:shadow-lg">
+      <div className={`mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl ring-4 ring-white ${accentClass}`}>
         <Icon name={icon} className="text-xl" />
       </div>
-      <h3 className="font-display text-2xl font-bold text-brand-950">{title}</h3>
-      <p className="mt-3 text-sm leading-relaxed text-slate-500">{description}</p>
-      <div className="mt-5">{action}</div>
+      <h3 className="font-display text-xl font-bold text-brand-950">{title}</h3>
+      <p className="mt-2 text-sm leading-relaxed text-slate-500">{description}</p>
+      <div className="mt-4">{action}</div>
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-transparent via-brand-300 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
     </article>
   );
 }
@@ -19,7 +20,10 @@ export function GuestToolsSection({ featuredProperties, analyticsSummary, onShow
       <div className="mx-auto max-w-7xl px-4 md:px-8">
         <div className="mx-auto mb-12 max-w-3xl text-center">
           <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-brand-500">Guest Tools</p>
-          <h2 className="font-display text-4xl font-bold text-brand-950 md:text-5xl">Search, save, and book faster</h2>
+          <h2 className="font-display text-4xl font-bold text-brand-950 md:text-5xl">
+            Search, save, and{' '}
+            <span className="bg-gradient-to-r from-brand-600 to-accent-500 bg-clip-text text-transparent">book faster</span>
+          </h2>
           <p className="mt-4 text-lg leading-relaxed text-slate-600">
             Hora now supports real search, wishlist saving, chat support, mobile install, and live business reporting in
             the operations dashboard.
@@ -27,7 +31,9 @@ export function GuestToolsSection({ featuredProperties, analyticsSummary, onShow
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <article className="rounded-[2rem] border border-brand-100 bg-gradient-to-br from-brand-950 via-brand-900 to-brand-700 p-8 text-white shadow-2xl">
+          <article className="relative overflow-hidden rounded-[2rem] border border-brand-100 bg-gradient-to-br from-brand-950 via-brand-900 to-brand-700 p-8 text-white shadow-2xl">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(6,182,212,0.18)_0%,transparent_60%)]" />
+            <div className="relative z-10">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/75">
               <Icon name="search" />
               Discovery Search
@@ -78,6 +84,7 @@ export function GuestToolsSection({ featuredProperties, analyticsSummary, onShow
               >
                 Ask Chat Support
               </button>
+            </div>
             </div>
           </article>
 

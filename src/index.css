@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-brand-50: #eff6ff;
   --color-brand-100: #dbeafe;
@@ -20,6 +22,23 @@
   --color-ice-200: #e2e8f0;
   --font-display: 'Playfair Display', serif;
   --font-body: 'DM Sans', sans-serif;
+  /* Semantic tokens — dark-mode ready (opt-in via .dark on <html>).
+     Light values mirror the existing brand/neutral palette so light mode is unchanged. */
+  --color-foreground: #0f172a;
+  --color-muted-foreground: #64748b;
+  --color-muted: #e2e8f0;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f8fafc;
+  --color-border-subtle: #e2e8f0;
+}
+
+.dark {
+  --color-foreground: #f8fafc;
+  --color-muted-foreground: #94a3b8;
+  --color-muted: #1e293b;
+  --color-surface: #0f172a;
+  --color-surface-muted: #111827;
+  --color-border-subtle: #1e293b;
 }
 
 :root {
@@ -241,8 +260,8 @@ label:focus-visible,
 
 .stay-card {
   transition:
-    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.4s ease;
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.25s ease;
 }
 
 .stay-card:hover {
@@ -257,7 +276,7 @@ label:focus-visible,
 }
 
 .prop-img-wrap img {
-  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .stay-card:hover .prop-img-wrap img {
@@ -294,7 +313,7 @@ label:focus-visible,
   color: white;
   padding: 1rem 1.25rem;
   box-shadow: 0 10px 40px rgba(15, 23, 42, 0.22);
-  animation: toast-in 0.35s ease-out forwards;
+  animation: toast-in 0.3s ease-out forwards;
 }
 
 .toast-success {
@@ -330,7 +349,7 @@ label:focus-visible,
   display: flex;
   height: 100%;
   gap: var(--hero-card-gap);
-  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
 }
 
@@ -345,9 +364,9 @@ label:focus-visible,
   transform: scale(0.88);
   opacity: 0.55;
   transition:
-    transform 0.45s ease,
-    opacity 0.45s ease,
-    box-shadow 0.45s ease;
+    transform 0.3s ease,
+    opacity 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .hero-carousel-card.is-active {
@@ -426,24 +445,16 @@ label:focus-visible,
   right: 1rem;
 }
 
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-.animate-float-slow {
-  animation: floatSlow 8s ease-in-out infinite;
-}
-
 .animate-slide-right {
-  animation: slideInRight 0.7s ease-out forwards;
+  animation: slideInRight 0.4s ease-out forwards;
 }
 
 .reveal-up {
   opacity: 0;
   transform: translateY(30px);
   transition:
-    opacity 0.8s ease,
-    transform 0.8s ease;
+    opacity 0.4s ease,
+    transform 0.4s ease;
 }
 
 .reveal-up.visible {
@@ -467,7 +478,7 @@ label:focus-visible,
   width: 100%;
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-  transition: left 0.6s ease;
+  transition: left 0.3s ease;
 }
 
 .dash-card.updated::before {
@@ -483,26 +494,6 @@ label:focus-visible,
 
 main section[id] {
   scroll-margin-top: 6rem;
-}
-
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-18px) rotate(1deg);
-  }
-}
-
-@keyframes floatSlow {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
 }
 
 @keyframes shimmer {
@@ -613,4 +604,39 @@ main section[id] {
   .hero-carousel-arrow-right {
     right: 0.65rem;
   }
+}
+
+/* ── Marquee animations (TestimonialsSection) ──────────────────────────────── */
+@keyframes marquee-left {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@keyframes marquee-right {
+  from { transform: translateX(-50%); }
+  to   { transform: translateX(0); }
+}
+.animate-marquee-left {
+  animation: marquee-left 40s linear infinite;
+}
+.animate-marquee-right {
+  animation: marquee-right 44s linear infinite;
+}
+
+/* ── Support widget pulse ───────────────────────────────────────────────────── */
+@keyframes support-pulse {
+  0%   { box-shadow: 0 0 0 0    rgba(37, 99, 235, 0.55); }
+  60%  { box-shadow: 0 0 0 14px rgba(37, 99, 235, 0); }
+  100% { box-shadow: 0 0 0 0    rgba(37, 99, 235, 0); }
+}
+.support-pulse {
+  animation: support-pulse 2.8s ease-out infinite;
+}
+
+/* ── Cookie consent banner slide-up ────────────────────────────────────────── */
+@keyframes slide-up-banner {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.animate-slide-up-banner {
+  animation: slide-up-banner 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }

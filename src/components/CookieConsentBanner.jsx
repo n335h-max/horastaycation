@@ -7,7 +7,7 @@ export function CookieConsentBanner({ open, preferences, onAcceptAll, onEssentia
 
   return (
     <aside
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-brand-100 bg-white/95 px-4 py-4 shadow-[0_-18px_45px_rgba(15,23,42,0.14)] backdrop-blur-md md:px-8"
+      className="animate-slide-up-banner fixed inset-x-0 bottom-0 z-50 border-t border-brand-100 bg-white/95 px-4 py-4 shadow-[0_-18px_45px_rgba(15,23,42,0.14)] backdrop-blur-md md:px-8"
       aria-label="Cookie consent"
     >
       <div className="mx-auto flex max-w-7xl flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">

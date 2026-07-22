@@ -30,7 +30,11 @@ export function BookingPage({
 }) {
   const googleConnected = Boolean(authUser && availableRoles.includes('client'));
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState('Any location');
+  const [selectedLocation, setSelectedLocation] = useState(
+    () =>
+      (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('location')) ||
+      'Any location',
+  );
   const [savedOnly, setSavedOnly] = useState(false);
   const [summaryPulse, setSummaryPulse] = useState(false);
   const formRef = useRef(null);
@@ -152,6 +156,19 @@ export function BookingPage({
     });
   }, [bookingForm.property, filteredProperties, onBookingChange]);
 
+  // Seed search + booking form from the landing hero search query params (runs once on mount).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const checkin = params.get('checkin');
+    const checkout = params.get('checkout');
+    const guests = params.get('guests');
+
+    if (checkin) onBookingChange({ target: { name: 'checkin', value: checkin } });
+    if (checkout) onBookingChange({ target: { name: 'checkout', value: checkout } });
+    if (guests) onBookingChange({ target: { name: 'guests', value: guests } });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <section className="min-h-screen bg-white px-4 pb-16 pt-28 md:px-8">
       <div className="mx-auto max-w-7xl">
@@ -165,7 +182,7 @@ export function BookingPage({
         </button>
         <div className="mb-8 text-center">
           <h1 className="font-display text-4xl font-bold text-brand-950 md:text-5xl">Book a Staycation</h1>
-          <p className="mt-3 text-lg text-slate-600">
+          <p className="mt-3 text-lg text-muted-foreground">
             Pick your perfect escape, choose your dates, and book your stay in minutes.
           </p>
         </div>
@@ -179,7 +196,7 @@ export function BookingPage({
               <div className="flex flex-wrap items-center justify-between gap-2.5">
                 <div>
                   <h2 className="font-display text-3xl font-bold text-brand-950 md:text-4xl">Book Your Staycation</h2>
-                  <p className="mt-1.5 text-sm text-slate-500">Pick a property, choose your dates, and check out now.</p>
+                  <p className="mt-1.5 text-sm text-muted-foreground">Pick a property, choose your dates, and check out now.</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <button
@@ -261,7 +278,7 @@ export function BookingPage({
                 </button>
               </form>
 
-              <div className="mt-3 text-xs font-medium text-slate-500">
+              <div className="mt-3 text-xs font-medium text-muted-foreground">
                 {filteredProperties.length} active stay option{filteredProperties.length === 1 ? '' : 's'}
               </div>
             </div>
@@ -270,12 +287,12 @@ export function BookingPage({
               {filteredProperties.length === 0 ? (
                 <div className="rounded-[1.2rem] border border-ice-200 bg-white p-10 text-center shadow-sm">
                   <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-ice-100">
-                    <Icon name="home" className="text-2xl text-slate-400" />
+                    <Icon name="home" className="text-2xl text-muted-foreground" />
                   </div>
                   {properties.length === 0 ? (
                     <>
                       <h3 className="font-display text-xl font-bold text-brand-950">No staycations available yet</h3>
-                      <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
+                      <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
                         Our team is preparing new listings. Check back soon or contact support for early enquiries.
                       </p>
                       <button
@@ -290,7 +307,7 @@ export function BookingPage({
                   ) : (
                     <>
                       <h3 className="font-display text-xl font-bold text-brand-950">No results match your filters</h3>
-                      <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
+                      <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
                         Try adjusting your search, location, or date range.
                       </p>
                       <button
@@ -315,15 +332,15 @@ export function BookingPage({
                 return (
                   <article
                     key={property.id}
-                    className={`rounded-[1.2rem] border bg-white shadow-sm transition ${
-                      isSelected ? 'border-brand-500 ring-2 ring-brand-100' : 'border-ice-200 hover:border-brand-300'
+                    className={`stay-card overflow-hidden rounded-2xl border bg-white shadow-sm ${
+                      isSelected ? 'border-brand-500 ring-2 ring-brand-100' : 'border-ice-200'
                     }`}
                   >
-                    <div className="grid gap-4 p-4 text-left md:grid-cols-[160px_minmax(0,1fr)_auto]">
+                    <div className="grid gap-0 text-left md:grid-cols-[180px_minmax(0,1fr)_auto]">
                       <button
                         type="button"
                         onClick={() => handlePropertySelect(property.id)}
-                        className="overflow-hidden rounded-xl bg-ice-100"
+                        className="prop-img-wrap min-h-[7rem] bg-ice-100"
                         aria-label={`Select ${property.name}`}
                       >
                         <ListingImage
@@ -332,13 +349,13 @@ export function BookingPage({
                           width="320"
                           height="220"
                           loading="lazy"
-                          className="h-28 w-full object-cover"
+                          className="h-full min-h-[7rem] w-full object-cover"
                         />
                       </button>
                       <button
                         type="button"
                         onClick={() => handlePropertySelect(property.id)}
-                        className="text-left"
+                        className="p-4 text-left"
                         aria-label={`Select ${property.name}`}
                       >
                         <div className="flex flex-wrap items-center gap-2">
@@ -352,19 +369,19 @@ export function BookingPage({
                           </span>
                         </div>
                         <h3 className="mt-2 text-lg font-semibold text-brand-950">{property.name}</h3>
-                        <p className="text-sm text-slate-500">{property.location}</p>
-                        <p className="mt-2 text-sm text-slate-600">&quot;{property.reviewSnippet}&quot;</p>
+                        <p className="text-sm text-muted-foreground">{property.location}</p>
+                        <p className="mt-2 text-sm text-muted-foreground">&quot;{property.reviewSnippet}&quot;</p>
                       </button>
-                      <div className="flex flex-col items-start gap-2 md:items-end">
+                      <div className="flex flex-col items-start gap-2 p-4 md:items-end">
                         <div className="text-right">
-                          <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Per night</p>
+                          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Per night</p>
                           <p className="text-2xl font-bold text-brand-900">{formatCurrency(property.price)}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
                             onClick={(event) => handleWishlistClick(event, property.id)}
-                            className={`rounded-full p-2 ${wishlistIdSet.has(property.id) ? 'bg-rose-100 text-rose-600' : 'bg-ice-100 text-slate-400'}`}
+                            className={`rounded-full p-2 ${wishlistIdSet.has(property.id) ? 'bg-rose-100 text-rose-600' : 'bg-ice-100 text-muted-foreground'}`}
                             aria-label={wishlistIdSet.has(property.id) ? 'Remove from wishlist' : 'Save to wishlist'}
                           >
                             <Icon name="heart" />
@@ -379,7 +396,7 @@ export function BookingPage({
                         </div>
                         <span
                           className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                            isSelected ? 'bg-brand-600 text-white' : 'bg-ice-100 text-slate-500'
+                            isSelected ? 'bg-brand-600 text-white' : 'bg-ice-100 text-muted-foreground'
                           }`}
                         >
                           {isSelected ? 'Selected' : 'Choose'}
@@ -470,14 +487,14 @@ export function BookingPage({
               <div className="rounded-2xl border border-ice-200 bg-ice-50 p-4">
                 {bookingSummary ? (
                   <div className="space-y-2 text-sm">
-                    <div className="flex justify-between text-slate-600">
+                    <div className="flex justify-between text-muted-foreground">
                       <span>
                         {bookingSummary.nights} night{bookingSummary.nights > 1 ? 's' : ''} x{' '}
                         {formatCurrency(bookingSummary.price)}
                       </span>
                       <span className="font-semibold text-brand-900">{formatCurrency(bookingSummary.subtotal)}</span>
                     </div>
-                    <div className="flex justify-between text-slate-600">
+                    <div className="flex justify-between text-muted-foreground">
                       <span>Service fee</span>
                       <span className="font-semibold text-brand-900">{formatCurrency(bookingSummary.serviceFee)}</span>
                     </div>
@@ -491,13 +508,13 @@ export function BookingPage({
                   <div className="space-y-2 text-sm" aria-label="Calculating total...">
                     {[...Array(3)].map((_, i) => (
                       <div key={i} className="flex justify-between">
-                        <div className="h-4 w-24 animate-pulse rounded bg-slate-200" />
-                        <div className="h-4 w-16 animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+                        <div className="h-4 w-16 animate-pulse rounded bg-muted" />
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-muted-foreground">
                     Select valid stay dates to generate your live total breakdown.
                   </p>
                 )}
@@ -567,7 +584,7 @@ export function BookingPage({
                     </button>
                   </div>
                   {selectedProperty?.guestCapacity ? (
-                    <p className="mt-1 text-xs text-slate-400">Max {selectedProperty.guestCapacity} guests for this stay.</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Max {selectedProperty.guestCapacity} guests for this stay.</p>
                   ) : null}
                   {bookingErrors?.guests ? <p className="mt-1 text-sm text-rose-600">{bookingErrors.guests[0]}</p> : null}
                 </div>
@@ -621,7 +638,7 @@ export function BookingPage({
                     className="form-input"
                     placeholder="e.g. early check-in, late check-out, romantic setup, accessibility needs..."
                   />
-                  <p className="mt-1 text-xs text-slate-400">Optional — up to 500 characters.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Optional — up to 500 characters.</p>
                 </div>
               </div>
 

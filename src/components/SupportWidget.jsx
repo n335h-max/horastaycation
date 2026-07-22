@@ -240,7 +240,7 @@ export function SupportWidget({ open, onOpen, onClose, onSubmit, authUser, curre
           onClick={open ? onClose : onOpen}
           aria-expanded={open}
           aria-controls="support-title"
-          className="inline-flex min-h-[3.5rem] items-center gap-3 rounded-full bg-brand-950 px-5 py-3 text-sm font-semibold text-white shadow-2xl transition hover:-translate-y-0.5"
+          className={`inline-flex min-h-[3.5rem] items-center gap-3 rounded-full bg-brand-950 px-5 py-3 text-sm font-semibold text-white shadow-2xl transition hover:-translate-y-0.5 ${open ? '' : 'support-pulse'}`}
         >
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
             <Icon name="comment" className="text-lg" />
