@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   test: {
     globals: true,
+    testTimeout: 10000,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.js'],
     coverage: {

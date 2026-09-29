@@ -8,6 +8,9 @@ vi.mock('./_lib/resendServer.js', () => ({
   getManagementEmail: () => 'admin@example.com',
 }));
 vi.mock('./_lib/cors.js', () => ({ handleCors: () => null }));
+vi.mock('./_lib/auth.js', () => ({
+  resolveAuthenticatedUser: vi.fn(async () => ({ ok: true, user: { id: 'user-1', email: 'guest@example.com' } })),
+}));
 // Stub the server-side owner-email resolver (unit under test is the wiring).
 const { resolveOwnerEmailMock } = vi.hoisted(() => ({ resolveOwnerEmailMock: vi.fn() }));
 vi.mock('./_lib/supabaseAdmin.js', () => ({ resolveOwnerEmail: resolveOwnerEmailMock }));

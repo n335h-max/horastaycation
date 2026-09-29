@@ -4,7 +4,10 @@ This document tracks pending tasks and configurations for deployment and operati
 
 ## High Priority
 
-- [ ] **Configure Stripe Webhook**
+- [x] **Implement and test Stripe Webhook**
+  - The server verifies signatures, handles successful/failed/expired payments and refunds, deduplicates event deliveries, and persists booking state.
+
+- [ ] **Configure Stripe Webhook in production**
   - **Goal:** Enable automatic booking confirmation and refund handling without depending on client-side redirects.
   - **Steps:**
     1. Go to the **Stripe Dashboard** → **Developers** → **Webhooks**.

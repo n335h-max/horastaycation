@@ -13,8 +13,8 @@ import { bookingSchema } from '../lib/validation';
 function validBase(overrides = {}) {
   return {
     property: 'villa-serena',
-    checkin: '2026-08-01',
-    checkout: '2026-08-03',
+    checkin: '2027-08-01',
+    checkout: '2027-08-03',
     guests: '2',
     guestName: 'Jane Doe',
     guestEmail: 'jane@example.com',

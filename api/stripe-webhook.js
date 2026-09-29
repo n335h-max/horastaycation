@@ -13,6 +13,11 @@ function getHeader(req, name) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+function getStripeId(value) {
+  if (typeof value === 'string') return value;
+  return value && typeof value === 'object' && typeof value.id === 'string' ? value.id : '';
+}
+
 async function sendEmailViaResend(type, data, to = null) {
   const resend = getResendClient();
   const fromEmail = getFromEmail();
@@ -87,8 +92,7 @@ export default async function handler(req, res) {
 
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
-      const paymentIntentId =
-        typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id || '';
+      const paymentIntentId = getStripeId(session.payment_intent);
 
       await upsertBookingTransactionAdmin(
         mapWebhookMetadataToBookingRecord(session.metadata, {
@@ -199,14 +203,19 @@ export default async function handler(req, res) {
 
     if (event.type === 'charge.refunded') {
       const charge = event.data.object;
-      await updateBookingTransactionAdmin('stripe_payment_intent_id', charge.payment_intent, {
-        payment_status: 'refunded',
-        booking_status: 'refunded',
-        stripe_refund_id: charge.refunds?.data?.[0]?.id || null,
-        refund_status: charge.refunded ? 'succeeded' : 'pending',
-        refunded_at: charge.refunded ? new Date().toISOString() : null,
-        status_note: charge.refunded ? 'Stripe refund completed.' : 'Stripe refund update received.',
-      });
+      const paymentIntentId = getStripeId(charge.payment_intent);
+      if (paymentIntentId) {
+        await updateBookingTransactionAdmin('stripe_payment_intent_id', paymentIntentId, {
+          payment_status: 'refunded',
+          booking_status: 'refunded',
+          stripe_refund_id: charge.refunds?.data?.[0]?.id || null,
+          refund_status: charge.refunded ? 'succeeded' : 'pending',
+          refunded_at: charge.refunded ? new Date().toISOString() : null,
+          status_note: charge.refunded ? 'Stripe refund completed.' : 'Stripe refund update received.',
+        });
+      } else {
+        logger.warn('Stripe refund event did not include a payment intent; skipping booking update.');
+      }
     }
     // Record that we've processed this Stripe event to avoid duplicates.
     if (!eventRecorded) {
