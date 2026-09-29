@@ -1,4 +1,3 @@
-/* global process */
 import { beforeEach, expect, it, vi } from 'vitest';
 
 const getJsonBodyMock = vi.fn();
@@ -107,8 +106,8 @@ it('calculates checkout amount from server-side property pricing', async () => {
   getJsonBodyMock.mockReturnValue({
     bookingForm: {
       property: MOCK_PROPERTY.id,
-      checkin: '2026-08-01',
-      checkout: '2026-08-03',
+      checkin: '2027-08-01',
+      checkout: '2027-08-03',
       guestEmail: 'guest@example.com',
       guestName: 'Test Guest',
       guests: '2',

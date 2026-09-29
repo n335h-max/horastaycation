@@ -57,9 +57,12 @@ function scopeIdempotencyKey(authUserId, rawKey) {
 }
 
 function sanitizeMetadataValue(value, maxLength = 500) {
-  return String(value || '')
-    .trim()
-    .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
+  return Array.from(String(value || '').trim())
+    .filter((character) => {
+      const code = character.charCodeAt(0);
+      return code > 31 && code !== 127;
+    })
+    .join('')
     .slice(0, maxLength);
 }
 

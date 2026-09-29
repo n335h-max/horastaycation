@@ -41,5 +41,14 @@ export default [
       'no-console': 'warn',
     },
   },
+  {
+    files: ['api/**/*.js', 'scripts/**/*.js', '**/*.test.{js,jsx}', 'src/test/setup.js'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.vitest,
+      },
+    },
+  },
   prettier,
 ];

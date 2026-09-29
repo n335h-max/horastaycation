@@ -5,6 +5,11 @@ import { Icon } from '../components/Icon';
 const CONFETTI_COLORS = ['#2563eb', '#06b6d4', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
 const CONFETTI_COUNT = 48;
 
+function seededFraction(index, salt) {
+  const value = Math.sin(index * 12.9898 + salt * 78.233) * 43758.5453;
+  return value - Math.floor(value);
+}
+
 function ConfettiParticle({ color, style }) {
   return (
     <span
@@ -19,12 +24,12 @@ function ConfettiBurst() {
   const particles = Array.from({ length: CONFETTI_COUNT }, (_, i) => ({
     id: i,
     color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-    left: `${Math.random() * 100}%`,
-    delay: `${Math.random() * 0.6}s`,
-    duration: `${0.8 + Math.random() * 0.8}s`,
-    width: `${6 + Math.random() * 7}px`,
-    height: `${10 + Math.random() * 6}px`,
-    rotate: `${Math.random() * 360}deg`,
+    left: `${seededFraction(i, 1) * 100}%`,
+    delay: `${seededFraction(i, 2) * 0.6}s`,
+    duration: `${0.8 + seededFraction(i, 3) * 0.8}s`,
+    width: `${6 + seededFraction(i, 4) * 7}px`,
+    height: `${10 + seededFraction(i, 5) * 6}px`,
+    rotate: `${seededFraction(i, 6) * 360}deg`,
   }));
 
   return (

@@ -8,11 +8,13 @@
     "build": "vite build",
     "preview": "vite preview",
     "check-env": "node ./scripts/checkEnv.js",
-    "lint": "eslint src/",
+    "lint": "eslint src/ api/",
     "format": "prettier --write src/",
-    "test": "vitest",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "check": "npm run lint && npm test && npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.1",

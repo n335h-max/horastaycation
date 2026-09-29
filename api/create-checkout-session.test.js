@@ -94,8 +94,8 @@ describe('create-checkout-session — prices from Supabase listing (not static a
   it('creates a Stripe session for a fully-filled booking of a published listing', async () => {
     const bookingForm = {
       property: 'l1',
-      checkin: '2026-07-20',
-      checkout: '2026-07-23',
+      checkin: '2027-07-20',
+      checkout: '2027-07-23',
       guestEmail: 'client@example.com',
       guestName: 'Client One',
       guests: 2,
@@ -126,8 +126,8 @@ describe('create-checkout-session — prices from Supabase listing (not static a
 
     const bookingForm = {
       property: 'missing',
-      checkin: '2026-07-20',
-      checkout: '2026-07-23',
+      checkin: '2027-07-20',
+      checkout: '2027-07-23',
       guestEmail: 'client@example.com',
     };
     const req = { method: 'POST', headers: { authorization: 'Bearer token' }, body: { bookingForm } };
